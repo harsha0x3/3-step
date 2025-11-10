@@ -1,7 +1,13 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-from routes import auth_routes, store_routes, candidate_routes, verification_routes
+from routes import (
+    auth_routes,
+    store_routes,
+    candidate_routes,
+    verification_routes,
+    vendor_routes,
+)
 from db.connection import init_db
 from fastapi.staticfiles import StaticFiles
 import os
@@ -43,3 +49,4 @@ app.include_router(auth_routes.router)
 app.include_router(store_routes.router)
 app.include_router(candidate_routes.router)
 app.include_router(verification_routes.router)
+app.include_router(vendor_routes.router)

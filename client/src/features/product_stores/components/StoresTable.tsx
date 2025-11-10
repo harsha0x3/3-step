@@ -48,27 +48,6 @@ const columns: ColumnDef<StoreItemWithUser, any>[] = [
     header: "Email",
     cell: (info) => info.getValue(),
   }),
-  columnHelper.accessor("city", {
-    header: "City",
-    cell: (info) => info.getValue(),
-  }),
-  columnHelper.accessor("state", {
-    header: "State",
-    cell: (info) => info.getValue(),
-  }),
-  columnHelper.accessor("maps_link", {
-    header: "Map",
-    cell: (info) => {
-      const v = info.getValue() as string | undefined;
-      return v ? (
-        <a href={v} target="_blank" rel="noreferrer" className="underline">
-          Open
-        </a>
-      ) : (
-        "-"
-      );
-    },
-  }),
 
   // 🆕 Add this column for store_person
   columnHelper.accessor("store_person", {

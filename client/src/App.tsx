@@ -12,6 +12,8 @@ import AllStores from "./features/product_stores/pages/AllStores";
 import { useGetCurrentUserQuery } from "./features/auth/store/authApiSlice";
 import AllCandidates from "./features/candidates/pages/AllCandidates";
 import CandidateVerification from "./features/verification/pages/CandidateVerification";
+import AllVendors from "./features/vendors/pages/AllVendors";
+import AllVendorSpoc from "./features/vendors/pages/AllVendorSpoc";
 
 function App() {
   const currentAuthState: AuthState = useSelector(selectAuth);
@@ -42,6 +44,8 @@ function App() {
               element={<CandidateVerification />}
             />
             <Route path="store/dashboard" element={<div>store dash</div>} />
+            <Route path="vendors" element={<AllVendors />} />
+            <Route path="vendor_spoc" element={<AllVendorSpoc />} />
           </Route>
         </Route>
       </Routes>

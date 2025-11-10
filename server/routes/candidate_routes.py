@@ -24,7 +24,6 @@ from controllers.candidates_controller import (
     get_candidates_of_store,
     update_candidate_details,
     upload_candidate_img,
-    upload_parent_img,
     update_candidate_verification_status,
     get_candidate_details_by_id,
 )
@@ -79,21 +78,21 @@ async def upload_candidate_photo(
     return await upload_candidate_img(photo=photo, candidate_id=candidate_id, db=db)
 
 
-@router.patch("/{candidate_id}/upload-parent-photo", status_code=status.HTTP_200_OK)
-async def upload_parent_photo(
-    parent_photo: Annotated[UploadFile, File(...)],
-    candidate_id: Annotated[
-        str, Path(title="Id of the candidate whose parent's image is being uploaded")
-    ],
-    db: Annotated[Session, Depends(get_db_conn)],
-    current_user: Annotated[UserOut, Depends(get_current_user)],
-):
-    if current_user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorised to uplad images"
-        )
+# @router.patch("/{candidate_id}/upload-parent-photo", status_code=status.HTTP_200_OK)
+# async def upload_parent_photo(
+#     parent_photo: Annotated[UploadFile, File(...)],
+#     candidate_id: Annotated[
+#         str, Path(title="Id of the candidate whose parent's image is being uploaded")
+#     ],
+#     db: Annotated[Session, Depends(get_db_conn)],
+#     current_user: Annotated[UserOut, Depends(get_current_user)],
+# ):
+#     if current_user.role != "admin":
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorised to uplad images"
+#         )
 
-    return await upload_parent_img(photo=parent_photo, candidate_id=candidate_id, db=db)
+#     return await upload_parent_img(photo=parent_photo, candidate_id=candidate_id, db=db)
 
 
 # ✅ Get all candidates (with optional search)

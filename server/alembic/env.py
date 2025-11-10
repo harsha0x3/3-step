@@ -8,7 +8,15 @@ from dotenv import load_dotenv
 import os
 
 from db.base import Base
-from models import users, stores, candidates, otps, verification_statuses, coupons
+from models import (
+    users,
+    stores,
+    candidates,
+    otps,
+    verification_statuses,
+    coupons,
+    vendors,
+)
 
 load_dotenv()
 

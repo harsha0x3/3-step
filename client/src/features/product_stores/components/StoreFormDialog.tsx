@@ -42,11 +42,8 @@ const StoreFormDialog: React.FC<Props> = ({ store }) => {
           store_person_first_name: store.store_person?.first_name ?? "",
           store_person_last_name: store.store_person?.last_name ?? "",
           email: store.email ?? "",
-          store_contact_number: store.contact_number ?? "",
+          contact_number: store.contact_number ?? "",
           address: store.address ?? "",
-          city: store.city ?? "",
-          state: store.state ?? "",
-          maps_link: store.maps_link ?? "",
         }
       : {},
   });
@@ -168,13 +165,13 @@ const StoreFormDialog: React.FC<Props> = ({ store }) => {
             <Label htmlFor="store_contact_number">Contact Number</Label>
             <Input
               id="store_contact_number"
-              {...register("store_contact_number", {
+              {...register("contact_number", {
                 required: "Contact number is required",
               })}
             />
-            {errors.store_contact_number && (
+            {errors.contact_number && (
               <span className="text-sm text-red-500">
-                {errors.store_contact_number.message}
+                {errors.contact_number.message}
               </span>
             )}
           </div>
@@ -183,40 +180,6 @@ const StoreFormDialog: React.FC<Props> = ({ store }) => {
           <div className="grid gap-1">
             <Label htmlFor="address">Address</Label>
             <Input id="address" {...register("address", { required: true })} />
-          </div>
-
-          {/* city & State */}
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label htmlFor="city">city</Label>
-              <Input
-                id="city"
-                {...register("city", { required: "city is required" })}
-              />
-              {errors.city && (
-                <span className="text-sm text-red-500">
-                  {errors.city.message}
-                </span>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="state">State</Label>
-              <Input
-                id="state"
-                {...register("state", { required: "State is required" })}
-              />
-              {errors.state && (
-                <span className="text-sm text-red-500">
-                  {errors.state.message}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Maps link (optional) */}
-          <div className="grid gap-1">
-            <Label htmlFor="maps_link">Maps Link</Label>
-            <Input id="maps_link" {...register("maps_link")} />
           </div>
 
           <DialogFooter className="pt-4">

@@ -28,6 +28,7 @@ import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
 import { useVerifyCandidateAadharMutation } from "@/features/verification/store/verificationApiSlice";
 import StoresCombobox from "@/features/product_stores/components/StoresCombobox";
+import VendorSpocCombobox from "@/features/vendors/components/VendorSpocCombobox";
 
 type Props = {
   store_id?: string;
@@ -54,7 +55,6 @@ const CandidateFormDialog: React.FC<Props> = ({
     useVerifyCandidateAadharMutation();
 
   const [candidatePhoto, setCandidatePhoto] = useState<File | null>(null);
-  const [parentPhoto, setParentPhoto] = useState<File | null>(null);
   const [candidateData, setCandidateData] =
     useState<CandidateItemWithStore | null>(null);
   const [verifyAadhar, setVerifyAadhar] = useState<string>("");
@@ -75,21 +75,14 @@ const CandidateFormDialog: React.FC<Props> = ({
       ? {
           full_name: candidate.full_name,
           gender: candidate.gender,
-          dob: candidate.dob,
           aadhar_number: "",
           mobile_number: candidate.mobile_number,
           email: candidate.email,
-          disability_type: candidate.disability_type,
           address: candidate.address,
-          city: candidate.city,
-          state: candidate.state,
+          vendor_id: candidate.vendor_id,
+          is_candidate_verified: candidate.is_candidate_verified,
+
           store_id: candidate.store_id,
-          parent_name: candidate.parent_name,
-          parent_employee_code: candidate.parent_employee_code,
-          parent_mobile_number: candidate.parent_mobile_number,
-          parent_email: candidate.parent_email,
-          parent_photo_url: candidate.parent_photo_url,
-          parent_relation: candidate.parent_relation,
         }
       : { store_id: store_id || "" },
   });
@@ -233,20 +226,14 @@ const CandidateFormDialog: React.FC<Props> = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 py-2">
-          <section>
+          <section className="flex flex-col gap-4">
             <h3 className="font-semibold text-lg mb-2">Candidate Details</h3>
             {renderTextInput("full_name", "Full Name")}
             {renderTextInput("gender", "Gender")}
-            {renderTextInput("dob", "Date of Birth", "date")}
             {!isEditMode && renderTextInput("aadhar_number", "Aadhaar Number")}
             {renderTextInput("mobile_number", "Mobile Number")}
             {renderTextInput("email", "Email", "email")}
-            {renderTextInput("disability_type", "Disability Type")}
             {renderTextInput("address", "Address")}
-            <div className="grid grid-cols-2 gap-2">
-              {renderTextInput("city", "City")}
-              {renderTextInput("state", "State")}
-            </div>
             <StoresCombobox
               value={watch("store_id")}
               onChange={(store) =>
@@ -254,16 +241,33 @@ const CandidateFormDialog: React.FC<Props> = ({
               }
               disabled={viewOnly}
             />
+
+            <VendorSpocCombobox
+              value={watch("vendor_id")}
+              onChange={(vendor_spoc) =>
+                setValue("vendor_id", vendor_spoc.id, { shouldDirty: true })
+              }
+            />
+            <div className="flex items-center gap-2 mt-2">
+              <Input
+                type="checkbox"
+                id="is_candidate_verified"
+                {...register("is_candidate_verified")}
+                disabled={viewOnly}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="is_candidate_verified">Candidate Verified</Label>
+            </div>
           </section>
 
-          <section>
+          {/* <section>
             <h3 className="font-semibold text-lg mb-2">Parent Details</h3>
             {renderTextInput("parent_name", "Parent Name")}
             {renderTextInput("parent_employee_code", "Parent Employee Code")}
             {renderTextInput("parent_relation", "Relation")}
             {renderTextInput("parent_mobile_number", "Parent Mobile Number")}
             {renderTextInput("parent_email", "Parent Email", "email")}
-          </section>
+          </section> */}
 
           {!viewOnly && (
             <DialogFooter className="pt-4">
@@ -285,12 +289,12 @@ const CandidateFormDialog: React.FC<Props> = ({
 
           {/* Candidate Photo */}
           <div className="flex items-center gap-3">
-            {candidate?.photo_url || candidateData?.photo_url ? (
+            {candidate?.photo || candidateData?.photo ? (
               <img
                 src={`${
                   import.meta.env.VITE_API_BASE_API_URL
                 }/hard_verify/api/v1.0/uploads/${
-                  candidateData?.photo_url ?? candidate?.photo_url
+                  candidateData?.photo ?? candidate?.photo
                 }`}
                 alt="Candidate"
                 className="w-20 h-20 object-cover rounded-md border"
@@ -323,7 +327,7 @@ const CandidateFormDialog: React.FC<Props> = ({
           </div>
 
           {/* Parent Photo */}
-          <div className="flex items-center gap-3">
+          {/* <div className="flex items-center gap-3">
             {candidate?.parent_photo_url || candidateData?.parent_photo_url ? (
               <img
                 src={`${
@@ -355,7 +359,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                 </Button>
               </div>
             )}
-          </div>
+          </div> */}
           {currentUserInfo.role === "verifier" && (
             <Dialog>
               <DialogTrigger asChild>

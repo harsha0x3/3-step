@@ -4,26 +4,20 @@ from typing import Literal
 
 
 class AddNewStore(BaseModel):
-    store_person_first_name: str
-    store_person_last_name: str
+    store_person_first_name: str | None = None
+    store_person_last_name: str | None = None
+
     store_name: str
-    store_contact_number: str
+    contact_number: str
     email: EmailStr
     address: str
-    city: str
-    state: str
-    maps_link: str | None = None
 
 
 class UpdateStorePayload(BaseModel):
     store_name: str | None = None
-    contact_person_id: str | None = None
     contact_number: str | None = None
     email: EmailStr | None = None
     address: str | None = None
-    city: str | None = None
-    state: str | None = None
-    maps_link: str | None = None
 
 
 class StoreSearchParams(BaseModel):
@@ -37,7 +31,5 @@ class StoreItemWithUser(BaseModel):
     contact_number: str
     email: str
     address: str
-    city: str
-    state: str
-    maps_link: str | None = None
+
     store_person: UserOut | None = None

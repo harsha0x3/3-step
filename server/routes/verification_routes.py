@@ -1,14 +1,13 @@
 from controllers.candidates_controller import (
     get_candidate_by_photo_url,
     get_candidate_by_id,
+    get_candidate_details_by_coupon_code,
 )
 from controllers.verification_controller import (
     facial_recognition,
     otp_resend,
     verify_otp,
     upload_laptop_issuance,
-    verify_coupon_code,
-    add_coupon_code_to_candidate,
 )
 from controllers.store_controller import get_store_of_user
 from utils.helpers import save_image_file
@@ -230,69 +229,69 @@ async def verify_candidate_via_otp(
         )
 
 
-@router.post("/add-coupon/candidate/{candidate_id}")
-async def add_candidate_coupon_code(
-    db: Annotated[Session, Depends(get_db_conn)],
-    current_user: Annotated[UserOut, Depends(get_current_user)],
-    candidate_id: Annotated[str, Path(title="Candidate ID")],
-    coupon: Annotated[CouponCodeRequest, ""],
-):
-    try:
-        if current_user.role != "verifier":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Unauthorised to add coupons to candidates",
-            )
-        coupon_addition_result = await add_coupon_code_to_candidate(
-            candidate_id=candidate_id, coupon_code=coupon.coupon_code, db=db
-        )
-        return {"msg": "Coupon code added successfully", "data": coupon_addition_result}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "msg": "Error adding candidate coupon code",
-                "err_stack": str(e),
-            },
-        )
+# @router.post("/add-coupon/candidate/{candidate_id}")
+# async def add_candidate_coupon_code(
+#     db: Annotated[Session, Depends(get_db_conn)],
+#     current_user: Annotated[UserOut, Depends(get_current_user)],
+#     candidate_id: Annotated[str, Path(title="Candidate ID")],
+#     coupon: Annotated[CouponCodeRequest, ""],
+# ):
+#     try:
+#         if current_user.role != "verifier":
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_FORBIDDEN,
+#                 detail="Unauthorised to add coupons to candidates",
+#             )
+#         coupon_addition_result = await add_coupon_code_to_candidate(
+#             candidate_id=candidate_id, coupon_code=coupon.coupon_code, db=db
+#         )
+#         return {"msg": "Coupon code added successfully", "data": coupon_addition_result}
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail={
+#                 "msg": "Error adding candidate coupon code",
+#                 "err_stack": str(e),
+#             },
+#         )
 
 
-@router.post("/verify-coupon/candidate/{candidate_id}")
-async def verify_candidate_via_coupon(
-    db: Annotated[Session, Depends(get_db_conn)],
-    current_user: Annotated[UserOut, Depends(get_current_user)],
-    candidate_id: Annotated[str, Path(title="Candidate ID")],
-    coupon: Annotated[CouponCodeRequest, ""],
-):
-    try:
-        if current_user.role != "store_personnel":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Unauthorised to verify candidates",
-            )
-        store = get_store_of_user(db=db, user=current_user)
-        candidate = get_candidate_by_id(candidate_id=candidate_id, db=db)
-        if candidate.store_id != store.id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Candidate is not allotted to this store. Please check the candidate allotted store properly.",
-            )
-        coupon_verification_result = await verify_coupon_code(
-            candidate_id=candidate_id, coupon_code=coupon.coupon_code, db=db
-        )
-        return coupon_verification_result
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "msg": "Error verifying candidate coupon code",
-                "err_stack": str(e),
-            },
-        )
+# @router.post("/verify-coupon/candidate/{candidate_id}")
+# async def verify_candidate_via_coupon(
+#     db: Annotated[Session, Depends(get_db_conn)],
+#     current_user: Annotated[UserOut, Depends(get_current_user)],
+#     candidate_id: Annotated[str, Path(title="Candidate ID")],
+#     coupon: Annotated[CouponCodeRequest, ""],
+# ):
+#     try:
+#         if current_user.role != "store_personnel":
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_FORBIDDEN,
+#                 detail="Unauthorised to verify candidates",
+#             )
+#         store = get_store_of_user(db=db, user=current_user)
+#         candidate = get_candidate_by_id(candidate_id=candidate_id, db=db)
+#         if candidate.store_id != store.id:
+#             raise HTTPException(
+#                 status_code=status.HTTP_400_BAD_REQUEST,
+#                 detail="Candidate is not allotted to this store. Please check the candidate allotted store properly.",
+#             )
+#         coupon_verification_result = await verify_coupon_code(
+#             candidate_id=candidate_id, coupon_code=coupon.coupon_code, db=db
+#         )
+#         return coupon_verification_result
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail={
+#                 "msg": "Error verifying candidate coupon code",
+#                 "err_stack": str(e),
+#             },
+#         )
 
 
 @router.post("/otp/re-send/candidate/{candidate_id}")
@@ -434,3 +433,13 @@ async def issue_candidate_laptop(
                 "err_stack": str(e),
             },
         )
+
+
+@router.get("/coupon-details/{coupon_code}", status_code=status.HTTP_200_OK)
+async def get_candidate_by_coupon(
+    coupon_code: str,
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+):
+    res = get_candidate_details_by_coupon_code(coupon_code, db)
+    return {"msg": "Candidate fetched successfully", "data": {"candidate": res}}

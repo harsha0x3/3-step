@@ -6,6 +6,7 @@ from models.schemas.candidate_schemas import (
     CandidatesSearchParams,
     CandidateItemWithStore,
     UpdatedCandidatePayload,
+    CandidateOut,
 )
 from sqlalchemy.exc import IntegrityError
 from utils.helpers import generate_readable_id
@@ -15,7 +16,7 @@ from models.schemas.auth_schemas import UserOut
 import time
 from models.schemas.store_schemas import StoreItemWithUser
 import os
-from utils.helpers import save_image_file, get_relative_upload_path
+from utils.helpers import save_image_file, get_relative_upload_path, generate_coupon
 
 MAX_RETRIES = 3
 
@@ -23,8 +24,8 @@ MAX_RETRIES = 3
 def add_new_candidate(payload: NewCandidatePayload, db: Session):
     try:
         # Check if store exists
-        store = db.get(Store, payload.store_id)
-        if not store:
+        store = db.get(Store, payload.store_id) if payload.store_id else None
+        if payload.store_id and not store:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Store not found"
             )
@@ -37,20 +38,11 @@ def add_new_candidate(payload: NewCandidatePayload, db: Session):
                     id=candidate_id,
                     full_name=payload.full_name,
                     gender=payload.gender,
-                    dob=payload.dob,
                     mobile_number=payload.mobile_number,
                     email=payload.email,
-                    disability_type=payload.disability_type,
                     address=payload.address,
-                    city=payload.city,
-                    state=payload.state,
-                    store_id=payload.store_id,
-                    photo_url="",
-                    aadhar_last_four_digits=payload.aadhar_number[-4:],
-                    parent_employee_code=payload.parent_employee_code,
-                    parent_mobile_number=payload.parent_mobile_number,
-                    parent_email=payload.parent_email,
-                    parent_relation=payload.parent_relation,
+                    store_id=payload.store_id if payload.store_id else None,
+                    coupon_code=generate_coupon(),
                 )
 
                 new_candidate.set_aadhar_number(payload.aadhar_number)
@@ -75,25 +67,34 @@ def add_new_candidate(payload: NewCandidatePayload, db: Session):
                             continue
                         raise HTTPException(
                             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail="Failed to generate unique candidate ID after several attempts.",
+                            detail="Failed to generate unique candidate ID after several attempts. Try again",
+                        )
+                    elif "coupon_code" in error_message:
+                        # Retry if duplicate ID
+                        if attempt < MAX_RETRIES - 1:
+                            time.sleep(0.1)
+                            continue
+                        raise HTTPException(
+                            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Failed to generate unique Coupon after several attempts. Try again",
                         )
 
                     elif "aadhar" in error_message:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="A candidate with this Aadhar number already exists.",
+                            detail="A candidate with this Aadhar number already exists. Try again",
                         )
 
                     elif "mobile_number" in error_message:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="A candidate with this mobile number already exists.",
+                            detail="A candidate with this mobile number already exists. Try again",
                         )
 
                     elif "email" in error_message:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="A candidate with this email already exists.",
+                            detail="A candidate with this email already exists. Try again",
                         )
 
                     else:
@@ -154,40 +155,74 @@ def get_candidate_details_by_id(candidate_id: str, db: Session):
             id=candidate.id,
             full_name=candidate.full_name,
             gender=candidate.gender,
-            dob=candidate.dob,
-            aadhar_last_four_digits=candidate.aadhar_last_four_digits,
             mobile_number=candidate.mobile_number,
             email=candidate.email,
-            disability_type=candidate.disability_type,
             address=candidate.address,
-            city=candidate.city,
-            state=candidate.state,
             store_id=candidate.store_id,
-            photo_url=get_relative_upload_path(candidate.photo_url)
-            if candidate.photo_url
+            photo=get_relative_upload_path(candidate.photo)
+            if candidate.photo
             else None,
             issued_status=candidate.issued_status.issued_status
             if candidate.issued_status
             else "not_issued",
-            parent_photo_url=get_relative_upload_path(candidate.parent_photo_url)
-            if candidate.parent_photo_url
-            else None,
-            parent_name=candidate.parent_name,
-            parent_employee_code=candidate.parent_employee_code,
-            parent_mobile_number=candidate.parent_mobile_number,
-            parent_email=candidate.parent_email,
+            vendor_id=candidate.vendor_id,
             is_candidate_verified=candidate.is_candidate_verified,
-            parent_relation=candidate.parent_relation,
-            coupon=candidate.coupon.coupon_code if candidate.coupon else None,
+            coupon_code=candidate.coupon_code,
             store_with_user=StoreItemWithUser(
                 store_name=store.store_name,
                 id=store.id,
                 contact_number=store.contact_number,
                 email=store.email,
                 address=store.address,
-                city=store.city,
-                state=store.state,
-                maps_link=store.maps_link,
+                store_person=UserOut.model_validate(store_person)
+                if store.store_person
+                else None,
+            ),
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"msg": "Error getting candidate by ID", "err_stack": str(e)},
+        )
+
+
+def get_candidate_details_by_coupon_code(coupon_code: str, db: Session):
+    try:
+        candidate = db.scalar(
+            select(Candidate).where(Candidate.coupon_code == coupon_code)
+        )
+        if not candidate:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found"
+            )
+        store = candidate.store
+        store_person = store.store_person
+        return CandidateItemWithStore(
+            id=candidate.id,
+            full_name=candidate.full_name,
+            gender=candidate.gender,
+            mobile_number=candidate.mobile_number,
+            email=candidate.email,
+            address=candidate.address,
+            store_id=candidate.store_id,
+            photo=get_relative_upload_path(candidate.photo)
+            if candidate.photo
+            else None,
+            issued_status=candidate.issued_status.issued_status
+            if candidate.issued_status
+            else "not_issued",
+            vendor_id=candidate.vendor_id,
+            is_candidate_verified=candidate.is_candidate_verified,
+            coupon_code=candidate.coupon_code,
+            store_with_user=StoreItemWithUser(
+                store_name=store.store_name,
+                id=store.id,
+                contact_number=store.contact_number,
+                email=store.email,
+                address=store.address,
                 store_person=UserOut.model_validate(store_person)
                 if store.store_person
                 else None,
@@ -207,7 +242,7 @@ def get_candidate_by_photo_url(photo_url, db: Session):
     try:
         candidate = db.scalar(
             select(Candidate).where(
-                and_(Candidate.photo_url == photo_url, Candidate.is_candidate_verified)
+                and_(Candidate.photo == photo_url, Candidate.is_candidate_verified)
             )
         )
         if not candidate:
@@ -221,40 +256,25 @@ def get_candidate_by_photo_url(photo_url, db: Session):
             id=candidate.id,
             full_name=candidate.full_name,
             gender=candidate.gender,
-            dob=candidate.dob,
-            aadhar_last_four_digits=candidate.aadhar_last_four_digits,
             mobile_number=candidate.mobile_number,
             email=candidate.email,
-            disability_type=candidate.disability_type,
             address=candidate.address,
-            city=candidate.city,
-            state=candidate.state,
             store_id=candidate.store_id,
-            photo_url=get_relative_upload_path(candidate.photo_url)
-            if candidate.photo_url
+            vendor_id=candidate.vendor_id,
+            photo=get_relative_upload_path(candidate.photo)
+            if candidate.photo
             else None,
             issued_status=candidate.issued_status.issued_status
             if candidate.issued_status
             else "not_issued",
-            parent_photo_url=get_relative_upload_path(candidate.parent_photo_url)
-            if candidate.parent_photo_url
-            else None,
-            parent_name=candidate.parent_name,
-            parent_employee_code=candidate.parent_employee_code,
-            parent_mobile_number=candidate.parent_mobile_number,
-            parent_email=candidate.parent_email,
             is_candidate_verified=candidate.is_candidate_verified,
-            parent_relation=candidate.parent_relation,
-            coupon=candidate.coupon.coupon_code if candidate.coupon else None,
+            coupon_code=candidate.coupon_code,
             store_with_user=StoreItemWithUser(
                 store_name=store.store_name,
                 id=store.id,
                 contact_number=store.contact_number,
                 email=store.email,
                 address=store.address,
-                city=store.city,
-                state=store.state,
-                maps_link=store.maps_link,
                 store_person=UserOut.model_validate(store_person)
                 if store.store_person
                 else None,
@@ -272,7 +292,7 @@ def get_candidate_by_photo_url(photo_url, db: Session):
 
 def get_all_candidates(db: Session, params: CandidatesSearchParams | None = None):
     try:
-        query = select(Candidate).where(Candidate.is_candidate_verified)
+        query = select(Candidate)
 
         if params and params.search_by and params.search_term:
             column_attr = getattr(Candidate, params.search_by)
@@ -290,40 +310,25 @@ def get_all_candidates(db: Session, params: CandidatesSearchParams | None = None
                 id=candidate.id,
                 full_name=candidate.full_name,
                 gender=candidate.gender,
-                dob=candidate.dob,
-                aadhar_last_four_digits=candidate.aadhar_last_four_digits,
                 mobile_number=candidate.mobile_number,
                 email=candidate.email,
-                disability_type=candidate.disability_type,
                 address=candidate.address,
-                city=candidate.city,
-                state=candidate.state,
                 store_id=candidate.store_id,
-                photo_url=get_relative_upload_path(candidate.photo_url)
-                if candidate.photo_url
+                photo=get_relative_upload_path(candidate.photo)
+                if candidate.photo
                 else None,
                 issued_status=candidate.issued_status.issued_status
                 if candidate.issued_status
                 else "not_issued",
-                parent_photo_url=get_relative_upload_path(candidate.parent_photo_url)
-                if candidate.parent_photo_url
-                else None,
-                parent_name=candidate.parent_name,
-                parent_employee_code=candidate.parent_employee_code,
-                parent_mobile_number=candidate.parent_mobile_number,
-                parent_email=candidate.parent_email,
                 is_candidate_verified=candidate.is_candidate_verified,
-                parent_relation=candidate.parent_relation,
-                coupon=candidate.coupon.coupon_code if candidate.coupon else None,
+                coupon_code=candidate.coupon_code,
+                vendor_id=candidate.vendor_id,
                 store_with_user=StoreItemWithUser(
                     store_name=store.store_name,
                     id=store.id,
                     contact_number=store.contact_number,
                     email=store.email,
                     address=store.address,
-                    city=store.city,
-                    state=store.state,
-                    maps_link=store.maps_link,
                     store_person=UserOut.model_validate(store_person)
                     if store.store_person
                     else None,
@@ -358,35 +363,34 @@ def get_candidates_of_store(db: Session, store_id: str):
         for candidate in candidates:
             print("Candidate", candidate)
             store = candidate.store
+            store_person = store.store_person
             data = CandidateItemWithStore(
                 id=candidate.id,
                 full_name=candidate.full_name,
                 gender=candidate.gender,
-                dob=candidate.dob,
-                aadhar_last_four_digits=candidate.aadhar_last_four_digits,
                 mobile_number=candidate.mobile_number,
                 email=candidate.email,
-                disability_type=candidate.disability_type,
                 address=candidate.address,
-                city=candidate.city,
-                state=candidate.state,
                 store_id=candidate.store_id,
-                parent_name=candidate.parent_name,
-                parent_employee_code=candidate.parent_employee_code,
-                parent_mobile_number=candidate.parent_mobile_number,
-                parent_email=candidate.parent_email,
-                photo_url=get_relative_upload_path(candidate.photo_url)
-                if candidate.photo_url
+                photo=get_relative_upload_path(candidate.photo)
+                if candidate.photo
                 else None,
                 issued_status=candidate.issued_status.issued_status
                 if candidate.issued_status
                 else "not_issued",
-                parent_photo_url=get_relative_upload_path(candidate.parent_photo_url)
-                if candidate.parent_photo_url
-                else None,
-                parent_relation=candidate.parent_relation,
+                vendor_id=candidate.vendor_id,
                 is_candidate_verified=candidate.is_candidate_verified,
-                coupon=candidate.coupon.coupon_code if candidate.coupon else None,
+                coupon_code=candidate.coupon_code,
+                store_with_user=StoreItemWithUser(
+                    store_name=store.store_name,
+                    id=store.id,
+                    contact_number=store.contact_number,
+                    email=store.email,
+                    address=store.address,
+                    store_person=UserOut.model_validate(store_person)
+                    if store.store_person
+                    else None,
+                ),
             )
             result.append(data)
 
@@ -408,7 +412,7 @@ def update_candidate_details(
     - Performs partial updates only on provided fields.
     """
 
-    from models.candidates import Candidate  # local import to avoid circular deps
+    from models.candidates import Candidate
 
     candidate = db.get(Candidate, candidate_id)
     if not candidate:
@@ -438,42 +442,50 @@ def update_candidate_details(
             if hasattr(candidate, field):
                 setattr(candidate, field, value)
 
+        store = candidate.store
+        store_person = store.store_person
+
+        if payload.is_candidate_verified:
+            cand_out = CandidateOut.model_validate(candidate)
+            is_cand_ready = is_candidate_ready_to_verify(cand_out.model_dump())
+            if not is_cand_ready.get("status"):
+                db.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=is_cand_ready.get("msg"),
+                )
         db.add(candidate)
         db.commit()
         db.refresh(candidate)
 
-        store = candidate.store
-
-        return {
-            "candidate": {
-                "id": candidate.id,
-                "full_name": candidate.full_name,
-                "gender": candidate.gender,
-                "dob": candidate.dob,
-                "mobile_number": candidate.mobile_number,
-                "email": candidate.email,
-                "disability_type": candidate.disability_type,
-                "address": candidate.address,
-                "city": candidate.city,
-                "state": candidate.state,
-                "issued_status": candidate.issued_status.issued_status
-                if candidate.issued_status
-                else "not_issued",
-                "photo_url": candidate.photo_url,
-                "store_id": candidate.store_id,
-                "parent_name": candidate.parent_name,
-                "parent_employee_code": candidate.parent_employee_code,
-                "parent_mobile_number": candidate.parent_mobile_number,
-                "parent_email": candidate.parent_email,
-                "parent_photo_url": candidate.parent_photo_url,
-            },
-            "store": {
-                "id": store.id,
-                "store_name": store.store_name,
-                "city": store.city,
-                "state": store.state,
-            },
-        }
+        return CandidateItemWithStore(
+            id=candidate.id,
+            full_name=candidate.full_name,
+            gender=candidate.gender,
+            mobile_number=candidate.mobile_number,
+            email=candidate.email,
+            address=candidate.address,
+            store_id=candidate.store_id,
+            vendor_id=candidate.vendor_id,
+            photo=get_relative_upload_path(candidate.photo)
+            if candidate.photo
+            else None,
+            issued_status=candidate.issued_status.issued_status
+            if candidate.issued_status
+            else "not_issued",
+            is_candidate_verified=candidate.is_candidate_verified,
+            coupon_code=candidate.coupon_code,
+            store_with_user=StoreItemWithUser(
+                store_name=store.store_name,
+                id=store.id,
+                contact_number=store.contact_number,
+                email=store.email,
+                address=store.address,
+                store_person=UserOut.model_validate(store_person)
+                if store.store_person
+                else None,
+            ),
+        )
 
     except Exception as e:
         db.rollback()
@@ -481,6 +493,21 @@ def update_candidate_details(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update candidate: {str(e)}",
         )
+
+
+def is_candidate_ready_to_verify(payload):
+    null_vals = []
+    for key, val in payload.items():
+        if not val and key != "issued_status":
+            null_vals.append(key)
+    if "mobile_number" in null_vals and "email_address" in null_vals:
+        return {"status": False, "msg": "Both Mail Id and mobile number can't be null"}
+    elif len(null_vals) > 0:
+        return {
+            "status": False,
+            "msg": f"These fileds are empty please add them. {', '.join(null_vals)}",
+        }
+    return {"status": True, "msg": ""}
 
 
 async def upload_candidate_img(photo: UploadFile, candidate_id: str, db: Session):
@@ -492,9 +519,9 @@ async def upload_candidate_img(photo: UploadFile, candidate_id: str, db: Session
                 status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found"
             )
 
-        if candidate.photo_url is not None:
-            if os.path.exists(candidate.photo_url):
-                os.remove(candidate.photo_url)
+        if candidate.photo is not None:
+            if os.path.exists(candidate.photo):
+                os.remove(candidate.photo)
                 print("File deleted successfully.")
             else:
                 print("File not found.")
@@ -503,7 +530,7 @@ async def upload_candidate_img(photo: UploadFile, candidate_id: str, db: Session
             candidate_id=candidate.id, store_id=candidate.store_id, photo=photo
         )
 
-        candidate.photo_url = candidate_img_path
+        candidate.photo = candidate_img_path
 
         db.add(candidate)
         db.commit()
@@ -521,45 +548,45 @@ async def upload_candidate_img(photo: UploadFile, candidate_id: str, db: Session
         )
 
 
-async def upload_parent_img(photo: UploadFile, candidate_id: str, db: Session):
-    try:
-        candidate = db.get(Candidate, candidate_id)
+# async def upload_parent_img(photo: UploadFile, candidate_id: str, db: Session):
+#     try:
+#         candidate = db.get(Candidate, candidate_id)
 
-        if not candidate:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found"
-            )
+#         if not candidate:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found"
+#             )
 
-        if candidate.photo_url is not None:
-            if os.path.exists(candidate.photo_url):
-                os.remove(candidate.photo_url)
-                print("File deleted successfully.")
-            else:
-                print("File not found.")
+#         if candidate.photo is not None:
+#             if os.path.exists(candidate.photo_url):
+#                 os.remove(candidate.photo_url)
+#                 print("File deleted successfully.")
+#             else:
+#                 print("File not found.")
 
-        parent_img_path = await save_image_file(
-            candidate_id=candidate.id,
-            store_id=candidate.store_id,
-            photo=photo,
-            isParent=True,
-        )
+#         parent_img_path = await save_image_file(
+#             candidate_id=candidate.id,
+#             store_id=candidate.store_id,
+#             photo=photo,
+#             isParent=True,
+#         )
 
-        candidate.parent_photo_url = parent_img_path
+#         candidate.parent_photo_url = parent_img_path
 
-        db.add(candidate)
-        db.commit()
-        db.refresh(candidate)
+#         db.add(candidate)
+#         db.commit()
+#         db.refresh(candidate)
 
-        return {"msg": "Candidate image added successfully"}
+#         return {"msg": "Candidate image added successfully"}
 
-    except HTTPException:
-        raise
+#     except HTTPException:
+#         raise
 
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"msg": "Error adding candidate image to db", "err_stack": str(e)},
-        )
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail={"msg": "Error adding candidate image to db", "err_stack": str(e)},
+#         )
 
 
 async def update_candidate_verification_status(

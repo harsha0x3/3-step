@@ -51,34 +51,46 @@ const Sidebar: React.FC = () => {
           <div>
             <Button
               className="bg-transparent hover:bg-sidebar-accent hover:cursor-pointer hover:text-sidebar-accent-foreground text-sidebar-foreground"
-              variant={
-                selectedItemLabel === "vendors" ? "outline" : "secondary"
-              }
+              variant={selectedItemLabel === "stores" ? "outline" : "secondary"}
               onClick={() => {
-                setSelectedItemLabel("vendors");
+                setSelectedItemLabel("stores");
                 switch (currentUserRole) {
                   case "admin":
-                    navigate("/admin/vendors");
+                    navigate("/admin/stores");
                     break;
                 }
               }}
             >
               Stores
             </Button>
-
+          </div>
+        )}
+        {(currentUserRole === "admin" || currentUserRole === "verifier") && (
+          <div className="felx flex-col gap-2">
             <Button
               className="bg-transparent hover:bg-sidebar-accent hover:cursor-pointer hover:text-sidebar-accent-foreground text-sidebar-foreground"
-              variant={selectedItemLabel === "stores" ? "outline" : "secondary"}
+              variant={
+                selectedItemLabel === "vendors" ? "outline" : "secondary"
+              }
               onClick={() => {
                 setSelectedItemLabel("vendors");
-                switch (currentUserRole) {
-                  case "admin":
-                    navigate("/admin/vendors");
-                    break;
-                }
+                navigate("vendors");
               }}
             >
               Vendors
+            </Button>
+
+            <Button
+              className="bg-transparent hover:bg-sidebar-accent hover:cursor-pointer hover:text-sidebar-accent-foreground text-sidebar-foreground"
+              variant={
+                selectedItemLabel === "vendor_spoc" ? "outline" : "secondary"
+              }
+              onClick={() => {
+                setSelectedItemLabel("vendor_spoc");
+                navigate("vendor_spoc");
+              }}
+            >
+              Vendor Spoc
             </Button>
           </div>
         )}

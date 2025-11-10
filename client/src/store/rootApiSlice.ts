@@ -11,7 +11,15 @@ const baseQueryWithAuth = fetchBaseQuery({
 
 export const rootApiSlice = createApi({
   baseQuery: baseQueryWithAuth,
-  tagTypes: ["User", "AllUsers", "Stores", "Candidates", "VerificationStatus"],
+  tagTypes: [
+    "User",
+    "AllUsers",
+    "Stores",
+    "Candidates",
+    "VerificationStatus",
+    "Vendors",
+    "VendorsSpoc",
+  ],
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   endpoints: (builder) => ({}),

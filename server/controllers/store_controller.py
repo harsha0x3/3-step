@@ -54,12 +54,9 @@ def add_new_store(payload: AddNewStore, db: Session):
                 store_name=payload.store_name,
                 id=store_id,
                 contact_person_id=new_store_in_user.id,
-                contact_number=payload.store_contact_number,
+                contact_number=payload.contact_number,
                 email=new_store_in_user.email,
                 address=payload.address,
-                city=payload.city,
-                state=payload.state,
-                maps_link=payload.maps_link,
             )
 
             db.add(new_store)
@@ -121,9 +118,6 @@ async def get_all_stores(db: Session, params: StoreSearchParams | None = None):
                     contact_number=store.contact_number,
                     email=store.email,
                     address=store.address,
-                    city=store.city,
-                    state=store.state,
-                    maps_link=store.maps_link,
                     store_person=UserOut(
                         id=store.store_person.id,
                         username=store.store_person.username,
@@ -218,9 +212,6 @@ def update_store_details(store_id: str, payload: dict, db: Session):
                 "contact_number": store.contact_number,
                 "email": store.email,
                 "address": store.address,
-                "city": store.city,
-                "state": store.state,
-                "maps_link": store.maps_link,
             }
         }
 

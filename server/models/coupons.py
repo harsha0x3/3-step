@@ -26,4 +26,4 @@ class Coupon(Base):
 
     coupon_photo: Mapped[str] = mapped_column(Text, nullable=True)
 
-    candidate = relationship("Candidate", back_populates="coupon")
+    # candidate = relationship("Candidate", back_populates="coupon")

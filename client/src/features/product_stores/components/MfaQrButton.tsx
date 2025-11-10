@@ -36,17 +36,10 @@ const MfaQrButton: React.FC<MfaQrButtonProps> = ({ user }) => {
           <DialogTitle>MFA QR Code for {user.username}</DialogTitle>
         </DialogHeader>
 
-        <QRCodeCanvas
-          value={
-            "otpauth://totp/Laptop%20Distribution%20Titan:verifier%40gmail.com?secret=S3JDYCVDEDUQS5LLT2Q5G34FUEZZRTNS&issuer=Laptop%20Distribution%20Titan"
-          }
-          size={200}
-        />
+        <QRCodeCanvas value={otpUri} size={200} />
 
         <p className="text-xs text-muted-foreground text-center break-all">
-          {
-            "otpauth://totp/Laptop%20Distribution%20Titan:verifier%40gmail.com?secret=S3JDYCVDEDUQS5LLT2Q5G34FUEZZRTNS&issuer=Laptop%20Distribution%20Titan"
-          }
+          {otpUri}
         </p>
       </DialogContent>
     </Dialog>

@@ -1,5 +1,5 @@
 from db.base import Base, BaseMixin
-from sqlalchemy import String, Text, ForeignKey, Index
+from sqlalchemy import String, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
@@ -13,9 +13,6 @@ class Store(Base, BaseMixin):
     contact_number: Mapped[str] = mapped_column(String(36), nullable=False)
     email: Mapped[str] = mapped_column(String(100), nullable=True, unique=True)
     address: Mapped[str] = mapped_column(Text, nullable=False)
-    city: Mapped[str] = mapped_column(String(100), nullable=False)
-    state: Mapped[str] = mapped_column(String(100), nullable=False)
-    maps_link: Mapped[str] = mapped_column(Text, nullable=True)
 
     store_person = relationship("User", back_populates="store")
     candidates = relationship("Candidate", back_populates="store")

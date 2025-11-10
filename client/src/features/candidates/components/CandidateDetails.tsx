@@ -28,10 +28,7 @@ const CandidateDetailsSection: React.FC<Props> = ({ candidate }) => {
           <Label>Gender</Label>
           <Input value={candidate.gender ?? ""} readOnly />
         </div>
-        <div>
-          <Label>Date of Birth</Label>
-          <Input value={candidate.dob ?? ""} readOnly />
-        </div>
+
         <div>
           <Label>Mobile Number</Label>
           <Input value={candidate.mobile_number ?? ""} readOnly />
@@ -41,21 +38,10 @@ const CandidateDetailsSection: React.FC<Props> = ({ candidate }) => {
           <Input value={candidate.email ?? ""} readOnly />
         </div>
         <div>
-          <Label>Disability Type</Label>
-          <Input value={candidate.disability_type ?? ""} readOnly />
-        </div>
-        <div>
           <Label>Address</Label>
           <Input value={candidate.address ?? ""} readOnly />
         </div>
-        <div>
-          <Label>City</Label>
-          <Input value={candidate.city ?? ""} readOnly />
-        </div>
-        <div>
-          <Label>State</Label>
-          <Input value={candidate.state ?? ""} readOnly />
-        </div>
+
         <div>
           <Label>Store ID</Label>
           <Input value={candidate.store_id ?? ""} readOnly />
@@ -63,8 +49,8 @@ const CandidateDetailsSection: React.FC<Props> = ({ candidate }) => {
       </section>
 
       {/* Parent Info */}
-      <section className="mt-6">
-        <h3 className="font-semibold text-lg mb-2">Parent Details</h3>
+      {/* <section className="mt-6">
+        <h3 className="font-semibold text-lg mb-2">Vemdor Details</h3>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>Parent Name</Label>
@@ -87,7 +73,7 @@ const CandidateDetailsSection: React.FC<Props> = ({ candidate }) => {
             <Input value={candidate.parent_email ?? ""} readOnly />
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Photos */}
       <section className="mt-6">
@@ -96,9 +82,9 @@ const CandidateDetailsSection: React.FC<Props> = ({ candidate }) => {
           {/* Candidate Photo */}
           <div className="flex flex-col items-center">
             <Label>Candidate Photo</Label>
-            {candidate.photo_url ? (
+            {candidate.photo ? (
               <img
-                src={`${baseUrl}/hard_verify/api/v1.0/uploads/${candidate.photo_url}`}
+                src={`${baseUrl}/hard_verify/api/v1.0/uploads/${candidate.photo}`}
                 alt="Candidate"
                 className="w-24 h-24 object-cover rounded-md border mt-1"
               />
@@ -110,7 +96,7 @@ const CandidateDetailsSection: React.FC<Props> = ({ candidate }) => {
           </div>
 
           {/* Parent Photo */}
-          <div className="flex flex-col items-center">
+          {/* <div className="flex flex-col items-center">
             <Label>Parent Photo</Label>
             {candidate.parent_photo_url ? (
               <img
@@ -123,7 +109,7 @@ const CandidateDetailsSection: React.FC<Props> = ({ candidate }) => {
                 No Photo
               </div>
             )}
-          </div>
+          </div> */}
         </div>
       </section>
     </div>

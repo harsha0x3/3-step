@@ -220,11 +220,12 @@ async def upload_laptop_issuance(
             issued_status = IssuedStatus(
                 candidate_id=candidate_id,
                 issued_status="issued",
-                issued_photo=photo_url,
+                evidence_photo=photo_url,
+                issued_at=datetime.now(timezone.utc),
             )
         issued_status.issued_status = "issued"
 
-        issued_status.issued_photo = photo_url
+        issued_status.evidence_photo = photo_url
         issued_status.issued_at = datetime.now(timezone.utc)
         issued_status.issued_laptop_serial = laptop_serial
         db.add(issued_status)
@@ -240,83 +241,83 @@ async def upload_laptop_issuance(
         )
 
 
-async def add_coupon_code_to_candidate(
-    candidate_id: str, coupon_code: str, db: Session
-):
-    try:
-        coupon = db.scalar(select(Coupon).where(Coupon.candidate_id == candidate_id))
-        if coupon:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Coupon already exists for the candidate.",
-            )
-        new_coupon = Coupon(
-            candidate_id=candidate_id, coupon_code=coupon_code, is_used=False
-        )
-        db.add(new_coupon)
-        db.commit()
-        db.refresh(new_coupon)
-        return new_coupon
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error adding coupon code: {str(e)}",
-        )
+# async def add_coupon_code_to_candidate(
+#     candidate_id: str, coupon_code: str, db: Session
+# ):
+#     try:
+#         coupon = db.scalar(select(Coupon).where(Coupon.candidate_id == candidate_id))
+#         if coupon:
+#             raise HTTPException(
+#                 status_code=status.HTTP_400_BAD_REQUEST,
+#                 detail="Coupon already exists for the candidate.",
+#             )
+#         new_coupon = Coupon(
+#             candidate_id=candidate_id, coupon_code=coupon_code, is_used=False
+#         )
+#         db.add(new_coupon)
+#         db.commit()
+#         db.refresh(new_coupon)
+#         return new_coupon
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"Error adding coupon code: {str(e)}",
+#         )
 
 
-async def verify_coupon_code(candidate_id: str, coupon_code: str, db: Session):
-    try:
-        verification_status = db.scalar(
-            select(VerificationStatus).where(
-                VerificationStatus.candidate_id == candidate_id
-            )
-        )
-        if not verification_status:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Verification status not found for the candidate",
-            )
-        elif not verification_status.is_facial_verified:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Candidate has not been facially verified yet",
-            )
-        elif not verification_status.is_otp_verified:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Candidate has not been OTP verified yet",
-            )
+# async def verify_coupon_code(candidate_id: str, coupon_code: str, db: Session):
+#     try:
+#         verification_status = db.scalar(
+#             select(VerificationStatus).where(
+#                 VerificationStatus.candidate_id == candidate_id
+#             )
+#         )
+#         if not verification_status:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail="Verification status not found for the candidate",
+#             )
+#         elif not verification_status.is_facial_verified:
+#             raise HTTPException(
+#                 status_code=status.HTTP_400_BAD_REQUEST,
+#                 detail="Candidate has not been facially verified yet",
+#             )
+#         elif not verification_status.is_otp_verified:
+#             raise HTTPException(
+#                 status_code=status.HTTP_400_BAD_REQUEST,
+#                 detail="Candidate has not been OTP verified yet",
+#             )
 
-        coupon = db.scalar(select(Coupon).where(Coupon.candidate_id == candidate_id))
-        if not coupon:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Coupon not found for the candidate. Contact support.",
-            )
-        if coupon.coupon_code != coupon_code:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid coupon code.",
-            )
-        if coupon.is_used:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Coupon code has already been used.",
-            )
-        coupon.is_used = True
-        verification_status.is_coupon_verified = True
-        db.add(coupon)
-        db.add(verification_status)
-        db.commit()
-        db.refresh(coupon)
-        db.refresh(verification_status)
-        return {"msg": "Coupon code verified successfully."}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error verifying coupon code: {str(e)}",
-        )
+#         coupon = db.scalar(select(Coupon).where(Coupon.candidate_id == candidate_id))
+#         if not coupon:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail="Coupon not found for the candidate. Contact support.",
+#             )
+#         if coupon.coupon_code != coupon_code:
+#             raise HTTPException(
+#                 status_code=status.HTTP_400_BAD_REQUEST,
+#                 detail="Invalid coupon code.",
+#             )
+#         if coupon.is_used:
+#             raise HTTPException(
+#                 status_code=status.HTTP_400_BAD_REQUEST,
+#                 detail="Coupon code has already been used.",
+#             )
+#         coupon.is_used = True
+#         verification_status.is_coupon_verified = True
+#         db.add(coupon)
+#         db.add(verification_status)
+#         db.commit()
+#         db.refresh(coupon)
+#         db.refresh(verification_status)
+#         return {"msg": "Coupon code verified successfully."}
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"Error verifying coupon code: {str(e)}",
+#         )

@@ -1,15 +1,12 @@
 import type { UserItem } from "../auth/types";
 
 export interface NewStorePayload {
-  store_person_first_name: string;
-  store_person_last_name: string;
+  store_person_first_name?: string;
+  store_person_last_name?: string;
   store_name: string;
-  store_contact_number: string;
+  contact_number: string;
   email: string;
   address: string;
-  city: string;
-  state: string;
-  maps_link?: string | null | undefined;
 }
 
 export interface StoreItem {
@@ -32,8 +29,6 @@ export interface StoreItemWithUser {
   contact_number: string;
   email: string;
   address: string;
-  city: string;
-  state: string;
-  maps_link: string;
+
   store_person: UserItem;
 }

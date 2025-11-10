@@ -3,8 +3,11 @@
 import React, { useEffect, useState } from "react";
 import FacialRecognition from "../components/FacialRecognition";
 import OtpVerification from "../components/OtpVerification";
-import { useLazyGetCandidateVerificationStatusQuery } from "../store/verificationApiSlice";
-import { useLazyGetCandidateByIdQuery } from "@/features/candidates/store/candidatesApiSlice";
+import {
+  useLazyGetCandidateByCouponQuery,
+  useLazyGetCandidateVerificationStatusQuery,
+} from "../store/verificationApiSlice";
+// import { useLazyGetCandidateByIdQuery } from "@/features/candidates/store/candidatesApiSlice";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -19,13 +22,17 @@ const CandidateVerification: React.FC = () => {
   const [candidate, setCandidate] = useState<CandidateItemWithStore | null>(
     null
   );
-  const [candidateId, setCandidateId] = useState<string>("");
+  const [couponCode, setCouponCode] = useState<string>("");
+
+  // const [
+  //   fetchCandidate,
+  //   { data: candidateDetails_, isLoading: loadingCandidateDetails },
+  // ] = useLazyGetCandidateByIdQuery();
 
   const [
-    fetchCandidate,
+    fetchCandidateByCoupon,
     { data: candidateDetails, isLoading: loadingCandidateDetails },
-  ] = useLazyGetCandidateByIdQuery();
-
+  ] = useLazyGetCandidateByCouponQuery();
   const [
     fetchVerificationStatus,
     { data: candidateVerificationStatus, isLoading },
@@ -34,7 +41,9 @@ const CandidateVerification: React.FC = () => {
   const getCandidate = async () => {
     try {
       // Get the candidate directly from the response
-      const result = await fetchCandidate(candidateId).unwrap();
+      const result = await fetchCandidateByCoupon({
+        couponCode: couponCode,
+      }).unwrap();
       setCandidate(result?.data?.candidate);
 
       const candidateIdFromResult = result?.data?.candidate?.id;
@@ -117,7 +126,7 @@ const CandidateVerification: React.FC = () => {
           <Button
             onClick={() => {
               setCandidate(null);
-              setCandidateId("");
+              setCouponCode("");
             }}
           >
             Verify new Candidate
@@ -156,7 +165,8 @@ const CandidateVerification: React.FC = () => {
         )}
       </div>
 
-      <div className="flex gap-2 w-full items-center justify-center">
+      <div className="flex flex-col sm:flex-row gap-2 w-full items-center justify-center">
+        {candidate && renderVerificationStep()}
         <div>
           {candidateDetails && candidate && (
             <div className="h-[500px] w-[600px] overflow-auto">
@@ -167,26 +177,25 @@ const CandidateVerification: React.FC = () => {
         <div>
           {!candidate && (
             <div className="flex flex-col gap-2">
-              <Label>Canididate Id</Label>
+              <Label>Enter Coupon Code</Label>
               <Input
                 type="text"
-                value={candidateId}
+                placeholder="Candidate's Coupon Code"
+                value={couponCode}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  setCandidateId(e.target.value);
+                  setCouponCode(e.target.value);
                 }}
               />
               <Button
                 onClick={getCandidate}
                 className="mt-2"
-                disabled={candidateId.trim() === ""}
+                disabled={couponCode.trim() === ""}
               >
                 Get Cadidate
               </Button>
             </div>
           )}
         </div>
-
-        {candidate && renderVerificationStep()}
       </div>
     </div>
   );

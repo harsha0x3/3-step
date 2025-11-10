@@ -6,7 +6,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import type { CandidateItemWithStore } from "../types";
+import type { VendorItem } from "../types";
 import {
   Table,
   TableBody,
@@ -17,149 +17,95 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Loader } from "lucide-react";
-import CandidateFormDialog from "./CandidateFormDialog";
+import VendorFormDialog from "./VendorFormDialog";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
-import CouponDialog from "@/features/verification/components/CouponDialog";
 
 type Props = {
-  candidates: CandidateItemWithStore[];
+  vendors: VendorItem[];
   isLoading: boolean;
   error: string;
 };
 
-const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
+const VendorsTable: React.FC<Props> = ({ vendors, isLoading, error }) => {
   const currentUserInfo = useSelector(selectAuth);
+  const columnHelper = createColumnHelper<VendorItem>();
 
-  const columnHelper = createColumnHelper<CandidateItemWithStore>();
-
-  const columns: ColumnDef<CandidateItemWithStore, any>[] = [
+  const columns: ColumnDef<VendorItem, any>[] = [
     columnHelper.accessor("id", {
-      header: "Candidate ID",
+      header: "Vendor ID",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("full_name", {
-      header: "Full Name",
+    columnHelper.accessor("vendor_name", {
+      header: "Vendor Name",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("gender", {
-      header: "Gender",
+    columnHelper.accessor("location", {
+      header: "Location",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("mobile_number", {
-      header: "Mobile",
+    columnHelper.accessor("contact", {
+      header: "Contact",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("email", {
-      header: "Email",
-      cell: (info) => info.getValue(),
+    columnHelper.accessor("created_at", {
+      header: "Created At",
+      cell: (info) => new Date(info.getValue()).toLocaleString(),
     }),
-
-    columnHelper.accessor("is_candidate_verified", {
-      header: "Is Verified",
-      cell: (info) => (
-        <span
-          className={`px-2 py-1 rounded text-xs font-medium ${
-            info.getValue()
-              ? "bg-green-300/50 text-green-600"
-              : "bg-red-300/50 text-red-600"
-          }`}
-        >
-          {info.getValue() ? "Verified" : "Not Verified"}
-        </span>
-      ),
-    }),
-    columnHelper.accessor("issued_status", {
-      header: "Issued Status",
-      cell: (info) => (
-        <span
-          className={`px-2 py-1 rounded text-xs font-medium ${
-            info.getValue() === "issued"
-              ? "bg-green-100 text-green-700"
-              : "bg-yellow-100 text-yellow-700"
-          }`}
-        >
-          {info.getValue()}
-        </span>
-      ),
-    }),
-    columnHelper.accessor("store_with_user", {
-      header: "Store Info",
-      cell: (info) => {
-        const store = info.getValue();
-        if (!store) return "-";
-        return (
-          <div className="flex flex-col">
-            <span className="font-medium">{store.store_name}</span>
-            <span className="text-xs text-muted-foreground">
-              {store.store_person?.email}
-            </span>
-          </div>
-        );
-      },
+    columnHelper.accessor("updated_at", {
+      header: "Updated At",
+      cell: (info) => new Date(info.getValue()).toLocaleString(),
     }),
     columnHelper.display({
-      id: "verify-candidate",
-      header:
-        currentUserInfo.role === "admin" ? "View details" : "Verify Details",
+      id: "actions",
+      header: currentUserInfo.role === "admin" ? "Actions" : "View Details",
       cell: ({ row }) => {
-        const candidate = row.original;
+        const vendor = row.original;
         if (
           currentUserInfo.role === "admin" ||
           currentUserInfo.role === "verifier"
         ) {
           return (
             <div className="flex items-center gap-2">
-              <CandidateFormDialog
-                candidate={candidate}
-                store_id={candidate.store_id}
+              <VendorFormDialog
+                vendor={vendor}
                 viewOnly={currentUserInfo.role === "verifier"}
-                toVerify={currentUserInfo.role === "verifier"}
               />
             </div>
           );
-        } else {
-          return null;
         }
-      },
-    }),
-    columnHelper.accessor("coupon_code", {
-      id: "coupon",
-      header: "Coupon",
-      cell: ({ row }) => {
-        const coupon = row.original.coupon_code;
-        return coupon ? (
-          <span className="font-medium">{coupon}</span>
-        ) : (
-          <span className="text-muted-foreground">No Coupon</span>
-        );
+        return null;
       },
     }),
   ];
 
   const table = useReactTable({
-    data: candidates,
+    data: vendors,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
 
   if (currentUserInfo.role !== "admin" && currentUserInfo.role !== "verifier") {
-    console.log(currentUserInfo);
     return <div>You do not have permission to view this content.</div>;
   }
+
   if (isLoading) {
-    return <Loader className="animate-spin h-10 w-10" />;
+    return (
+      <div className="flex justify-center py-6">
+        <Loader className="animate-spin h-10 w-10" />
+      </div>
+    );
   }
 
   if (error) {
-    return <div>{JSON.stringify(error)}</div>;
+    return <div className="text-red-500">{error}</div>;
   }
 
   return (
     <div className="w-full">
       <div className="rounded-md border">
         <Table className="min-w-full">
-          <TableCaption>List of Candidates</TableCaption>
+          <TableCaption>List of Vendors</TableCaption>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -186,7 +132,7 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
                   colSpan={columns.length}
                   className="text-center py-6"
                 >
-                  No candidates found.
+                  No vendors found.
                 </TableCell>
               </TableRow>
             ) : (
@@ -210,4 +156,4 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
   );
 };
 
-export default CandidatesTable;
+export default VendorsTable;

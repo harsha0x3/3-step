@@ -10,7 +10,7 @@ class Vendor(Base, BaseMixin):
     location: Mapped[str] = mapped_column(Text, nullable=False)
     contact: Mapped[str] = mapped_column(String(100), nullable=True)
 
-    vendor_spoc = relationship("VendorSpoc", back_populates="vendor")
+    vendor_spocs = relationship("VendorSpoc", back_populates="vendor")
 
 
 class VendorSpoc(Base, BaseMixin):

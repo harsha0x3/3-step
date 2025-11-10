@@ -72,7 +72,7 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
       { candidateId: string; formData: FormData }
     >({
       query: ({ candidateId, formData }) => ({
-        url: `candidates/${candidateId}/upload-photo`,
+        url: `/candidates/${candidateId}/upload-photo`,
         method: "PATCH",
         body: formData,
       }),
@@ -83,7 +83,7 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
       ApiResponse<CandidateItemWithStore | unknown>,
       string
     >({
-      query: (candidateId: string) => `candidates/details/${candidateId}`,
+      query: (candidateId: string) => `/candidates/details/${candidateId}`,
     }),
   }),
 });

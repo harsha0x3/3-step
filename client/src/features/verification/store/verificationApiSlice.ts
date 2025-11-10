@@ -78,6 +78,12 @@ export const verificationApi = rootApiSlice.injectEndpoints({
         body: formData,
       }),
     }),
+    getCandidateByCoupon: builder.query<
+      ApiResponse<unknown>,
+      { couponCode: string }
+    >({
+      query: ({ couponCode }) => `/verify/coupon-details/${couponCode}`,
+    }),
   }),
 });
 
@@ -91,4 +97,5 @@ export const {
   useLazyGetCandidateVerificationStatusQuery,
   useVerifyCandidateAadharMutation,
   useIssueLaptopMutation,
+  useLazyGetCandidateByCouponQuery,
 } = verificationApi;

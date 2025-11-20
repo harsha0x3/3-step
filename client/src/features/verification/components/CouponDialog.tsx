@@ -30,7 +30,7 @@ const CouponDialog: React.FC<CouponProps> = ({ candidateId }) => {
       setCouponCode("");
     } catch (err) {
       const errMsg: string =
-        err?.data?.detail?.msg ?? err?.data?.detail ?? "Error verifying face";
+        err?.data?.detail?.msg ?? err?.data?.detail ?? "Error adding coupon";
 
       const errDesc = err?.data?.detail?.msg
         ? err?.data?.detail?.err_stack

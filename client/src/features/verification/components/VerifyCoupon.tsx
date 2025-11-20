@@ -18,7 +18,9 @@ const VerifyCoupon: React.FC<VerifyCouponProps> = ({ candidateId }) => {
       await verifyCoupon({ candidateId, couponCode }).unwrap();
     } catch (err) {
       const errMsg: string =
-        err?.data?.detail?.msg ?? err?.data?.detail ?? "Error verifying face";
+        err?.data?.detail?.msg ??
+        err?.data?.detail ??
+        "Error verifying coupon. Try again.";
 
       const errDesc = err?.data?.detail?.msg
         ? err?.data?.detail?.err_stack

@@ -16,14 +16,14 @@ import type { LoginPayload } from "../types";
 import { useSelector } from "react-redux";
 import { selectIsAuthenticated } from "../store/authSlice";
 
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSeparator,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
+// import {
+//   InputOTP,
+//   InputOTPGroup,
+//   InputOTPSeparator,
+//   InputOTPSlot,
+// } from "@/components/ui/input-otp";
 
-import { REGEXP_ONLY_DIGITS } from "input-otp";
+// import { REGEXP_ONLY_DIGITS } from "input-otp";
 
 const LoginPage: React.FC = () => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -116,7 +116,7 @@ const LoginPage: React.FC = () => {
                   required
                 />
               </div>
-              <div className="grid gap-2">
+              {/* <div className="grid gap-2">
                 <Label htmlFor="mfa_code">MFA Code</Label>
                 <InputOTP
                   id="mfa_code"
@@ -137,7 +137,7 @@ const LoginPage: React.FC = () => {
                     <InputOTPSlot index={5} />
                   </InputOTPGroup>
                 </InputOTP>
-              </div>
+              </div> */}
             </div>
           </form>
         </CardContent>

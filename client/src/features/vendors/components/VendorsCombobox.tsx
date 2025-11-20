@@ -68,19 +68,17 @@ const VendorsCombobox: React.FC<VendorsComboboxProps> = ({
             id="vendor"
             variant={"outline"}
             role="combobox"
+            className="w-[95vw] sm:w-[340px] max-w-[340px] h-16 justify-between"
             aria-expanded={open}
-            className="w-full justify-between h-14"
             disabled={disabled}
           >
             {selectedVendor ? (
-              <div className="flex flex-col text-left">
-                <p className="text-md font-medium">
-                  {selectedVendor.vendor_name}
-                </p>
-                <p className="text-xs text-muted-foreground">
+              <div className="flex flex-col text-left overflow-hidden">
+                <p className="text-md truncate">{selectedVendor.vendor_name}</p>
+                <p className="text-xs text-muted-foreground truncate">
                   {selectedVendor.location}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground truncate">
                   {selectedVendor.contact}
                 </p>
               </div>
@@ -90,7 +88,7 @@ const VendorsCombobox: React.FC<VendorsComboboxProps> = ({
             <ChevronsUpDownIcon className="h-4 w-4" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[300px] p-0">
+        <PopoverContent className="w-[95vw] sm:w-[340px] max-w-[340px] p-0">
           <Command shouldFilter={false}>
             <CommandInput
               placeholder="Search Vendor"

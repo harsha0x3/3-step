@@ -100,4 +100,4 @@ def get_current_user(
             detail="Inactive or non-existent user",
         )
 
-    return UserOut.model_validate(user.to_dict_safe())
+    return UserOut.model_validate(user)

@@ -1,7 +1,8 @@
 from db.base import Base, BaseMixin
-from sqlalchemy import String, Text, ForeignKey, Boolean, Index
+from sqlalchemy import String, Text, ForeignKey, Boolean, Index, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from services.aadhar.utils import hash_aadhar_number, verify_aadhar_number
+from datetime import date
 
 
 class Candidate(Base, BaseMixin):
@@ -12,19 +13,26 @@ class Candidate(Base, BaseMixin):
     )
 
     full_name: Mapped[str] = mapped_column(String(512), nullable=True)
-    gender: Mapped[str] = mapped_column(String(10), nullable=True)
-    aadhar_number: Mapped[str] = mapped_column(String(255))
     mobile_number: Mapped[str] = mapped_column(String(15), nullable=True, unique=True)
-    email: Mapped[str] = mapped_column(String(64), nullable=True, unique=True)
-    address: Mapped[str] = mapped_column(Text, nullable=True)
+
+    dob: Mapped[date] = mapped_column(Date, nullable=True)
+    state: Mapped[str] = mapped_column(String(64), nullable=True)
+    city: Mapped[str] = mapped_column(String(100), nullable=True)
+    division: Mapped[str] = mapped_column(String(100), nullable=True)
+
+    aadhar_number = mapped_column(String(32), nullable=True)
+    aadhar_photo = mapped_column(Text, nullable=True)
 
     photo: Mapped[str] = mapped_column(Text, nullable=True)
 
     store_id: Mapped[str] = mapped_column(
         String(40), ForeignKey("stores.id"), nullable=True
     )
-    vendor_id: Mapped[str] = mapped_column(
+    vendor_spoc_id: Mapped[str] = mapped_column(
         String(40), ForeignKey("vendor_spoc.id", ondelete="set null"), nullable=True
+    )
+    verified_by: Mapped[str] = mapped_column(
+        String(40), ForeignKey("users.id", ondelete="set null"), nullable=True
     )
     is_candidate_verified: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=True

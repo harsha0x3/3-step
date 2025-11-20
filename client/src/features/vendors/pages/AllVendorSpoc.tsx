@@ -16,7 +16,9 @@ const AllVendorSpoc: React.FC = () => {
     { searchTerm: "" },
     {
       skip:
-        currentUserInfo.role !== "admin" && currentUserInfo.role !== "verifier",
+        currentUserInfo.role !== "admin" &&
+        currentUserInfo.role !== "super_admin" &&
+        currentUserInfo.role !== "registration_officer",
     }
   );
 
@@ -27,7 +29,7 @@ const AllVendorSpoc: React.FC = () => {
 
   const vendorSpocList = vendorSpocData?.data ?? [];
 
-  if (currentUserInfo.role === "store_personnel") {
+  if (currentUserInfo.role === "store_agent") {
     return null;
   }
 

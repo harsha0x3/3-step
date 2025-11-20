@@ -13,38 +13,48 @@ const CandidateDetailsSection: React.FC<Props> = ({ candidate }) => {
   const baseUrl = import.meta.env.VITE_API_BASE_API_URL;
 
   return (
-    <div className="border rounded-md p-4 shadow-sm space-y-6 w-full">
+    <div
+      className="border rounded-md shadow-sm space-y-6 w-[95vw] max-w-[500px] sm:max-w-[600px] 
+                          h-[90vh] sm:h-[80vh] overflow-auto 
+                          mx-auto"
+    >
       <h2 className="text-xl font-semibold text-center mb-4">
         Candidate Details
       </h2>
 
       {/* Candidate Info */}
-      <section className="grid grid-cols-2 gap-3">
+      <section className="grid grid-cols-1 gap-3">
         <div>
           <Label>Full Name</Label>
           <Input value={candidate.full_name ?? ""} readOnly />
-        </div>
-        <div>
-          <Label>Gender</Label>
-          <Input value={candidate.gender ?? ""} readOnly />
         </div>
 
         <div>
           <Label>Mobile Number</Label>
           <Input value={candidate.mobile_number ?? ""} readOnly />
         </div>
+
         <div>
-          <Label>Email</Label>
-          <Input value={candidate.email ?? ""} readOnly />
-        </div>
-        <div>
-          <Label>Address</Label>
-          <Input value={candidate.address ?? ""} readOnly />
+          <Label>City</Label>
+          <Input value={candidate.city ?? ""} readOnly />
         </div>
 
         <div>
-          <Label>Store ID</Label>
-          <Input value={candidate.store_id ?? ""} readOnly />
+          <Label>State</Label>
+          <Input value={candidate.state ?? ""} readOnly />
+        </div>
+        <div>
+          <Label>Date of Birth</Label>
+          <Input value={candidate.dob ?? ""} readOnly />
+        </div>
+
+        <div>
+          <Label>Store Name</Label>
+          <Input value={candidate.store?.name ?? ""} readOnly />
+        </div>
+        <div>
+          <Label>Store Address</Label>
+          <Input value={candidate.store?.address ?? ""} readOnly />
         </div>
       </section>
 

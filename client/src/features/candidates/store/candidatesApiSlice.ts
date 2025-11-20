@@ -11,7 +11,14 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // ➕ Add a new candidate
     addNewCandidate: builder.mutation<
-      ApiResponse<{ candidate: CandidateItemWithStore } | unknown>,
+      ApiResponse<
+        | {
+            candidate: CandidateItemWithStore;
+            count: number;
+            total_count: number;
+          }
+        | unknown
+      >,
       NewCandidatePayload
     >({
       query: (payload) => ({
@@ -39,9 +46,11 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
 
     // 📋 Get all candidates (with optional search)
     getAllCandidates: builder.query<
-      ApiResponse<
-        { candidates: CandidateItemWithStore[]; count: number } | unknown
-      >,
+      ApiResponse<{
+        candidates: CandidateItemWithStore[];
+        count: number;
+        total_count: number;
+      }>,
       CandidatesSearchParams | void
     >({
       query: (params) => {
@@ -50,6 +59,14 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
           searchParams.append("search_by", params.search_by);
         if (params?.search_term)
           searchParams.append("search_term", params.search_term);
+        if (params?.page) searchParams.append("page", String(params.page));
+        if (params?.page_size)
+          searchParams.append("page_size", String(params.page_size));
+        if (params?.sort_by)
+          searchParams.append("sort_by", String(params.sort_by));
+        if (params?.sort_order)
+          searchParams.append("sort_order", String(params.sort_order));
+
         const queryString = searchParams.toString();
         return `/candidates${queryString ? `?${queryString}` : ""}`;
       },
@@ -59,7 +76,12 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
     // 🏪 Get all candidates belonging to a specific store
     getCandidatesOfStore: builder.query<
       ApiResponse<
-        { candidates: CandidateItemWithStore[]; count: number } | unknown
+        | {
+            candidates: CandidateItemWithStore[];
+            count: number;
+            total_count: number;
+          }
+        | unknown
       >,
       void
     >({
@@ -72,7 +94,7 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
       { candidateId: string; formData: FormData }
     >({
       query: ({ candidateId, formData }) => ({
-        url: `/candidates/${candidateId}/upload-photo`,
+        url: `/candidates/upload-photo/${candidateId}`,
         method: "PATCH",
         body: formData,
       }),
@@ -84,6 +106,19 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
       string
     >({
       query: (candidateId: string) => `/candidates/details/${candidateId}`,
+      providesTags: ["Candidates"],
+    }),
+
+    addCandidateAadhar: builder.mutation<
+      ApiResponse<CandidateItemWithStore | unknown>,
+      { candidateId: string; formData: FormData }
+    >({
+      query: ({ candidateId, formData }) => ({
+        url: `/candidates/add-aadhar/${candidateId}`,
+        method: "PATCH",
+        body: formData,
+      }),
+      invalidatesTags: ["Candidates"],
     }),
   }),
 });
@@ -95,4 +130,7 @@ export const {
   useGetCandidatesOfStoreQuery,
   useUploadCandidatePhotoMutation,
   useLazyGetCandidateByIdQuery,
+  useGetCandidateByIdQuery,
+  useLazyGetAllCandidatesQuery,
+  useAddCandidateAadharMutation,
 } = candidatesApiSlice;

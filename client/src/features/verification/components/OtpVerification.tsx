@@ -17,9 +17,13 @@ import { Button } from "@/components/ui/button";
 
 interface OtpVerificationProps {
   candidateId: string;
+  onSuccess?: () => void;
 }
 
-const OtpVerification: React.FC<OtpVerificationProps> = ({ candidateId }) => {
+const OtpVerification: React.FC<OtpVerificationProps> = ({
+  candidateId,
+  onSuccess,
+}) => {
   const [otp, setOtp] = useState<string>("");
   const [sendOtp, { isLoading: isSending, error: otpSendError }] =
     useSendOtpMutation();
@@ -31,22 +35,23 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({ candidateId }) => {
       await sendOtp(candidateId).unwrap();
       toast.success("OTP sent successfully");
     } catch (err) {
-      console.error("Error in Otp send", err);
       const errMsg: string =
-        otpSendError?.data?.detail?.msg ??
-        otpSendError?.data?.detail ??
-        "Error verifying OTP";
-      toast.error(errMsg);
+        err?.data?.detail?.msg ?? err?.data?.detail ?? "Error Verifying OTP";
+
+      const errDesc = err?.data?.detail?.msg
+        ? err?.data?.detail?.err_stack
+        : "";
+      toast.error(errMsg, { description: errDesc });
     }
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      console.log(`TYPE OF OTP ${typeof otp} AND OTP - ${otp}`);
       const strOtp = `${otp}`;
       await verifyOtp({ candidateId, otp: strOtp }).unwrap();
       toast.success("OTP verified. Candidate verified successfully!");
+      onSuccess?.();
     } catch (err: any) {
       console.error("Error in otp verify", err);
       const errMsg: string =
@@ -57,6 +62,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({ candidateId }) => {
 
   return (
     <div className="flex flex-col gap-4 p-4 border rounded-md mt-4">
+      <p>Request for OTP by clicking on send OTP button.</p>
       <Button onClick={handleSendOtp} disabled={isSending}>
         {isSending ? "Sending OTP ..." : "Send OTP"}
       </Button>

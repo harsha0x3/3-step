@@ -1,0 +1,124 @@
+// src/components/common/PhotoCaptureSection.tsx
+import React, { useCallback, useRef, useState } from "react";
+import Webcam from "react-webcam";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+
+interface PhotoCaptureSectionProps {
+  candidateId: string;
+  onSubmit: (formData: FormData) => Promise<any>; // generic mutation function
+  title: string;
+  successMessage?: string;
+  submitLabel?: string;
+}
+
+const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
+  candidateId,
+  onSubmit,
+  title,
+  successMessage = "Photo submitted successfully",
+  submitLabel = "Submit Photo",
+}) => {
+  const webcamRef = useRef<Webcam | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedCam, setSelectedCam] = useState<"front" | "rear">("front");
+  const [videoConstraints, setVideoConstraints] = useState({
+    facingMode: "user",
+  });
+
+  const capturePhoto = useCallback(() => {
+    const imgSrc = webcamRef.current?.getScreenshot();
+    if (imgSrc) setPreview(imgSrc);
+  }, []);
+
+  const base64ToFile = (base64: string, filename: string) => {
+    const arr = base64.split(",");
+    const mime = arr[0].match(/:(.*?);/)?.[1] || "image/jpeg";
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
+    return new File([u8arr], filename, { type: mime });
+  };
+
+  const handleSubmit = async () => {
+    if (!preview) return toast.error("Please capture a photo first");
+    const file = base64ToFile(preview, "captured_photo.jpg");
+    const formData = new FormData();
+    formData.append("photo", file);
+    try {
+      setIsLoading(true);
+      await onSubmit(formData);
+      toast.success(successMessage);
+      setPreview(null);
+    } catch (err: any) {
+      const errMsg: string =
+        err?.data?.detail?.msg ?? err?.data?.detail ?? "Error submitting photo";
+      toast.error(errMsg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4 p-4 border rounded-md max-w-md">
+      <h2 className="text-xl font-semibold">{title}</h2>
+
+      {!preview ? (
+        <div className="flex flex-col items-center gap-3">
+          <Webcam
+            ref={webcamRef}
+            audio={false}
+            screenshotFormat="image/jpeg"
+            className="rounded-lg border max-w-[320px] w-full"
+            videoConstraints={videoConstraints}
+          />
+          <div className="flex justify-between items-center">
+            <Button
+              variant={selectedCam === "front" ? "outline" : "secondary"}
+              onClick={() => {
+                setVideoConstraints({ facingMode: "user" });
+                setSelectedCam("front");
+              }}
+            >
+              Front
+            </Button>
+            <Button
+              variant={selectedCam === "rear" ? "outline" : "secondary"}
+              onClick={() => {
+                setVideoConstraints({ facingMode: { exact: "environment" } });
+                setSelectedCam("rear");
+              }}
+            >
+              Rear
+            </Button>
+          </div>
+          <Button onClick={capturePhoto}>Capture Photo</Button>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center gap-3">
+          <img
+            src={preview}
+            alt="Captured"
+            className="rounded-lg border w-[320px] h-60 object-cover"
+          />
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setPreview(null)}
+            >
+              Retake
+            </Button>
+            <Button onClick={handleSubmit} disabled={isLoading}>
+              {isLoading ? "Submitting..." : submitLabel}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default PhotoCaptureSection;

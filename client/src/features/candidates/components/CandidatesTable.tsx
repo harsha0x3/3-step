@@ -20,7 +20,6 @@ import { Loader } from "lucide-react";
 import CandidateFormDialog from "./CandidateFormDialog";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
-import CouponDialog from "@/features/verification/components/CouponDialog";
 
 type Props = {
   candidates: CandidateItemWithStore[];
@@ -35,23 +34,28 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
 
   const columns: ColumnDef<CandidateItemWithStore, any>[] = [
     columnHelper.accessor("id", {
-      header: "Candidate ID",
+      header: "Employee ID",
       cell: (info) => info.getValue(),
     }),
     columnHelper.accessor("full_name", {
       header: "Full Name",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("gender", {
-      header: "Gender",
-      cell: (info) => info.getValue(),
-    }),
+
     columnHelper.accessor("mobile_number", {
       header: "Mobile",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("email", {
-      header: "Email",
+    columnHelper.accessor("city", {
+      header: "City",
+      cell: (info) => info.getValue(),
+    }),
+    columnHelper.accessor("state", {
+      header: "State",
+      cell: (info) => info.getValue(),
+    }),
+    columnHelper.accessor("dob", {
+      header: "Date of Birth",
       cell: (info) => info.getValue(),
     }),
 
@@ -83,16 +87,16 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
         </span>
       ),
     }),
-    columnHelper.accessor("store_with_user", {
+    columnHelper.accessor("store", {
       header: "Store Info",
       cell: (info) => {
         const store = info.getValue();
         if (!store) return "-";
         return (
           <div className="flex flex-col">
-            <span className="font-medium">{store.store_name}</span>
+            <span className="font-medium">Name: {store.name}</span>
             <span className="text-xs text-muted-foreground">
-              {store.store_person?.email}
+              City: {store.city}
             </span>
           </div>
         );
@@ -100,21 +104,20 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
     }),
     columnHelper.display({
       id: "verify-candidate",
-      header:
-        currentUserInfo.role === "admin" ? "View details" : "Verify Details",
+      header: "inspect",
       cell: ({ row }) => {
         const candidate = row.original;
         if (
           currentUserInfo.role === "admin" ||
-          currentUserInfo.role === "verifier"
+          currentUserInfo.role === "super_admin" ||
+          currentUserInfo.role === "registration_officer"
         ) {
           return (
             <div className="flex items-center gap-2">
               <CandidateFormDialog
                 candidate={candidate}
                 store_id={candidate.store_id}
-                viewOnly={currentUserInfo.role === "verifier"}
-                toVerify={currentUserInfo.role === "verifier"}
+                toVerify={currentUserInfo.role === "registration_officer"}
               />
             </div>
           );
@@ -143,7 +146,11 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  if (currentUserInfo.role !== "admin" && currentUserInfo.role !== "verifier") {
+  if (
+    currentUserInfo.role !== "admin" &&
+    currentUserInfo.role !== "super_admin" &&
+    currentUserInfo.role !== "registration_officer"
+  ) {
     console.log(currentUserInfo);
     return <div>You do not have permission to view this content.</div>;
   }
@@ -159,7 +166,7 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
     <div className="w-full">
       <div className="rounded-md border">
         <Table className="min-w-full">
-          <TableCaption>List of Candidates</TableCaption>
+          <TableCaption>List of Beneficiary Employees</TableCaption>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

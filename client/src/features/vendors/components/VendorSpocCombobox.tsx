@@ -63,32 +63,33 @@ const VendorSpocCombobox: React.FC<VendorSpocComboboxProps> = ({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between h-16"
+            className="w-[95vw] sm:w-[340px] max-w-[340px] h-16 justify-between"
             disabled={disabled}
           >
             {selectedSpoc ? (
-              <div className="flex items-center gap-3 text-left">
+              <div className="flex items-center gap-3 text-left w-full overflow-hidden">
                 {selectedSpoc.photo ? (
                   <img
-                    src={`${import.meta.env.VITE_API_BASE_API_URL}/uploads/${
-                      selectedSpoc.photo
-                    }`}
+                    src={`${import.meta.env.VITE_API_BASE_API_URL}${
+                      import.meta.env.VITE_RELATIVE_API_URL
+                    }/uploads/${selectedSpoc.photo}`}
                     alt={selectedSpoc.full_name}
-                    className="w-10 h-10 rounded-full object-cover border"
+                    className="w-10 h-10 rounded-full object-cover border shrink-0"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">
+                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500 shrink-0">
                     N/A
                   </div>
                 )}
-                <div className="flex flex-col">
-                  <p className="font-medium text-md">
+
+                <div className="flex flex-col overflow-hidden">
+                  <p className="font-medium text-md truncate">
                     {selectedSpoc.full_name}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground truncate">
                     {selectedSpoc.vendor?.vendor_name ?? "No Vendor Linked"}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground truncate">
                     {selectedSpoc.contact}
                   </p>
                 </div>
@@ -96,10 +97,11 @@ const VendorSpocCombobox: React.FC<VendorSpocComboboxProps> = ({
             ) : (
               <span>Select a Vendor SPOC</span>
             )}
+
             <ChevronsUpDownIcon className="h-4 w-4 ml-auto" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[340px] p-0">
+        <PopoverContent className="w-[95vw] sm:w-[340px] max-w-[340px] p-0">
           <Command shouldFilter={false}>
             <CommandInput
               placeholder="Search Vendor SPOC"
@@ -125,8 +127,8 @@ const VendorSpocCombobox: React.FC<VendorSpocComboboxProps> = ({
                       <div className="flex items-center gap-3 w-full">
                         {spoc.photo ? (
                           <img
-                            src={`${
-                              import.meta.env.VITE_API_BASE_API_URL
+                            src={`${import.meta.env.VITE_API_BASE_API_URL}${
+                              import.meta.env.VITE_RELATIVE_API_URL
                             }/uploads/${spoc.photo}`}
                             alt={spoc.full_name}
                             className="w-10 h-10 rounded-full object-cover border"

@@ -3,7 +3,7 @@ from datetime import datetime
 import pyotp
 
 from db.base import Base, BaseMixin
-from sqlalchemy import JSON, Boolean, DateTime, String
+from sqlalchemy import JSON, Boolean, DateTime, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, validates, relationship
 from sqlalchemy.ext.mutable import MutableList
 
@@ -26,9 +26,8 @@ class User(Base, BaseMixin):
         String(255), unique=True, nullable=False, index=True
     )
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    first_name: Mapped[str] = mapped_column(String(100), nullable=True)
-    last_name: Mapped[str] = mapped_column(String(100), nullable=True)
-    role: Mapped[str] = mapped_column(String(15), nullable=False)
+    full_name: Mapped[str] = mapped_column(String(150), nullable=True)
+    role: Mapped[str] = mapped_column(String(25), nullable=False)
 
     mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     mfa_secret: Mapped[str] = mapped_column(String(100), nullable=True)  # base32 secret
@@ -38,7 +37,11 @@ class User(Base, BaseMixin):
     last_login: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     disabled: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    store = relationship("Store", back_populates="store_person")
+    store_id: Mapped[str] = mapped_column(
+        String(40), ForeignKey("stores.id", ondelete="set null"), nullable=True
+    )
+
+    store = relationship("Store", back_populates="store_agents")
 
     def set_password(self, plain_password: str) -> None:
         self.password_hash = hash_password(plain_password)
@@ -84,15 +87,6 @@ class User(Base, BaseMixin):
             raise ValueError("Invalid Email Format")
         return email.lower()
 
-    def get_full_name(self) -> str:
-        if self.first_name and self.last_name:
-            return f"{self.first_name} {self.last_name}"
-        elif self.first_name and not self.last_name:
-            return f"{self.first_name}"
-        elif self.last_name and not self.first_name:
-            return f"{self.last_name}"
-        return f"{self.username}"
-
     def to_dict_safe(self):
         # Return user data without sensitive information
         return {
@@ -100,8 +94,7 @@ class User(Base, BaseMixin):
             "username": self.username,
             "email": self.email,
             "role": self.role,
-            "first_name": self.first_name,
-            "last_name": self.last_name,
+            "full_name": self.full_name,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
         }

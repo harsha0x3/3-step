@@ -68,6 +68,38 @@ export const verificationApi = rootApiSlice.injectEndpoints({
       providesTags: ["VerificationStatus"],
     }),
 
+    getCandidateIssuanceDetails: builder.query({
+      query: (candidateId: string) => ({
+        url: `/verify/issuance-details/candidate/${candidateId}`,
+        method: "GET",
+      }),
+      providesTags: ["Issuance"],
+    }),
+
+    uploadLaptopEvidence: builder.mutation<
+      ApiResponse<unknown>,
+      { candidateId: string; formData: FormData }
+    >({
+      query: ({ candidateId, formData }) => ({
+        url: `/verify/laptop-issuance/evidence/candidate/${candidateId}`,
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: ["Issuance"],
+    }),
+
+    uploadLaptopReciept: builder.mutation<
+      ApiResponse<unknown>,
+      { candidateId: string; formData: FormData }
+    >({
+      query: ({ candidateId, formData }) => ({
+        url: `/verify/laptop-issuance/reciept/candidate/${candidateId}`,
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: ["Issuance"],
+    }),
+
     issueLaptop: builder.mutation<
       ApiResponse<unknown>,
       { candidateId: string; formData: FormData }
@@ -77,6 +109,7 @@ export const verificationApi = rootApiSlice.injectEndpoints({
         method: "POST",
         body: formData,
       }),
+      invalidatesTags: ["VerificationStatus", "Candidates", "Issuance"],
     }),
     getCandidateByCoupon: builder.query<
       ApiResponse<unknown>,
@@ -98,4 +131,7 @@ export const {
   useVerifyCandidateAadharMutation,
   useIssueLaptopMutation,
   useLazyGetCandidateByCouponQuery,
+  useUploadLaptopEvidenceMutation,
+  useUploadLaptopRecieptMutation,
+  useGetCandidateIssuanceDetailsQuery,
 } = verificationApi;

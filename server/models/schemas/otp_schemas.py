@@ -9,7 +9,6 @@ class CandidateInOtp(BaseModel):
     store_name: str
     store_address_line: str
     store_city: str
-    store_state: str
     support_email: str
     support_phone: str
 

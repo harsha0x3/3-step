@@ -21,7 +21,16 @@ class IssuedStatus(Base):
     issued_laptop_serial: Mapped[str] = mapped_column(
         String(128), nullable=True, unique=True
     )
+    issued_by: Mapped[str] = mapped_column(
+        String(40), ForeignKey("users.id"), nullable=True
+    )
 
     evidence_photo: Mapped[str] = mapped_column(Text, nullable=True)
+    bill_reciept: Mapped[str] = mapped_column(Text, nullable=True)
 
     candidate = relationship("Candidate", back_populates="issued_status")
+    issued_user = relationship(
+        "User",
+        foreign_keys=[issued_by],
+        uselist=False,
+    )

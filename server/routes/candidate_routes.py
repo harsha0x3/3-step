@@ -26,6 +26,7 @@ from controllers.candidates_controller import (
     upload_candidate_img,
     update_candidate_verification_status,
     get_candidate_details_by_id,
+    add_aadhar_photo,
 )
 
 from controllers.store_controller import get_store_of_user
@@ -48,7 +49,7 @@ async def create_candidate(
     - Automatically hashes Aadhaar number.
     """
     # Only admin or store personnel can add candidates
-    if current_user.role != "admin":
+    if current_user.role != "admin" and current_user.role != "super_admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorised to add candidates",
@@ -61,7 +62,7 @@ async def create_candidate(
     }
 
 
-@router.patch("/{candidate_id}/upload-photo", status_code=status.HTTP_200_OK)
+@router.patch("/upload-photo/{candidate_id}", status_code=status.HTTP_200_OK)
 async def upload_candidate_photo(
     photo: Annotated[UploadFile, File(...)],
     candidate_id: Annotated[
@@ -70,7 +71,11 @@ async def upload_candidate_photo(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
 ):
-    if current_user.role != "admin":
+    if (
+        current_user.role != "admin"
+        and current_user.role != "super_admin"
+        and current_user.role != "registration_officer"
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorised to uplad images"
         )
@@ -87,7 +92,7 @@ async def upload_candidate_photo(
 #     db: Annotated[Session, Depends(get_db_conn)],
 #     current_user: Annotated[UserOut, Depends(get_current_user)],
 # ):
-#     if current_user.role != "admin":
+#     if current_user.role != "admin" and current_user.role != "super_admin":
 #         raise HTTPException(
 #             status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorised to uplad images"
 #         )
@@ -96,34 +101,52 @@ async def upload_candidate_photo(
 
 
 # ✅ Get all candidates (with optional search)
-@router.get("/", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK)
 async def list_candidates(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
     search_by: Annotated[
-        Literal["id", "full_name", "aadhar_last_four_digits"] | None,
+        Literal["id", "full_name"] | None,
         Query(title="Search candidates by: id, full_name, or aadhar_last_four_digits"),
     ] = None,
     search_term: Annotated[str | None, Query(title="Search term")] = None,
+    sort_by: Annotated[
+        Literal["created_at", "updated_at", "full_name"],
+        Query(title="Sort candidate by"),
+    ] = "created_at",
+    sort_order: Annotated[
+        Literal["asc", "desc"], Query(title="Order of sorting of candidates")
+    ] = "desc",
+    store_id: Annotated[str | None, Query(title="Filter by store id")] = None,
+    page: Annotated[int, Query(title="The page no.")] = 1,
+    page_size: Annotated[int, Query(title="No. of items to be fetched")] = 15,
 ):
     """
     Retrieve all candidates.
     Optional filters:
-      - search_by: one of ['id', 'full_name', 'aadhar_last_four_digits']
+      - search_by: one of ['id', 'full_name']
       - search_term: value to search for
     """
-    if current_user.role != "admin" and current_user.role != "verifier":
+    if (
+        current_user.role != "admin"
+        and current_user.role != "super_admin"
+        and current_user.role != "registration_officer"
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorised to view all candidates",
+            detail=f"Not authorised to view all candidates with role - {current_user.role}",
         )
 
-    params = CandidatesSearchParams(search_by=search_by, search_term=search_term)
-    candidates = get_all_candidates(db, params)
-    return {
-        "msg": "Candidates fetched successfully",
-        "data": {"candidates": candidates, "count": len(candidates)},
-    }
+    params = CandidatesSearchParams(
+        search_by=search_by,
+        search_term=search_term,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        store_id=store_id,
+        page=page,
+        page_size=page_size,
+    )
+    return get_all_candidates(db, params)
 
 
 # ✅ Get all candidates belonging to a specific store
@@ -131,20 +154,42 @@ async def list_candidates(
 async def list_candidates_of_store(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
+    search_by: Annotated[
+        Literal["id", "full_name"] | None,
+        Query(title="Search candidates by: id, full_name"),
+    ] = None,
+    search_term: Annotated[str | None, Query(title="Search term")] = None,
+    sort_by: Annotated[
+        Literal["created_at", "updated_at", "full_name"],
+        Query(title="Sort candidate by"),
+    ] = "created_at",
+    sort_order: Annotated[
+        Literal["asc", "desc"], Query(title="Order of sorting of candidates")
+    ] = "desc",
+    page: Annotated[int, Query(title="The page no.")] = 1,
+    page_size: Annotated[int, Query(title="No. of items to be fetched")] = 15,
 ):
     """
     Retrieve all candidates associated with a specific store.
     """
     # Only admin or that store's personnel can access this
-    if current_user.role not in ["admin", "store_personnel"]:
+    if current_user.role not in ["admin", "store_agent"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorised to view candidates of store",
         )
 
     store = get_store_of_user(db=db, user=current_user)
+    params = CandidatesSearchParams(
+        search_by=search_by,
+        search_term=search_term,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        page=page,
+        page_size=page_size,
+    )
 
-    candidates = get_candidates_of_store(db, store.id)
+    candidates = get_candidates_of_store(db, store.id, params)
     if not candidates:
         return {
             "msg": "No candidates present",
@@ -168,13 +213,19 @@ async def update_candidate(
     Update an existing candidate's details.
     Aadhaar number is not editable.
     """
-    if current_user.role != "admin":
+    if (
+        current_user.role != "admin"
+        and current_user.role != "super_admin"
+        and current_user.role != "registration_officer"
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorised to update candidates",
         )
 
-    updated_candidate = update_candidate_details(candidate_id, payload, db)
+    updated_candidate = update_candidate_details(
+        candidate_id, payload, db, current_user.id
+    )
     return {
         "msg": "Candidate updated successfully",
         "data": updated_candidate,
@@ -190,7 +241,10 @@ async def verify_candidate(
     """
     Verify a candidate.
     """
-    if current_user.role != "verifier":
+    if (
+        current_user.role != "registration_officer"
+        and current_user.role != "super_admin"
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorised to verify candidates",
@@ -215,3 +269,21 @@ async def get_candidate(
 ):
     res = get_candidate_details_by_id(candidate_id, db)
     return {"msg": "Candidate fetched successfully", "data": {"candidate": res}}
+
+
+@router.patch("/add-aadhar/{candidate_id}", status_code=status.HTTP_201_CREATED)
+async def add_aadhar(
+    candidate_id: Annotated[str, Path(...)],
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+    photo: Annotated[UploadFile, File(...)],
+):
+    if (
+        current_user.role != "registration_officer"
+        and current_user.role != "super_admin"
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorised to add these details",
+        )
+    return await add_aadhar_photo(candidate_id=candidate_id, photo=photo, db=db)

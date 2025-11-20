@@ -8,6 +8,9 @@ from controllers.verification_controller import (
     otp_resend,
     verify_otp,
     upload_laptop_issuance,
+    upload_laptop_issuance_bill_reciept,
+    upload_laptop_issuance_evidence,
+    get_issuance_details,
 )
 from controllers.store_controller import get_store_of_user
 from utils.helpers import save_image_file
@@ -50,6 +53,26 @@ class CouponCodeRequest(BaseModel):
     coupon_code: str
 
 
+@router.get("/issuance-details/candidate/{candidate_id}")
+async def get_laptop_issuance_details(
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+    candidate_id: Annotated[str, Path(title="Candidate ID")],
+):
+    try:
+        candidate = get_candidate_by_id(candidate_id=candidate_id, db=db)
+
+        return get_issuance_details(candidate_id=candidate.id, db=db)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"msg": "Error fetching issuance details", "err_stack": str(e)},
+        )
+
+
 @router.post("/candidate-aadhar/{candidate_id}")
 async def verify_candidate_aadhar(
     db: Annotated[Session, Depends(get_db_conn)],
@@ -58,7 +81,11 @@ async def verify_candidate_aadhar(
     aadhar_number: Annotated[AadharVerifyRequest, ""],
 ):
     try:
-        if current_user.role != "admin" and current_user.role != "verifier":
+        if (
+            current_user.role != "admin"
+            and current_user.role != "super_admin"
+            and current_user.role != "registration_officer"
+        ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Unauthorised to verify candidates",
@@ -83,7 +110,7 @@ async def verify_candidate_aadhar(
                 "candidate": {
                     "id": candidate.id,
                     "full_name": candidate.full_name,
-                    "store": {"store_name": candidate.store.store_name},
+                    "store": {"name": candidate.store.name},
                 },
             },
         }
@@ -106,7 +133,11 @@ async def verify_candidate_details(
     ],
     payload: Annotated[CandidateDetailsVerifyRequest, ""],
 ):
-    if current_user.role != "admin" or current_user.role != "verifier":
+    if (
+        current_user.role != "admin"
+        and current_user.role != "super_admin"
+        or current_user.role != "registration_officer"
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Unauthorised to verify candidates",
@@ -134,7 +165,11 @@ async def verify_candidate_via_face(
     candidate_id: Annotated[str, Path(title="Candidate ID")],
 ):
     try:
-        if current_user.role != "store_personnel":
+        if (
+            current_user.role != "store_agent"
+            and current_user.role != "super_admin"
+            and current_user.role != "admin"
+        ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Unauthorised to verify candidates",
@@ -143,7 +178,7 @@ async def verify_candidate_via_face(
         store = get_store_of_user(db=db, user=current_user)
 
         uploaded_img_path = await save_image_file(
-            store_id=store.id, photo=photo, isVerify=True
+            store_id=store.id, photo=photo, isVerify=True, candidate_id=candidate_id
         )
         verified_path = await facial_recognition(
             img_path=uploaded_img_path, store_id=store.id
@@ -184,7 +219,9 @@ async def verify_candidate_via_face(
                 "candidate": {
                     "id": candidate.id,
                     "full_name": candidate.full_name,
-                    "store": {"store_name": candidate.store_with_user.store_name},
+                    "store": {
+                        "name": candidate.store.name if candidate.store else None
+                    },
                 },
             },
         }
@@ -204,7 +241,11 @@ async def verify_candidate_via_otp(
     input_otp: Annotated[OtpVerifyRequest, ""],
 ):
     try:
-        if current_user.role != "store_personnel":
+        if (
+            current_user.role != "store_agent"
+            and current_user.role != "super_admin"
+            and current_user.role != "admin"
+        ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Unauthorised to verify candidates",
@@ -237,7 +278,7 @@ async def verify_candidate_via_otp(
 #     coupon: Annotated[CouponCodeRequest, ""],
 # ):
 #     try:
-#         if current_user.role != "verifier":
+#         if current_user.role != "registration_officer":
 #             raise HTTPException(
 #                 status_code=status.HTTP_403_FORBIDDEN,
 #                 detail="Unauthorised to add coupons to candidates",
@@ -266,7 +307,7 @@ async def verify_candidate_via_otp(
 #     coupon: Annotated[CouponCodeRequest, ""],
 # ):
 #     try:
-#         if current_user.role != "store_personnel":
+#         if current_user.role != "store_agent" and current_user.role != "super_admin" and current_user.role != "admin":
 #             raise HTTPException(
 #                 status_code=status.HTTP_403_FORBIDDEN,
 #                 detail="Unauthorised to verify candidates",
@@ -301,7 +342,11 @@ async def resend_candidate_otp(
     candidate_id: Annotated[str, Path(title="Candidate ID")],
 ):
     try:
-        if current_user.role != "store_personnel":
+        if (
+            current_user.role != "store_agent"
+            and current_user.role != "super_admin"
+            and current_user.role != "admin"
+        ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Unauthorised to resend candidate OTP",
@@ -331,18 +376,25 @@ async def get_candidate_verification_status(
     candidate_id: Annotated[str, Path(title="Candidate ID")],
 ):
     try:
-        if current_user.role != "store_personnel":
+        if (
+            current_user.role != "store_agent"
+            and current_user.role != "super_admin"
+            and current_user.role != "admin"
+        ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Unauthorised to view candidate verification status",
             )
         store = get_store_of_user(db=db, user=current_user)
         candidate = get_candidate_by_id(candidate_id=candidate_id, db=db)
-        if candidate.store_id != store.id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Candidate is not allotted to this store. Please check the candidate allotted store properly.",
-            )
+
+        if current_user.role == "store_agent":
+            if candidate.store_id != store.id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Candidate is not allotted to this store. Please check the candidate allotted store properly.",
+                )
+
         verification_status = db.scalar(
             select(VerificationStatus).where(
                 VerificationStatus.candidate_id == candidate.id
@@ -369,16 +421,15 @@ async def get_candidate_verification_status(
         )
 
 
-@router.post("/laptop-issuance/candidate/{candidate_id}")
-async def issue_candidate_laptop(
+@router.post("/laptop-issuance/evidence/candidate/{candidate_id}")
+async def add_laptop_issuace_evidence(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
     candidate_id: Annotated[str, Path(title="Candidate ID")],
     photo: Annotated[UploadFile, File(title="Laptop Issuance Photo")],
-    laptop_serial: Annotated[str, Form(...), ""],
 ):
     try:
-        if current_user.role != "store_personnel":
+        if current_user.role != "store_agent" and current_user.role != "super_admin":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Unauthorised to view candidate verification status",
@@ -388,7 +439,7 @@ async def issue_candidate_laptop(
         if candidate.store_id != store.id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Candidate is not allotted to this store. Please check the candidate allotted store properly.",
+                detail="Beneficiary Employee is not allotted to this store. Please check the candidate allotted store properly.",
             )
         verification_status = db.scalar(
             select(VerificationStatus).where(
@@ -398,29 +449,136 @@ async def issue_candidate_laptop(
         if not verification_status:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Candidate has not been verified yet",
+                detail="Beneficiary Employee has not been verified yet",
             )
         if not verification_status.is_facial_verified:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Candidate has not been facially verified yet",
+                detail="Beneficiary Employee has not been facially verified yet",
             )
         if not verification_status.is_otp_verified:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Candidate has not been OTP verified yet",
+                detail="Beneficiary Employee has not been OTP verified yet",
             )
-        photo_url = await save_image_file(
-            store_id=store.id,
+        return await upload_laptop_issuance_evidence(
+            candidate_id=candidate.id,
+            db=db,
             photo=photo,
-            candidate_id=candidate_id,
-            isLaptopIssuance=True,
+            user_id=current_user.id,
+            store_id=store.id,
         )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error uploading evidence of laptop issuance",
+        )
+
+
+@router.post("/laptop-issuance/reciept/candidate/{candidate_id}")
+async def add_laptop_issuace_reciept(
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+    candidate_id: Annotated[str, Path(title="Candidate ID")],
+    photo: Annotated[UploadFile, File(title="Laptop Issuance Photo")],
+):
+    try:
+        if current_user.role != "store_agent" and current_user.role != "super_admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Unauthorised to view candidate verification status",
+            )
+        store = get_store_of_user(db=db, user=current_user)
+        candidate = get_candidate_by_id(candidate_id=candidate_id, db=db)
+        if candidate.store_id != store.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary Employee is not allotted to this store. Please check the candidate allotted store properly.",
+            )
+        verification_status = db.scalar(
+            select(VerificationStatus).where(
+                VerificationStatus.candidate_id == candidate.id
+            )
+        )
+        if not verification_status:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Beneficiary Employee has not been verified yet",
+            )
+        if not verification_status.is_facial_verified:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary Employee has not been facially verified yet",
+            )
+        if not verification_status.is_otp_verified:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary Employee has not been OTP verified yet",
+            )
+        return await upload_laptop_issuance_bill_reciept(
+            candidate_id=candidate.id,
+            db=db,
+            photo=photo,
+            user_id=current_user.id,
+            store_id=store.id,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error uploading bill reciept of laptop issuance",
+        )
+
+
+@router.post("/laptop-issuance/candidate/{candidate_id}")
+async def issue_candidate_laptop(
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+    candidate_id: Annotated[str, Path(title="Candidate ID")],
+    laptop_serial: Annotated[str, Form(...), ""],
+):
+    try:
+        if current_user.role != "store_agent" and current_user.role != "super_admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Unauthorised to view candidate verification status",
+            )
+        store = get_store_of_user(db=db, user=current_user)
+        candidate = get_candidate_by_id(candidate_id=candidate_id, db=db)
+        if candidate.store_id != store.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary Employee is not allotted to this store. Please check the candidate allotted store properly.",
+            )
+        verification_status = db.scalar(
+            select(VerificationStatus).where(
+                VerificationStatus.candidate_id == candidate.id
+            )
+        )
+        if not verification_status:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Beneficiary Employee has not been verified yet",
+            )
+        if not verification_status.is_facial_verified:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary Employee has not been facially verified yet",
+            )
+        if not verification_status.is_otp_verified:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary Employee has not been OTP verified yet",
+            )
+
         issuance_result = await upload_laptop_issuance(
             candidate_id=candidate_id,
             db=db,
-            photo_url=photo_url,
             laptop_serial=laptop_serial,
+            user_id=current_user.id,
         )
         return {"msg": "Laptop issuance recorded successfully", "data": issuance_result}
     except HTTPException:
@@ -437,9 +595,26 @@ async def issue_candidate_laptop(
 
 @router.get("/coupon-details/{coupon_code}", status_code=status.HTTP_200_OK)
 async def get_candidate_by_coupon(
-    coupon_code: str,
+    coupon_code: Annotated[str, Path(...)],
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
 ):
-    res = get_candidate_details_by_coupon_code(coupon_code, db)
-    return {"msg": "Candidate fetched successfully", "data": {"candidate": res}}
+    store = None
+    candidate = get_candidate_details_by_coupon_code(coupon_code, db)
+    if current_user.role == "store_agent":
+        if not candidate.is_candidate_verified:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary Employee is not verified by registration officer yet.",
+            )
+        store = get_store_of_user(db=db, user=current_user)
+        if candidate.store_id != store.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary Employee is not assigned to your store",
+            )
+
+    return {
+        "msg": "Beneficiary Employee fetched successfully",
+        "data": {"candidate": candidate},
+    }

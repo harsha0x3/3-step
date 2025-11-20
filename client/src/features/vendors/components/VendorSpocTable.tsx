@@ -60,7 +60,9 @@ const VendorSpocTable: React.FC<Props> = ({
           return <div className="text-muted-foreground">No Photo</div>;
         return (
           <img
-            src={`${import.meta.env.VITE_API_BASE_API_URL}/uploads/${photo}`}
+            src={`${import.meta.env.VITE_API_BASE_API_URL}${
+              import.meta.env.VITE_RELATIVE_API_URL
+            }/uploads/${photo}`}
             alt="Vendor Spoc"
             className="w-16 h-16 object-cover rounded border"
           />
@@ -69,18 +71,23 @@ const VendorSpocTable: React.FC<Props> = ({
     }),
     columnHelper.display({
       id: "actions",
-      header: currentUserInfo.role === "admin" ? "Actions" : "View Details",
+      header:
+        currentUserInfo.role === "admin" ||
+        currentUserInfo.role === "super_admin"
+          ? "Actions"
+          : "View Details",
       cell: ({ row }) => {
         const vendorSpoc = row.original;
         if (
           currentUserInfo.role === "admin" ||
-          currentUserInfo.role === "verifier"
+          currentUserInfo.role === "super_admin" ||
+          currentUserInfo.role === "registration_officer"
         ) {
           return (
             <div className="flex items-center gap-2">
               <VendorSpocFormDialog
                 vendorSpoc={vendorSpoc}
-                viewOnly={currentUserInfo.role === "verifier"}
+                viewOnly={currentUserInfo.role === "registration_officer"}
               />
             </div>
           );
@@ -96,7 +103,11 @@ const VendorSpocTable: React.FC<Props> = ({
     getCoreRowModel: getCoreRowModel(),
   });
 
-  if (currentUserInfo.role !== "admin" && currentUserInfo.role !== "verifier") {
+  if (
+    currentUserInfo.role !== "admin" &&
+    currentUserInfo.role !== "super_admin" &&
+    currentUserInfo.role !== "registration_officer"
+  ) {
     return <div>You do not have permission to view this content.</div>;
   }
 

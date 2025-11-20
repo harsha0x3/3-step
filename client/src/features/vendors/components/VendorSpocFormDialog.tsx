@@ -93,7 +93,7 @@ const VendorSpocFormDialog: React.FC<Props> = ({
     type: string = "text",
     required = true
   ) => (
-    <div className="grid gap-1">
+    <div className="grid gap-cols-1 sm:grid-cols-2 gap-3">
       <Label htmlFor={name}>{label}</Label>
       <Input
         id={name}
@@ -124,7 +124,11 @@ const VendorSpocFormDialog: React.FC<Props> = ({
         )}
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent
+        className="w-[95vw] max-w-[650px] sm:max-w-[650px] 
+                          h-[90vh] sm:h-[80vh] overflow-auto 
+                          mx-auto"
+      >
         <DialogHeader>
           <DialogTitle>
             {viewOnly ? "View Vendor SPOC" : "Add Vendor SPOC"}
@@ -143,7 +147,7 @@ const VendorSpocFormDialog: React.FC<Props> = ({
           {renderTextInput("full_name", "Full Name")}
           {renderTextInput("contact", "Contact")}
 
-          <div className="grid gap-1">
+          <div className="grid gap-cols-1 sm:grid-cols-2 gap-3">
             <Label htmlFor="photo">Photo</Label>
             <Input
               id="photo"

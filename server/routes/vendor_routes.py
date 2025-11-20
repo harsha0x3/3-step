@@ -26,7 +26,11 @@ async def create_vendor(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
 ):
-    if current_user.role != "admin" and current_user.role != "verifier":
+    if (
+        current_user.role != "admin"
+        and current_user.role != "super_admin"
+        and current_user.role != "registration_officer"
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorised to view all candidates",
@@ -42,7 +46,11 @@ async def get_all_vendors(
     current_user: Annotated[UserOut, Depends(get_current_user)],
     search_term: Annotated[str, Query(...)],
 ):
-    if current_user.role != "admin" and current_user.role != "verifier":
+    if (
+        current_user.role != "admin"
+        and current_user.role != "super_admin"
+        and current_user.role != "registration_officer"
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorised to view all candidates",
@@ -60,7 +68,11 @@ async def create_vendor_spoc(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
 ):
-    if current_user.role != "admin" and current_user.role != "verifier":
+    if (
+        current_user.role != "admin"
+        and current_user.role != "super_admin"
+        and current_user.role != "registration_officer"
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorised to view all candidates",
@@ -80,7 +92,11 @@ async def get_all_vendors_spoc(
     current_user: Annotated[UserOut, Depends(get_current_user)],
     search_term: Annotated[str, Query(...)],
 ):
-    if current_user.role != "admin" and current_user.role != "verifier":
+    if (
+        current_user.role != "admin"
+        and current_user.role != "super_admin"
+        and current_user.role != "registration_officer"
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorised to view all candidates",

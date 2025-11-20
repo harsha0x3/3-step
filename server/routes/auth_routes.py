@@ -7,7 +7,7 @@ from models.schemas.auth_schemas import (
     LoginRequest,
     RegisterRequest,
 )
-from models.users import User
+from models.schemas.auth_schemas import UserOut
 from services.auth.deps import get_current_user
 from sqlalchemy.orm import Session
 
@@ -60,7 +60,30 @@ async def refresh_auth_tokens(
 @router.get("/me")
 def get_me(
     current_user: Annotated[
-        User, Depends(get_current_user), "Fetching logged in user details"
+        UserOut, Depends(get_current_user), "Fetching logged in user details"
     ],
 ):
     return current_user
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout_user(response: Response):
+    # Clear access token
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        path="/",
+    )
+
+    # Clear refresh token
+    response.delete_cookie(
+        key="refresh_token",
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        path="/",
+    )
+
+    return {"detail": "Logged out successfully"}

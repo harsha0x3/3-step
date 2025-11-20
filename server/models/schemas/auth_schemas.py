@@ -4,19 +4,18 @@ from pydantic import BaseModel, EmailStr, ConfigDict
 
 
 class RoleEnum(str, Enum):
+    super_admin = "super_admin"
     admin = "admin"
-    store_personnel = "store_personnel"
-    verifier = "verifier"
+    store_agent = "store_agent"
+    verifier = "registration_officer"
 
 
 class RegisterRequest(BaseModel):
     username: str
     email: EmailStr
     password: str
-    first_name: str | None
-    last_name: str | None
+    full_name: str
     role: RoleEnum
-    enable_mfa: bool = True
 
 
 class LoginRequest(BaseModel):
@@ -55,10 +54,9 @@ class UserOut(BaseModel):
     id: str
     username: str
     email: str
-    first_name: str
-    last_name: str | None = None
+    full_name: str | None = None
     role: str
-    mfa_secret: str | None = None
+    store_id: str | None = None
 
     created_at: datetime | None = None
     updated_at: datetime | None = None

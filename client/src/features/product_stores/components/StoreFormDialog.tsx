@@ -38,12 +38,11 @@ const StoreFormDialog: React.FC<Props> = ({ store }) => {
   } = useForm<NewStorePayload>({
     defaultValues: store
       ? {
-          store_name: store.store_name,
-          store_person_first_name: store.store_person?.first_name ?? "",
-          store_person_last_name: store.store_person?.last_name ?? "",
-          email: store.email ?? "",
-          contact_number: store.contact_number ?? "",
+          name: store.name,
+          city: store.city ?? "",
           address: store.address ?? "",
+          email: store.email ?? "",
+          mobile_number: store.mobile_number ?? "",
         }
       : {},
   });
@@ -89,7 +88,11 @@ const StoreFormDialog: React.FC<Props> = ({ store }) => {
         )}
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent
+        className="w-[95vw] max-w-[650px] sm:max-w-[650px] 
+                          h-[90vh] sm:h-[80vh] overflow-auto 
+                          mx-auto"
+      >
         <DialogHeader>
           <DialogTitle>
             {isEditMode ? "Edit Store Details" : "Add a New Store"}
@@ -97,89 +100,71 @@ const StoreFormDialog: React.FC<Props> = ({ store }) => {
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
-          {/* Store Name */}
-          <div className="grid gap-1">
-            <Label htmlFor="store_name">Store Name</Label>
+          {/* Store City */}
+          <div className="grid grid-cols-2 gap-2">
+            <Label htmlFor="store_city">City</Label>
             <Input
-              id="store_name"
-              {...register("store_name", {
-                required: "Store name is required",
+              id="store_city"
+              {...register("city", {
+                required: "First name is required",
               })}
             />
-            {errors.store_name && (
+            {errors.city && (
               <span className="text-sm text-red-500">
-                {errors.store_name.message}
+                {errors.city.message}
               </span>
             )}
           </div>
 
-          {/* Store Person First & Last Name */}
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label htmlFor="store_person_first_name">First Name</Label>
-              <Input
-                id="store_person_first_name"
-                {...register("store_person_first_name", {
-                  required: "First name is required",
-                })}
-              />
-              {errors.store_person_first_name && (
-                <span className="text-sm text-red-500">
-                  {errors.store_person_first_name.message}
-                </span>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="store_person_last_name">Last Name</Label>
-              <Input
-                id="store_person_last_name"
-                {...register("store_person_last_name", {
-                  required: "Last name is required",
-                })}
-              />
-              {errors.store_person_last_name && (
-                <span className="text-sm text-red-500">
-                  {errors.store_person_last_name.message}
-                </span>
-              )}
-            </div>
+          {/* Store Name */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Label htmlFor="name">Store Name</Label>
+            <Input
+              id="name"
+              {...register("name", {
+                required: "Store name is required",
+              })}
+            />
+            {errors.name && (
+              <span className="text-sm text-red-500">
+                {errors.name.message}
+              </span>
+            )}
           </div>
 
-          {/* Email */}
-          <div className="grid gap-1">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              {...register("email", { required: "Email is required" })}
-            />
+          {/* Address */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Label htmlFor="address">Address</Label>
+            <Input id="address" {...register("address", { required: true })} />
+            {errors.address && (
+              <span className="text-sm text-red-500">
+                {errors.address.message}
+              </span>
+            )}
+          </div>
+
+          {/* Store Email */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Label htmlFor="address">Email</Label>
+            <Input id="email" {...register("email", { required: true })} />
             {errors.email && (
               <span className="text-sm text-red-500">
                 {errors.email.message}
               </span>
             )}
           </div>
-
-          {/* Contact Number */}
-          <div className="grid gap-1">
-            <Label htmlFor="store_contact_number">Contact Number</Label>
+          {/* Store Mobile_number */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Label htmlFor="address">Mobile Number</Label>
             <Input
-              id="store_contact_number"
-              {...register("contact_number", {
-                required: "Contact number is required",
-              })}
+              id="mobile_number"
+              {...register("mobile_number", { required: true })}
             />
-            {errors.contact_number && (
+            {errors.mobile_number && (
               <span className="text-sm text-red-500">
-                {errors.contact_number.message}
+                {errors.mobile_number.message}
               </span>
             )}
-          </div>
-
-          {/* Address */}
-          <div className="grid gap-1">
-            <Label htmlFor="address">Address</Label>
-            <Input id="address" {...register("address", { required: true })} />
           </div>
 
           <DialogFooter className="pt-4">

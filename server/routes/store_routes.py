@@ -11,7 +11,9 @@ from controllers.store_controller import (
     get_all_stores,
     update_store_details,
     get_store_of_user,
+    add_store_agent,
 )
+from models.schemas.auth_schemas import RegisterRequest
 from typing import Annotated, Literal
 from models.schemas.auth_schemas import UserOut
 
@@ -31,7 +33,7 @@ async def create_store(
     Create a new store with a unique store_id.
     Retries automatically if ID collision occurs.
     """
-    if current_user.role != "admin":
+    if current_user.role != "admin" and current_user.role != "super_admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorised to add store"
         )
@@ -44,7 +46,7 @@ async def list_stores(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
     search_by: Annotated[
-        Literal["id", "store_name"] | None,
+        Literal["id", "name"] | None,
         Query(title="Search stores By"),
     ] = None,
     search_term: Annotated[str | None, Query(title="Search stores Term")] = None,
@@ -52,10 +54,14 @@ async def list_stores(
     """
     Retrieve all stores.
     Optional query parameters:
-        - search_by: "store_id" or "store_name"
+        - search_by: "store_id" or "name"
         - search_term: partial match text
     """
-    if current_user.role != "admin":
+    if (
+        current_user.role != "admin"
+        and current_user.role != "super_admin"
+        and current_user.role != "registration_officer"
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorised to add store"
         )
@@ -84,13 +90,32 @@ async def update_store(
     Update a store's details.
     Only admin can update stores.
     """
-    if current_user.role != "admin":
+    if current_user.role != "admin" and current_user.role != "super_admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorised to update store",
         )
 
-    updated_store = update_store_details(
-        store_id, payload.model_dump(exclude_unset=True, exclude_none=True), db
-    )
+    updated_store = update_store_details(store_id, payload, db)
     return {"msg": "Store updated successfully", "data": updated_store}
+
+
+@router.patch("/{store_id}", status_code=status.HTTP_200_OK)
+async def add_new_store_agent(
+    store_id: str,
+    payload: Annotated[RegisterRequest, "Details of store employee"],
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+):
+    """
+    Update a store's details.
+    Only admin can update stores.
+    """
+    if current_user.role != "admin" and current_user.role != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorised to update store",
+        )
+
+    new_store_agent = add_store_agent(store_id, payload, db)
+    return {"msg": "Store updated successfully", "data": new_store_agent}

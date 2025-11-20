@@ -18,20 +18,27 @@ const ProtectedLayout: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) {
+      navigate("/login");
+      console.log("NOT LOGGED IN");
+      return;
+    }
 
     switch (currentUserRole) {
       case "admin":
         navigate("/admin/stores", { state: { from: location }, replace: true });
         break;
+      case "super_admin":
+        navigate("/admin/stores", { state: { from: location }, replace: true });
+        break;
 
-      case "store_personnel":
+      case "store_agent":
         navigate("/store/candidates", {
           state: { from: location },
           replace: true,
         });
         break;
-      case "verifier":
+      case "registration_officer":
         navigate("/verifier/candidates", {
           state: { from: location },
           replace: true,

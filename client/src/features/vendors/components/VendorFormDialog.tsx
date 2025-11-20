@@ -66,7 +66,7 @@ const VendorFormDialog: React.FC<Props> = ({ vendor, viewOnly = false }) => {
     type: string = "text",
     required = true
   ) => (
-    <div className="grid gap-1">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <Label htmlFor={name}>{label}</Label>
       <Input
         id={name}
@@ -98,7 +98,11 @@ const VendorFormDialog: React.FC<Props> = ({ vendor, viewOnly = false }) => {
         )}
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent
+        className="w-[95vw] max-w-[650px] sm:max-w-[650px] 
+                          overflow-auto 
+                          mx-auto"
+      >
         <DialogHeader>
           <DialogTitle>
             {viewOnly

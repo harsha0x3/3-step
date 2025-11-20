@@ -12,17 +12,22 @@ import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import VerifyCoupon from "../components/VerifyCoupon";
 import CandidateDetailsSection from "@/features/candidates/components/CandidateDetails";
 import { CheckCheckIcon, XCircleIcon } from "lucide-react";
 import type { CandidateItemWithStore } from "@/features/candidates/types";
 import LaptopIssuanceForm from "../components/LaptopIssuanceForm";
+import { useSearchParams } from "react-router-dom";
 
 const CandidateVerification: React.FC = () => {
   const [candidate, setCandidate] = useState<CandidateItemWithStore | null>(
     null
   );
   const [couponCode, setCouponCode] = useState<string>("");
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const couponCodeParam = searchParams.get("coupon") || "";
+  const step = searchParams.get("step") || "start";
 
   // const [
   //   fetchCandidate,
@@ -38,101 +43,126 @@ const CandidateVerification: React.FC = () => {
     { data: candidateVerificationStatus, isLoading },
   ] = useLazyGetCandidateVerificationStatusQuery();
 
-  const getCandidate = async () => {
-    try {
-      // Get the candidate directly from the response
-      const result = await fetchCandidateByCoupon({
-        couponCode: couponCode,
-      }).unwrap();
-      setCandidate(result?.data?.candidate);
+  const backendStep = (status: any): string => {
+    console.log("RECIVED STATUS", status);
+    if (!status.is_facial_verified) return "facial";
+    if (status.is_facial_verified && !status.is_otp_verified) return "otp";
+    if (status.is_facial_verified && status.is_otp_verified) return "issue";
+    return "details";
+  };
 
-      const candidateIdFromResult = result?.data?.candidate?.id;
+  useEffect(() => {
+    if (!couponCodeParam) return;
 
-      if (candidateIdFromResult) {
-        await fetchVerificationStatus(candidateIdFromResult);
-      } else {
-        toast.error("Candidate not found");
+    const fetchCandidate = async () => {
+      try {
+        const result = await fetchCandidateByCoupon({
+          couponCode: couponCodeParam,
+        }).unwrap();
+        const cand = result?.data?.candidate;
+
+        if (!cand) {
+          toast.error("Candidate not found");
+          return;
+        }
+
+        setCandidate(cand);
+        await fetchVerificationStatus(cand.id).unwrap();
+
+        // sync URL to backend truth
+        setSearchParams({ coupon: couponCodeParam, step: "details" });
+      } catch (err: any) {
+        toast.error(
+          err?.data?.detail?.msg ??
+            err?.data?.detail ??
+            "Failed to fetch candidate"
+        );
       }
-    } catch (err: any) {
-      const errMsg: string =
-        err?.data?.detail?.msg ?? err?.data?.detail ?? "Error verifying face";
+    };
 
-      const errDesc = err?.data?.detail?.msg
-        ? err?.data?.detail?.err_stack
-        : "";
-      toast.error(errMsg, { description: errDesc });
-    }
+    fetchCandidate();
+  }, [couponCodeParam]);
+
+  const handleSubmitCoupon = () => {
+    setSearchParams({ coupon: couponCode, step: "fetching" });
   };
 
   useEffect(() => {
     console.log("CANDIDATE DETAILS", candidateDetails);
   }, [candidateDetails]);
 
-  const getCandidateVerificationStatus = async () => {
-    try {
-      if (candidateDetails) {
-        // Then trigger the second query
-        await fetchVerificationStatus(candidate?.id);
-      } else {
-        toast.error("Candidate not found");
-      }
-    } catch (err: any) {
-      const errMsg: string =
-        err?.data?.detail?.msg ?? err?.data?.detail ?? "Error verifying face";
+  const renderStepComponent = () => {
+    if (!candidate) return null;
 
-      const errDesc = err?.data?.detail?.msg
-        ? err?.data?.detail?.err_stack
-        : "";
-      toast.error(errMsg, { description: errDesc });
+    switch (step) {
+      case "facial":
+        return (
+          <FacialRecognition
+            candidateId={candidate.id}
+            onSuccess={handleStepCompleted}
+          />
+        );
+
+      case "otp":
+        return (
+          <OtpVerification
+            candidateId={candidate.id}
+            onSuccess={handleStepCompleted}
+          />
+        );
+
+      case "issue":
+        return (
+          <LaptopIssuanceForm
+            candidateId={candidate.id}
+            onSuccess={handleStepCompleted}
+          />
+        );
+
+      default:
+        return null;
     }
   };
 
-  const renderVerificationStep = () => {
-    const status = candidateVerificationStatus?.data;
-
-    if (!status) return null;
-
-    switch (true) {
-      case status.is_facial_verified === false:
-        return <FacialRecognition candidateId={candidate?.id} />;
-
-      case status.is_otp_verified === false:
-        return <OtpVerification candidateId={candidate?.id} />;
-
-      case status.is_coupon_verified === false:
-        return <VerifyCoupon candidateId={candidate?.id} />;
-
-      case status.is_facial_verified &&
-        status.is_otp_verified &&
-        status.is_coupon_verified:
-        return <LaptopIssuanceForm candidateId={candidate?.id} />;
-
-      default:
-        return <div>Error Refresh The page</div>;
+  const handleStepCompleted = async () => {
+    if (!candidate) {
+      console.log("CANDIDATE NOT FOUND");
+      return;
     }
+
+    console.log("INSIDE ONSUCCESS()");
+    const status = await fetchVerificationStatus(candidate.id).unwrap();
+    const nextStep = backendStep(status.data);
+
+    setSearchParams({ coupon: couponCodeParam, step: nextStep });
+  };
+
+  const resetFlow = () => {
+    setSearchParams({});
+    setCandidate(null);
+    setCouponCode("");
   };
 
   if (candidate && candidate.issued_status === "issued") {
-    return <div>Candidate already recieved the laptop</div>;
+    return <div>Candidate recieved the laptop successfully</div>;
   }
 
   return (
     <div className="w-full mt-3 space-y-6">
-      <div className="flex justify-between items-center px-2">
+      <div className="flex flex-col md:flex-row justify-between items-center px-2">
         <div className="flex gap-3 items-center">
           <h1 className="text-2xl font-bold text-center ">
             Laptop Issuance Verification
           </h1>
           <Button
             onClick={() => {
-              setCandidate(null);
-              setCouponCode("");
+              resetFlow();
             }}
           >
             Verify new Candidate
           </Button>
         </div>
-        {candidateVerificationStatus && (
+        {candidate && candidateVerificationStatus && (
           <div className="flex gap-2 items-center">
             <h2>Status: </h2>
             <div className="flex gap-1">
@@ -165,37 +195,60 @@ const CandidateVerification: React.FC = () => {
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-2 w-full items-center justify-center">
-        {candidate && renderVerificationStep()}
-        <div>
+      <div className="flex flex-col lg:flex-row gap-2 w-full items-center justify-center">
+        {/* Step rendering */}
+        {step !== "details" && candidate && renderStepComponent()}
+
+        {/* Candidate Details */}
+        <div className="w-full">
           {candidateDetails && candidate && (
-            <div className="h-[500px] w-[600px] overflow-auto">
+            <div className="flex flex-col md:flex-row md:items-end md:gap-3">
               <CandidateDetailsSection candidate={candidate} />
+
+              {step === "details" && (
+                <Button
+                  className="mt-4"
+                  onClick={async () => {
+                    const status = await fetchVerificationStatus(
+                      candidate.id
+                    ).unwrap();
+                    const nextStep = backendStep(status.data);
+                    console.log("🍜🍜", nextStep);
+                    setSearchParams({
+                      coupon: couponCodeParam,
+                      step: nextStep,
+                    });
+                  }}
+                >
+                  Proceed to Verification
+                </Button>
+              )}
             </div>
           )}
         </div>
-        <div>
-          {!candidate && (
-            <div className="flex flex-col gap-2">
-              <Label>Enter Coupon Code</Label>
-              <Input
-                type="text"
-                placeholder="Candidate's Coupon Code"
-                value={couponCode}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  setCouponCode(e.target.value);
-                }}
-              />
-              <Button
-                onClick={getCandidate}
-                className="mt-2"
-                disabled={couponCode.trim() === ""}
-              >
-                Get Cadidate
-              </Button>
-            </div>
-          )}
-        </div>
+      </div>
+
+      <div>
+        {!candidate && (
+          <div className="flex flex-col gap-2 w-1/2">
+            <Label>Enter Coupon Code</Label>
+            <Input
+              type="text"
+              placeholder="Candidate's Coupon Code"
+              value={couponCode}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setCouponCode(e.target.value);
+              }}
+            />
+            <Button
+              onClick={handleSubmitCoupon}
+              className="mt-2"
+              disabled={couponCode.trim() === ""}
+            >
+              Get Cadidate
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

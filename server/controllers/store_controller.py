@@ -2,95 +2,32 @@ from models.schemas.store_schemas import (
     AddNewStore,
     StoreSearchParams,
     StoreItemWithUser,
+    StoreItemOut,
+    UpdateStorePayload,
 )
-from utils.helpers import generate_readable_id
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
 from models.stores import Store
 from models.users import User
-from models.schemas.auth_schemas import UserOut
-from services.auth.utils import build_otpauth_uri
-from sqlalchemy.exc import IntegrityError
-import time
+from models.schemas.auth_schemas import UserOut, RegisterRequest
 
 MAX_RETRIES = 3
 
 
 def add_new_store(payload: AddNewStore, db: Session):
     try:
-        existing_user = db.scalar(select(User).where(User.email == payload.email))
-        if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Store with the email already exists",
-            )
-        new_store_password = "Password@123"
-        new_store_in_user = User(
-            username=payload.store_name,
-            email=payload.email,
-            first_name=payload.store_person_first_name,
-            last_name=payload.store_person_last_name,
-            role="store_personnel",
-            mfa_enabled=True,
-        )
-        new_store_in_user.set_password(new_store_password)
-        recovery_codes = new_store_in_user.enable_mfa()
-        mfa_uri = new_store_in_user.get_mfa_uri()
-
-        db.add(new_store_in_user)
+        new_store = Store(**payload.model_dump(exclude_none=True))
+        db.add(new_store)
         db.commit()
-        db.refresh(new_store_in_user)
+        db.refresh(new_store)
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"msg": "Error creating credentials for store", "err_stack": str(e)},
+            detail={"msg": "Error Adding store", "err_stack": str(e)},
         )
-
-    for attempt in range(MAX_RETRIES):
-        try:
-            store_id = generate_readable_id("STORE")
-            new_store = Store(
-                store_name=payload.store_name,
-                id=store_id,
-                contact_person_id=new_store_in_user.id,
-                contact_number=payload.contact_number,
-                email=new_store_in_user.email,
-                address=payload.address,
-            )
-
-            db.add(new_store)
-            db.commit()
-            db.refresh(new_store)
-            return {
-                "store": new_store,
-                "store_credentials": UserOut.model_validate(new_store_in_user),
-            }
-
-        except IntegrityError as e:
-            db.rollback()
-
-            if "Duplicate entry" in str(e.orig) and "id" in str(e.orig):
-                if attempt < MAX_RETRIES - 1:
-                    time.sleep(0.1)
-                    continue
-                else:
-                    raise HTTPException(
-                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail="Failed to generate unique store ID after several attempts",
-                    )
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Database error: {str(e)}",
-                )
-
-        except Exception as e:
-            db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error adding new store: {str(e)}",
-            )
 
 
 async def get_all_stores(db: Session, params: StoreSearchParams | None = None):
@@ -100,43 +37,33 @@ async def get_all_stores(db: Session, params: StoreSearchParams | None = None):
         if params and params.search_by and params.search_term:
             if params.search_by.lower() == "id":
                 query = query.where(Store.id.ilike(f"%{params.search_term}%"))
-            elif params.search_by.lower() == "store_name":
-                query = query.where(Store.store_name.ilike(f"%{params.search_term}%"))
+            elif params.search_by.lower() == "name":
+                query = query.where(Store.name.ilike(f"%{params.search_term}%"))
             else:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Invalid search_by value: {params.search_by}. Must be 'store_id' or 'store_name'.",
+                    detail=f"Invalid search_by value: {params.search_by}. Must be 'store_id' or 'name'.",
                 )
 
         stores = db.scalars(query).all()
         result = []
         for store in stores:
+            store_agents = []
+            if store.store_agents:
+                for agent in store.store_agents:
+                    store_agents.append(UserOut.model_validate(agent))
             result.append(
                 StoreItemWithUser(
-                    store_name=store.store_name,
                     id=store.id,
-                    contact_number=store.contact_number,
-                    email=store.email,
+                    name=store.name,
+                    city=store.city,
                     address=store.address,
-                    store_person=UserOut(
-                        id=store.store_person.id,
-                        username=store.store_person.username,
-                        email=store.store_person.email,
-                        first_name=store.store_person.first_name,
-                        last_name=store.store_person.last_name,
-                        role=store.store_person.role,
-                        mfa_secret=build_otpauth_uri(
-                            secret=store.store_person.mfa_secret,
-                            email=store.store_person.email,
-                            issuer="Laptop Distribution",
-                        ),
-                        created_at=store.store_person.created_at,
-                        updated_at=store.store_person.updated_at,
-                    )
-                    if store.store_person
-                    else None,
+                    mobile_number=store.mobile_number,
+                    email=store.email,
+                    store_agents=store_agents,
                 )
             )
+
         return result
 
     except Exception as e:
@@ -148,12 +75,13 @@ async def get_all_stores(db: Session, params: StoreSearchParams | None = None):
 
 def get_store_of_user(db: Session, user: UserOut):
     try:
-        store = db.scalar(select(Store).where(Store.contact_person_id == user.id))
+        store_id = user.store_id
+        store = db.get(Store, store_id)
         if not store:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Store not found"
             )
-        return store
+        return StoreItemOut.model_validate(store)
     except HTTPException:
         raise
     except Exception as e:
@@ -163,7 +91,7 @@ def get_store_of_user(db: Session, user: UserOut):
         )
 
 
-def update_store_details(store_id: str, payload: dict, db: Session):
+def update_store_details(store_id: str, payload: UpdateStorePayload, db: Session):
     """
     Update existing store details.
     Ignores updates to immutable fields (like store_id).
@@ -178,26 +106,10 @@ def update_store_details(store_id: str, payload: dict, db: Session):
             detail="Store not found",
         )
 
-    restricted_fields = ["id"]
-    payload = {k: v for k, v in payload.items() if k not in restricted_fields}
-
-    if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No editable fields provided for update.",
-        )
-
     try:
-        # Check if updating email → ensure uniqueness
-        if "email" in payload:
-            existing = db.scalar(select(Store).where(Store.email == payload["email"]))
-            if existing and existing.id != store.id:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="Another store already uses this email.",
-                )
-
-        for field, value in payload.items():
+        for field, value in payload.model_dump(
+            exclude_none=True, exclude_unset=True
+        ).items():
             if hasattr(store, field):
                 setattr(store, field, value)
 
@@ -205,15 +117,7 @@ def update_store_details(store_id: str, payload: dict, db: Session):
         db.commit()
         db.refresh(store)
 
-        return {
-            "store": {
-                "id": store.id,
-                "store_name": store.store_name,
-                "contact_number": store.contact_number,
-                "email": store.email,
-                "address": store.address,
-            }
-        }
+        return StoreItemOut.model_validate(store)
 
     except HTTPException:
         raise
@@ -222,4 +126,50 @@ def update_store_details(store_id: str, payload: dict, db: Session):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error updating store: {str(e)}",
+        )
+
+
+def add_store_agent(store_id: str, payload: RegisterRequest, db: Session):
+    try:
+        store = db.get(Store, store_id)
+        if not store:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Store not found",
+            )
+        new_store_agent = User(
+            username=payload.username,
+            email=payload.email,
+            full_name=payload.full_name,
+            role=payload.role,
+        )
+        new_store_agent.set_password(payload.password)
+        db.add(new_store_agent)
+        db.commit()
+        db.refresh(new_store_agent)
+
+        return UserOut.model_validate(new_store_agent)
+
+    except IntegrityError as e:
+        db.rollback()
+        error_message = str(e.orig)
+        if "Duplicate entry" in error_message:
+            if ".email" in error_message:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email address already exists",
+                )
+            if ".username" in error_message:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="username already exists",
+                )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"AGENT ADD ERR - {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error adding a store agent. Try again",
         )

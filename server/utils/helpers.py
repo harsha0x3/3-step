@@ -11,7 +11,6 @@ load_dotenv()
 
 BASE_SERVER_DIR = os.getenv("BASE_SERVER_DIR", "")
 BASE_CANDIDATE_IMG_PATH = os.path.join(BASE_SERVER_DIR, "uploads", "candidates_picture")
-BASE_PARENT_IMG_PATH = os.path.join(BASE_SERVER_DIR, "uploads", "parent_pictures")
 BASE_UPLOAD_DIR = os.path.join(BASE_SERVER_DIR, "uploads")
 
 
@@ -20,7 +19,6 @@ BASE_STORE_CANDIDATE_UPLOADS = os.path.join(
 )
 os.makedirs(BASE_CANDIDATE_IMG_PATH, exist_ok=True)
 os.makedirs(BASE_STORE_CANDIDATE_UPLOADS, exist_ok=True)
-os.makedirs(BASE_PARENT_IMG_PATH, exist_ok=True)
 
 
 def generate_readable_id(prefix: str) -> str:
@@ -47,21 +45,19 @@ async def save_image_file(
     photo: UploadFile,
     candidate_id: str | None = None,
     isVerify: bool = False,
-    isParent: bool = False,
     isLaptopIssuance: bool = False,
 ):
+    store_name = store_id if store_id else "no_store"
     try:
-        if isParent:
-            upload_img_dir = os.path.join(BASE_PARENT_IMG_PATH)
-        elif isLaptopIssuance:
+        if isLaptopIssuance:
             upload_img_dir = os.path.join(
-                BASE_SERVER_DIR, "uploads", "laptop_issuance", store_id
+                BASE_SERVER_DIR, "uploads", "laptop_issuance", store_name
             )
         else:
             upload_img_dir = (
-                os.path.join(BASE_STORE_CANDIDATE_UPLOADS, store_id)
+                os.path.join(BASE_STORE_CANDIDATE_UPLOADS, store_name)
                 if isVerify
-                else os.path.join(BASE_CANDIDATE_IMG_PATH, store_id)
+                else os.path.join(BASE_CANDIDATE_IMG_PATH, store_name)
             )
         os.makedirs(upload_img_dir, exist_ok=True)
 
@@ -95,11 +91,17 @@ async def save_image_file(
         with open(norm_uploaded_img_path, "wb") as f:
             f.write(contents)
 
-        return norm_uploaded_img_path
+        print(
+            f"RELATIVE PATH OF VERIFY PIC - {get_relative_upload_path(norm_uploaded_img_path)}"
+        )
+
+        return get_relative_upload_path(norm_uploaded_img_path)
 
     except HTTPException:
         raise
     except Exception as e:
+        print("SAVE IMG ERR")
+        print(e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"msg": "Error saving the image", "err_stack": str(e)},
@@ -139,7 +141,54 @@ async def save_vendor_spoc_img(photo: UploadFile):
         with open(norm_uploaded_img_path, "wb") as f:
             f.write(contents)
 
-        return norm_uploaded_img_path
+        return get_relative_upload_path(norm_uploaded_img_path)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"msg": "Error saving the image", "err_stack": str(e)},
+        )
+
+
+async def save_aadhar_photo(photo: UploadFile, candidate_id: str):
+    try:
+        upload_img_dir = os.path.join(BASE_UPLOAD_DIR, "aadhar")
+        os.makedirs(upload_img_dir, exist_ok=True)
+
+        valid_mime_types = [
+            "image/jpeg",
+            "image/jpg",
+            "image/png",
+            "image/gif",
+            "image/webp",
+        ]
+        if photo.content_type not in valid_mime_types:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid image format. Allowed formats: JPEG, PNG, GIF, WEBP.",
+            )
+
+        # Read file content
+        contents = await photo.read()
+        if not photo.filename:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Uploaded file must have a filename.",
+            )
+
+        ext = photo.filename.split(".")[-1].lower()
+
+        filename = f"{candidate_id}_aadhar.{ext}"
+
+        uploaded_img_path = os.path.join(upload_img_dir, filename)
+        norm_uploaded_img_path = normalize_path(uploaded_img_path)
+
+        with open(norm_uploaded_img_path, "wb") as f:
+            f.write(contents)
+
+        return get_relative_upload_path(norm_uploaded_img_path)
 
     except HTTPException:
         raise
@@ -172,5 +221,5 @@ def get_relative_upload_path(full_path: str) -> str:
 
 
 def generate_coupon() -> str:
-    chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    return "".join(random.choices(chars, k=6))
+    chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+    return "".join(random.choices(chars, k=8))

@@ -6,8 +6,7 @@ const initialState: AuthState = {
   id: null,
   username: null,
   email: null,
-  first_name: null,
-  last_name: null,
+  full_name: null,
   role: null,
   isAuthenticated: false,
   isLoading: false,
@@ -28,22 +27,19 @@ const authSlice = createSlice({
       state.username = user.username ?? state.username;
       state.id = user.id ?? state.id;
       state.role = user.role ?? state.role;
-      state.last_name = user.last_name ?? state.last_name;
-      state.first_name = user.first_name ?? state.first_name;
+      state.full_name = user.full_name ?? state.full_name;
       state.email = user.email ?? state.email;
       state.isAuthenticated = true;
       state.isLoading = false;
       state.error = null;
     },
     registerSuccess: (state, action) => {
-      const { username, role, first_name, last_name, email, id } =
-        action.payload;
+      const { username, role, full_name, email, id } = action.payload;
 
       state.username = username ?? state.username;
       state.role = role ?? state.role;
       state.id = id ?? state.id;
-      state.last_name = last_name ?? state.last_name;
-      state.first_name = first_name ?? state.first_name;
+      state.full_name = full_name ?? state.full_name;
       state.email = email ?? state.email;
       state.isAuthenticated = true;
       state.isLoading = false;
@@ -51,11 +47,10 @@ const authSlice = createSlice({
     },
 
     updateUser: (state, action: PayloadAction<Partial<AuthState>>) => {
-      const { username, role, first_name, last_name, email } = action.payload;
+      const { username, role, full_name, email } = action.payload;
       state.username = username ?? state.username;
       state.role = role ?? state.role;
-      state.last_name = last_name ?? state.last_name;
-      state.first_name = first_name ?? state.first_name;
+      state.full_name = full_name ?? state.full_name;
       state.email = email ?? state.email;
     },
 

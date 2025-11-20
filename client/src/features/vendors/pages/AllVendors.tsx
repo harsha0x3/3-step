@@ -16,7 +16,9 @@ const AllVendors: React.FC = () => {
     { searchTerm: "" },
     {
       skip:
-        currentUserInfo.role !== "admin" && currentUserInfo.role !== "verifier",
+        currentUserInfo.role !== "admin" &&
+        currentUserInfo.role !== "super_admin" &&
+        currentUserInfo.role !== "registration_officer",
     }
   );
 
@@ -28,7 +30,7 @@ const AllVendors: React.FC = () => {
 
   const vendorsList = vendorsData?.data ?? [];
 
-  if (currentUserInfo.role === "store_personnel") {
+  if (currentUserInfo.role === "store_agent") {
     return null;
   }
 

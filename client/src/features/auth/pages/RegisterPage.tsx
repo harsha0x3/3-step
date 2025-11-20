@@ -22,9 +22,8 @@ const RegisterPage: React.FC = () => {
     username: "",
     email: "",
     password: "",
-    first_name: "",
-    last_name: "",
-    role: "user",
+    full_name: "",
+    role: "",
   });
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [passwordsMatch, setPasswordsMatch] = useState<boolean>(true);
@@ -72,25 +71,14 @@ const RegisterPage: React.FC = () => {
             <div className="flex flex-col gap-6">
               <div className="flex gap-2">
                 <div className="grid gap-2">
-                  <Label htmlFor="email">First Name</Label>
+                  <Label htmlFor="email">Full Name</Label>
                   <Input
-                    id="first_name"
+                    id="full_name"
                     type="text"
-                    placeholder="First Name"
-                    value={formData.first_name}
+                    placeholder="Full Name"
+                    value={formData.full_name}
                     onChange={handleChange}
                     required
-                    disabled={isRegistering}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Last Name</Label>
-                  <Input
-                    id="last_name"
-                    type="text"
-                    placeholder="Last Name"
-                    value={formData.last_name}
-                    onChange={handleChange}
                     disabled={isRegistering}
                   />
                 </div>
@@ -99,7 +87,7 @@ const RegisterPage: React.FC = () => {
                 <Label>Role</Label>
                 <RadioGroup
                   className="w-full max-w-96 gap-3 rounded-md flex justify-between"
-                  defaultValue={"store_personnel"}
+                  defaultValue={"store_agent"}
                   value={formData.role} // bind to state
                   onValueChange={(value: RegisterPayload["role"]) =>
                     setFormData((prev) => ({ ...prev, role: value }))
@@ -107,21 +95,22 @@ const RegisterPage: React.FC = () => {
                   disabled={isRegistering}
                 >
                   <div
-                    key="role-store_personnel"
+                    key="role-store_agent"
                     className="flex-1 border-input has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent relative flex flex-col border px-4 py-2 outline-none rounded-md has-data-[state=checked]:z-10"
                   >
                     <div className="flex items-center gap-2">
                       <RadioGroupItem
-                        id="role-store_personnel"
-                        value={"store_personnel"}
+                        id="role-store_agent"
+                        value={"store_agent"}
                         disabled={isRegistering}
                       />
-                      <Label htmlFor="role-store_personnel">
-                        Store Personnel
-                      </Label>
+                      <Label htmlFor="role-store_agent">Store Agent</Label>
                     </div>
                   </div>
-                  <div className="flex-1 border-input has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent relative flex flex-col border px-4 py-2 outline-none rounded-md has-data-[state=checked]:z-10">
+                  <div
+                    key="role-admin"
+                    className="flex-1 border-input has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent relative flex flex-col border px-4 py-2 outline-none rounded-md has-data-[state=checked]:z-10"
+                  >
                     <div className="flex items-center gap-2">
                       <RadioGroupItem
                         id="role-admin"
@@ -129,6 +118,19 @@ const RegisterPage: React.FC = () => {
                         disabled={isRegistering}
                       />
                       <Label htmlFor="role-admin">Admin</Label>
+                    </div>
+                  </div>
+                  <div
+                    key="role-super_admin"
+                    className="flex-1 border-input has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent relative flex flex-col border px-4 py-2 outline-none rounded-md has-data-[state=checked]:z-10"
+                  >
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem
+                        id="role-super_admin"
+                        value={"super_admin"}
+                        disabled={isRegistering}
+                      />
+                      <Label htmlFor="role-super_admin">Super Admin</Label>
                     </div>
                   </div>
                 </RadioGroup>

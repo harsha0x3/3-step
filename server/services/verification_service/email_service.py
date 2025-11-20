@@ -98,7 +98,6 @@ async def send_otp_email(email_payload: CandidateInOtp) -> dict[str, Any] | None
                     <strong>Store</strong><br/>
                     {email_payload.store_name}<br/>
                     {email_payload.store_address_line}<br/>
-                    {email_payload.store_city}, {email_payload.store_state}
                   </td>
                   <td style="vertical-align:top;padding-left:12px;font-size:13px;color:#666666;">
                     <strong>Support</strong><br/>

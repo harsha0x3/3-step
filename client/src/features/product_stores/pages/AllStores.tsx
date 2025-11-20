@@ -16,13 +16,18 @@ const AllStores: React.FC = () => {
     isLoading: isFetchingStores,
     error: storesFetchError,
   } = useGetAllStoresQuery(
-    { searchBy: "store_name", searchTerm: "" },
+    { searchBy: "name", searchTerm: "" },
     {
-      skip: currentUserInfo.role !== "admin",
+      skip:
+        currentUserInfo.role !== "admin" &&
+        currentUserInfo.role !== "super_admin",
     }
   );
 
-  if (currentUserInfo.role !== "admin") {
+  if (
+    currentUserInfo.role !== "admin" &&
+    currentUserInfo.role !== "super_admin"
+  ) {
     navigate("/");
   }
   console.log("ALL STORES DATA", allStoresData);

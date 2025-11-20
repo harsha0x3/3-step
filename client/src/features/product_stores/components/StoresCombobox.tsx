@@ -23,15 +23,15 @@ import {
 type StoresComboboxProps = {
   value?: string; // current store id
   onChange?: (store: StoreItemWithUser) => void; // callback when store selected
-  disabled?: boolean;
+  isDisabled?: boolean;
 };
 
 const StoresCombobox: React.FC<StoresComboboxProps> = ({
   value,
   onChange,
-  disabled = false,
+  isDisabled = false,
 }) => {
-  const [searchBy, serSearchBy] = useState<string>("store_name");
+  const [searchBy, setSearchBy] = useState<string>("name");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchInput, setSearchInput] = useState<string>("");
   const [open, setOpen] = useState(false);
@@ -52,7 +52,9 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
     { searchBy, searchTerm },
     {
       skip:
-        currentUserInfo.role !== "admin" && currentUserInfo.role !== "verifier",
+        currentUserInfo.role !== "admin" &&
+        currentUserInfo.role !== "super_admin" &&
+        currentUserInfo.role !== "registration_officer",
     }
   );
 
@@ -69,34 +71,41 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
   return (
     <div className="w-full max-w-sm space-y-2">
       <Label htmlFor={selectedStore?.id ?? "selected-store"}>Stores</Label>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={isDisabled ? false : open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             id={selectedStore?.id ?? "selected-store"}
             variant={"outline"}
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between h-16"
+            disabled={isDisabled}
+            className="w-[95vw] sm:w-[340px] max-w-[340px] h-16 justify-between"
           >
             {selectedStore ? (
-              <div className="felx flex-col gap-1">
-                <p className="text-md">{selectedStore.store_name}</p>
-                <p className="text-sm">{selectedStore.address}</p>
-                <p className="text-sm">{selectedStore.contact_number}</p>
+              <div className="flex flex-col text-left overflow-hidden">
+                <p className="text-md truncate">{selectedStore.name}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {selectedStore.address}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {selectedStore.city}
+                </p>
               </div>
             ) : (
-              <div>Select a store</div>
+              <span>Select a store</span>
             )}
-            <ChevronsUpDownIcon className="h-4 w-4" />
+
+            <ChevronsUpDownIcon className="h-4 w-4 shrink-0 ml-2" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[300px] p-0">
+        <PopoverContent className="w-[95vw] sm:w-[340px] max-w-[340px] p-0">
           <Command shouldFilter={false}>
             <CommandInput
               placeholder="Search Store"
               className="h-9"
               value={searchInput || ""}
               onValueChange={(val) => setSearchInput(val)}
+              disabled={isDisabled}
             />
             <CommandList>
               <CommandEmpty>No Stores found</CommandEmpty>
@@ -106,6 +115,7 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
                   data?.data?.stores.map((store: StoreItemWithUser) => {
                     return (
                       <CommandItem
+                        disabled={isDisabled}
                         key={store.id}
                         value={store.id}
                         onSelect={() => {
@@ -116,12 +126,12 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
                         }}
                       >
                         <div className="felx flex-col gap-1">
-                          <p className="text-md">{store.store_name}</p>
+                          <p className="text-md">{store.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {store.address}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {store.contact_number}
+                            {store.city}
                           </p>
                         </div>
                       </CommandItem>

@@ -35,20 +35,19 @@ def register_user(
         new_user = User(
             username=reg_user.username,
             email=reg_user.email,
-            first_name=reg_user.first_name,
-            last_name=reg_user.last_name,
+            full_name=reg_user.full_name,
             role=reg_user.role,
             mfa_enabled=True,
         )
         new_user.set_password(reg_user.password)
-        if reg_user.enable_mfa:
-            # print("YRAH ENABLING MFA")
-            recovery_codes = new_user.enable_mfa()
-            mfa_uri = new_user.get_mfa_uri()
-        else:
-            # print("NO NO MFA")
-            recovery_codes = None
-            mfa_uri = None
+        # if reg_user.enable_mfa:
+        #     # print("YRAH ENABLING MFA")
+        #     recovery_codes = new_user.enable_mfa()
+        #     mfa_uri = new_user.get_mfa_uri()
+        # else:
+        #     # print("NO NO MFA")
+        #     recovery_codes = None
+        #     mfa_uri = None
 
         db.add(new_user)
         db.commit()
@@ -59,8 +58,6 @@ def register_user(
         )
         return {
             "user": new_user.to_dict_safe(),
-            "mfa_uri": mfa_uri,
-            "recovery_codes": recovery_codes,
         }
 
     except Exception as e:

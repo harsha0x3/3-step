@@ -30,7 +30,7 @@ app = FastAPI(lifespan=lifespan, root_path="/hard_verify/api/v1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:8070",
+        "*",
     ],
     allow_methods=["*"],
     allow_headers=["*"],

@@ -7,7 +7,7 @@ class Vendor(Base, BaseMixin):
     __tablename__ = "vendors"
 
     vendor_name: Mapped[str] = mapped_column(String(222), nullable=False)
-    location: Mapped[str] = mapped_column(Text, nullable=False)
+    location: Mapped[str] = mapped_column(Text, nullable=True)
     contact: Mapped[str] = mapped_column(String(100), nullable=True)
 
     vendor_spocs = relationship("VendorSpoc", back_populates="vendor")

@@ -17,7 +17,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"; // adjust path to your shadcn table components
-import MfaQrButton from "./MfaQrButton";
 import { Loader } from "lucide-react";
 import AddCandidate from "@/features/candidates/components/CandidateFormDialog";
 import StoreFormDialog from "./StoreFormDialog";
@@ -32,48 +31,43 @@ type Props = {
 const columnHelper = createColumnHelper<StoreItemWithUser>();
 
 const columns: ColumnDef<StoreItemWithUser, any>[] = [
-  columnHelper.accessor("id", {
-    header: "Store ID",
-    cell: (info) => info.getValue(),
-  }),
-  columnHelper.accessor("store_name", {
+  columnHelper.accessor("name", {
     header: "Store Name",
     cell: (info) => info.getValue(),
   }),
-  columnHelper.accessor("contact_number", {
-    header: "Contact",
+  columnHelper.accessor("city", {
+    header: "City",
     cell: (info) => info.getValue(),
   }),
-  columnHelper.accessor("email", {
-    header: "Email",
-    cell: (info) => info.getValue(),
-  }),
-
-  // 🆕 Add this column for store_person
-  columnHelper.accessor("store_person", {
-    header: "Store Person",
+  columnHelper.accessor("address", {
+    header: "Address",
     cell: (info) => {
-      const person = info.getValue();
-      if (!person) return "-";
-
+      const address = info.getValue();
       return (
-        <div className="flex flex-col">
-          <span className="font-medium">
-            {person.first_name} {person.last_name}
-          </span>
-          <span className="text-sm text-muted-foreground">{person.email}</span>
-          <span className="text-xs text-muted-foreground capitalize">
-            {person.role.replace("_", " ")}
-          </span>
-        </div>
+        <p className="whitespace-normal wrap-break max-w-[16rem]">{address}</p>
       );
     },
   }),
 
-  columnHelper.display({
-    id: "mfa_qr",
-    header: "MFA QR",
-    cell: ({ row }) => <MfaQrButton user={row.original.store_person} />,
+  // 🆕 Add this column for store_person
+  columnHelper.accessor("store_agents", {
+    header: "Store Agents",
+    cell: (info) => {
+      const store_agents = info.getValue();
+      if (!store_agents) return "-";
+
+      return (
+        <ol className="flex flex-col">
+          {Array.isArray(store_agents) && store_agents.length > 0
+            ? store_agents.map((agent) => (
+                <li key={agent.id}>
+                  <p>Agent Name: {agent.full_name}</p>
+                </li>
+              ))
+            : "-"}
+        </ol>
+      );
+    },
   }),
 
   columnHelper.display({
@@ -111,7 +105,7 @@ const StoreTable: React.FC<Props> = ({ stores, isLoading, error }) => {
         className="rounded-md border" /* no manual color, uses shadcn's border via tailwind tokens */
       >
         {/* Use a table element provided by shadcn components */}
-        <Table className="min-w-full">
+        <Table className="w-full">
           <TableCaption>List of Stores</TableCaption>
           {/* TableHeader render - we'll rely on shadcn's TableHeader + TableHead components */}
           <TableHeader>

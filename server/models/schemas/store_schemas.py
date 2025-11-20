@@ -1,35 +1,42 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict
 from .auth_schemas import UserOut
 from typing import Literal
 
 
 class AddNewStore(BaseModel):
-    store_person_first_name: str | None = None
-    store_person_last_name: str | None = None
-
-    store_name: str
-    contact_number: str
-    email: EmailStr
+    name: str
+    city: str
     address: str
+
+    email: str | None = None
+    mobile_number: str | None = None
 
 
 class UpdateStorePayload(BaseModel):
-    store_name: str | None = None
-    contact_number: str | None = None
-    email: EmailStr | None = None
+    name: str | None = None
+    city: str | None = None
     address: str | None = None
+
+    email: str | None = None
+    mobile_number: str | None = None
 
 
 class StoreSearchParams(BaseModel):
-    search_by: Literal["id", "store_name"] | None = None
+    search_by: Literal["id", "name"] | None = None
     search_term: str | None = None
 
 
-class StoreItemWithUser(BaseModel):
+class StoreItemOut(BaseModel):
     id: str
-    store_name: str
-    contact_number: str
-    email: str
+    name: str
+    city: str
     address: str
 
-    store_person: UserOut | None = None
+    email: str | None = None
+    mobile_number: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class StoreItemWithUser(StoreItemOut, BaseModel):
+    store_agents: list[UserOut] | None = None

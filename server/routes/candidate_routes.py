@@ -120,6 +120,12 @@ async def list_candidates(
     store_id: Annotated[str | None, Query(title="Filter by store id")] = None,
     page: Annotated[int, Query(title="The page no.")] = 1,
     page_size: Annotated[int, Query(title="No. of items to be fetched")] = 15,
+    is_verified: Annotated[
+        bool | None, Query(title="Filter by verified / not verified")
+    ] = None,
+    is_issued: Annotated[
+        bool | None, Query(title="Filter by laptop issued / not issued")
+    ] = None,
 ):
     """
     Retrieve all candidates.
@@ -145,6 +151,8 @@ async def list_candidates(
         store_id=store_id,
         page=page,
         page_size=page_size,
+        is_verified=is_verified,
+        is_issued=is_issued,
     )
     return get_all_candidates(db, params)
 

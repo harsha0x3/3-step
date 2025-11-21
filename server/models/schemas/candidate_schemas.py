@@ -25,6 +25,7 @@ class UpdatedCandidatePayload(BaseModel):
     city: str | None = None
     state: str | None = None
     division: str | None = None
+    aadhar_number: str | None = None
 
     is_candidate_verified: bool | None = None
     store_id: str | None = None
@@ -39,6 +40,8 @@ class CandidatesSearchParams(BaseModel):
     sort_by: Literal["created_at", "updated_at", "full_name"] = "created_at"
     sort_order: Literal["asc", "desc"] = "desc"
     store_id: str | None = None
+    is_verified: bool | None = None
+    is_issued: bool | None = None
 
 
 class CandidateItemWithStore(BaseModel):

@@ -1,5 +1,5 @@
 from models.candidates import Candidate
-from sqlalchemy import select, and_, func, desc, asc
+from sqlalchemy import select, and_, func, desc, asc, or_
 from sqlalchemy.orm import Session
 from models.schemas.candidate_schemas import (
     NewCandidatePayload,
@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from utils.helpers import generate_readable_id
 from models.stores import Store
 from models.verification_statuses import VerificationStatus
+from models import IssuedStatus
 from fastapi import HTTPException, status, UploadFile
 from models.schemas.auth_schemas import UserOut
 from models.users import User
@@ -294,6 +295,24 @@ def get_all_candidates(db: Session, params: CandidatesSearchParams):
     try:
         stmt = select(Candidate)
         total_candidates = db.scalar(select(func.count()).select_from(stmt.subquery()))
+        # Filter by verification
+        if params.is_verified is not None:
+            stmt = stmt.where(Candidate.is_candidate_verified == params.is_verified)
+
+        # Filter by issued status
+        if params.is_issued is not None:
+            if params.is_issued:
+                stmt = stmt.join(IssuedStatus).where(
+                    IssuedStatus.issued_status == "issued"
+                )
+            else:
+                stmt = stmt.join(IssuedStatus).where(
+                    or_(
+                        IssuedStatus.issued_status == "not_issued",
+                        Candidate.issued_status.is_(None),
+                    )
+                )
+
         if params.store_id and params.store_id != "null":
             stmt = stmt.join(Store).where(Candidate.store_id == params.store_id)
 
@@ -473,8 +492,6 @@ def update_candidate_details(
     - Performs partial updates only on provided fields.
     """
 
-    from models.candidates import Candidate
-
     candidate = db.get(Candidate, candidate_id)
     if not candidate:
         raise HTTPException(
@@ -482,25 +499,14 @@ def update_candidate_details(
             detail="Employee not found",
         )
 
-    # Prevent aadhaar_number or hashed value modification
-    restricted_fields = ["aadhar_number", "aadhar_last_four_digits", "id"]
-    update_payload = {
-        k: v
-        for k, v in payload.model_dump(exclude_none=True).items()
-        if k not in restricted_fields
-    }
-
-    # No fields provided?
-    if not update_payload:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No editable fields provided for update.",
-        )
+    print(f"payload-dump - {payload.model_dump()}")
 
     try:
         # Dynamically update provided fields
-        for field, value in update_payload.items():
+        for field, value in payload.model_dump(exclude_unset=True).items():
+            print(f"field - {field} , value - {value}")
             if hasattr(candidate, field):
+                print(f"ATTR FOUND {field}")
                 setattr(candidate, field, value)
 
         store = candidate.store
@@ -548,6 +554,55 @@ def update_candidate_details(
             if store
             else None,
         )
+
+    except IntegrityError as e:
+        db.rollback()
+        error_message = str(e.orig)
+
+        if "Duplicate entry" in error_message:
+            # Check which column caused the duplicate error
+            if ".id" in error_message:
+                # Retry if duplicate ID
+                print(error_message)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Duplicate entry on Employee ID. Try again",
+                )
+            elif ".coupon_code" in error_message:
+                print(error_message)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to generate unique Coupon after several attempts. Try again",
+                )
+
+            elif ".mobile_number" in error_message:
+                print(error_message)
+
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="An employee with this mobile number already exists. Try again",
+                )
+
+            elif ".full_name" in error_message:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Duplicate entry on employee name. Try again",
+                )
+
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Duplicate entry detected: {error_message}",
+                )
+
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Database error: {error_message}",
+            )
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         db.rollback()

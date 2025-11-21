@@ -13,6 +13,7 @@ import { lazy, Suspense } from "react";
 import { Loader } from "lucide-react";
 
 function App() {
+  const IndexPage = lazy(() => import("./features/dashboards/pages/IndexPage"));
   const AllStores = lazy(
     () => import("./features/product_stores/pages/AllStores")
   );
@@ -29,10 +30,7 @@ function App() {
   const CandidatesSearch = lazy(
     () => import("./features/candidates/components/CandidateSearch")
   );
-  const CandidateVoucherDistribution = lazy(
-    () =>
-      import("./features/candidates/components/CandidateVoucherDistribution")
-  );
+
   const RootLayout = lazy(() => import("@/layouts/RootLayout"));
   const currentAuthState: AuthState = useSelector(selectAuth);
   const { data: _currentUser } = useGetCurrentUserQuery(undefined, {
@@ -85,13 +83,13 @@ function App() {
               }
             />
             <Route
-              path="admin/candidates"
+              path="admin/beneficiary"
               element={
                 <Suspense
                   fallback={
                     <div className="flex flex-col justify-center items-center">
                       <Loader className="animate-spin w-10 h-10 text-amber-600" />
-                      <p>Loading candidates page...</p>
+                      <p>Loading beneficiaries page...</p>
                     </div>
                   }
                 >
@@ -99,15 +97,29 @@ function App() {
                 </Suspense>
               }
             />
-            <Route path="admin/dashboard" element={<div>admin dash</div>} />
             <Route
-              path="verifier/candidates"
+              path="admin/dashboard"
               element={
                 <Suspense
                   fallback={
                     <div className="flex flex-col justify-center items-center">
                       <Loader className="animate-spin w-10 h-10 text-amber-600" />
-                      <p>Loading candidates page...</p>
+                      <p>Loading Index dashboard page...</p>
+                    </div>
+                  }
+                >
+                  <IndexPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="verifier/beneficiary"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col justify-center items-center">
+                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
+                      <p>Loading befificairy verification page...</p>
                     </div>
                   }
                 >
@@ -116,28 +128,13 @@ function App() {
               }
             />
             <Route
-              path="verifier/candidates/:candidateId"
+              path="store/beneficiary"
               element={
                 <Suspense
                   fallback={
                     <div className="flex flex-col justify-center items-center">
                       <Loader className="animate-spin w-10 h-10 text-amber-600" />
-                      <p>Loading candidates page...</p>
-                    </div>
-                  }
-                >
-                  <CandidateVoucherDistribution />
-                </Suspense>
-              }
-            />
-            <Route
-              path="store/candidates"
-              element={
-                <Suspense
-                  fallback={
-                    <div className="flex flex-col justify-center items-center">
-                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
-                      <p>Loading candidates verification page...</p>
+                      <p>Loading beneficiaries verification page...</p>
                     </div>
                   }
                 >

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import FacialRecognition from "../components/FacialRecognition";
 import OtpVerification from "../components/OtpVerification";
 import {
+  useGetCandidateIssuanceDetailsQuery,
   useLazyGetCandidateByCouponQuery,
   useLazyGetCandidateVerificationStatusQuery,
 } from "../store/verificationApiSlice";
@@ -17,6 +18,7 @@ import { CheckCheckIcon, XCircleIcon } from "lucide-react";
 import type { CandidateItemWithStore } from "@/features/candidates/types";
 import LaptopIssuanceForm from "../components/LaptopIssuanceForm";
 import { useSearchParams } from "react-router-dom";
+import LaptopIssuanceSuccess from "../components/LaptopIssuanceSuccess";
 
 const CandidateVerification: React.FC = () => {
   const [candidate, setCandidate] = useState<CandidateItemWithStore | null>(
@@ -42,6 +44,9 @@ const CandidateVerification: React.FC = () => {
     fetchVerificationStatus,
     { data: candidateVerificationStatus, isLoading },
   ] = useLazyGetCandidateVerificationStatusQuery();
+
+  const { data: issuancedetails, isLoading: isLoadingIssuanceDetails } =
+    useGetCandidateIssuanceDetailsQuery(candidate?.id, { skip: !candidate });
 
   const backendStep = (status: any): string => {
     console.log("RECIVED STATUS", status);
@@ -115,7 +120,15 @@ const CandidateVerification: React.FC = () => {
         return (
           <LaptopIssuanceForm
             candidateId={candidate.id}
-            onSuccess={handleStepCompleted}
+            onSuccess={() => setSearchParams({ step: "success" })}
+          />
+        );
+      case "success":
+        return (
+          <LaptopIssuanceSuccess
+            candidate={candidate}
+            issuanceDetails={issuancedetails}
+            onVerifyNext={resetFlow}
           />
         );
 
@@ -143,9 +156,15 @@ const CandidateVerification: React.FC = () => {
     setCouponCode("");
   };
 
-  if (candidate && candidate.issued_status === "issued") {
-    return <div>Candidate recieved the laptop successfully</div>;
-  }
+  useEffect(() => {
+    if (
+      candidate &&
+      candidate.issued_status === "issued" &&
+      step !== "success"
+    ) {
+      setSearchParams({ coupon: couponCodeParam, step: "success" });
+    }
+  }, [candidate, step]);
 
   return (
     <div className="w-full mt-3 space-y-6">
@@ -201,7 +220,7 @@ const CandidateVerification: React.FC = () => {
 
         {/* Candidate Details */}
         <div className="w-full">
-          {candidateDetails && candidate && (
+          {candidateDetails && candidate && step !== "success" && (
             <div className="flex flex-col md:flex-row md:items-end md:gap-3">
               <CandidateDetailsSection candidate={candidate} />
 

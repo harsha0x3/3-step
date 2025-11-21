@@ -17,6 +17,7 @@ import {
   ChevronLastIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  SlidersHorizontalIcon,
 } from "lucide-react";
 import {
   Select,
@@ -26,6 +27,20 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 const AllCandidates: React.FC = () => {
   const currentUserInfo = useSelector(selectAuth);
@@ -36,6 +51,8 @@ const AllCandidates: React.FC = () => {
   const candSortOrder = searchParams.get("candSortOrder") || "desc";
   const candSearchBy = searchParams.get("candSearchBy") || "full_name";
   const candSearchTerm = searchParams.get("candSearchTerm") || "";
+  const candIsVerified = searchParams.get("is_verified");
+  const candIsIssued = searchParams.get("is_issued");
 
   const [searchInput, setSearchInput] = useState<string>("");
 
@@ -47,6 +64,9 @@ const AllCandidates: React.FC = () => {
       sort_order: candSortOrder ?? "desc",
       search_by: candSearchBy ?? "full_name",
       search_term: candSearchTerm,
+      is_verified:
+        candIsVerified !== null ? candIsVerified === "true" : undefined,
+      is_issued: candIsIssued !== null ? candIsIssued === "true" : undefined,
     }),
     [
       candPage,
@@ -55,6 +75,8 @@ const AllCandidates: React.FC = () => {
       candSortOrder,
       candSearchBy,
       candSearchTerm,
+      candIsVerified,
+      candIsIssued,
     ]
   );
 
@@ -114,37 +136,203 @@ const AllCandidates: React.FC = () => {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex justify-between items-center">
-        <div className="w-full max-w-xs space-y-2">
-          <div className="flex flex-col md:flex-row rounded-md">
+        <div className="w-full space-y-2 flex flex-wrap items-center">
+          {/* Search Text Input */}
+          <div className="px-2">
+            <label className="text-xs font-medium">Search</label>
             <Input
-              type="text"
-              placeholder={`Search candidate by`}
               value={searchInput}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setSearchInput(e.target.value);
-              }}
+              placeholder={`Search Employee by ${
+                candSearchBy === "id" ? "Employee ID" : "Full Name"
+              }`}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="mt-1 h-8"
             />
-            <Select
-              value={String(candSearchBy)}
-              aria-label="Select page"
-              onValueChange={(value) =>
-                updateSearchParams({ candSearchBy: value })
-              }
-            >
-              <SelectTrigger
-                id="select-page"
-                className="whitespace-nowrap w-32"
-                aria-label="Select page"
-              >
-                <SelectValue placeholder="Search by" />
-              </SelectTrigger>
-              <SelectContent className="">
-                <SelectItem value="full_name">Full Name</SelectItem>
-                <SelectItem value="id">Employee Id</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
+          {/* Filters Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" className="px-2 pt mt-4">
+                <SlidersHorizontalIcon className="h-4 w-4 mr-2" /> Filters
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent className="w-60">
+              <DropdownMenuLabel>Candidate Filters</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+
+              <DropdownMenuGroup>
+                {/* Search By */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>Search By</DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({
+                            candSearchBy: "full_name",
+                            candPage: 1,
+                          })
+                        }
+                      >
+                        Full Name
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({
+                            candSearchBy: "id",
+                            candPage: 1,
+                          })
+                        }
+                      >
+                        Employee ID
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+
+                {/* Sort Order */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>Sort Order</DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({
+                            candSortOrder: "asc",
+                            candPage: 1,
+                          })
+                        }
+                      >
+                        Ascending
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({
+                            candSortOrder: "desc",
+                            candPage: 1,
+                          })
+                        }
+                      >
+                        Descending
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+
+                {/* Sort By */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>Sort By</DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({
+                            candSortBy: "created_at",
+                            candPage: 1,
+                          })
+                        }
+                      >
+                        Date Created
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({
+                            candSortBy: "full_name",
+                            candPage: 1,
+                          })
+                        }
+                      >
+                        Full Name
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({ candSortBy: "id", candPage: 1 })
+                        }
+                      >
+                        Employee ID
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+
+                {/* Verification Filter */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    Verification Status
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({ is_verified: null, candPage: 1 })
+                        }
+                      >
+                        All
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({
+                            is_verified: "true",
+                            candPage: 1,
+                          })
+                        }
+                      >
+                        Verified
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({
+                            is_verified: "false",
+                            candPage: 1,
+                          })
+                        }
+                      >
+                        Not Verified
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+
+                {/* Issued Filter */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    Laptop Issuance Status
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({ is_issued: null, candPage: 1 })
+                        }
+                      >
+                        All
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({ is_issued: "true", candPage: 1 })
+                        }
+                      >
+                        Issued
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({
+                            is_issued: "false",
+                            candPage: 1,
+                          })
+                        }
+                      >
+                        Not Issued
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+
         <CandidateFormDialog />
       </div>
       <div className="flex-1">

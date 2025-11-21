@@ -24,7 +24,7 @@ import type {
   CandidateItemWithStore,
   UpdateCandidatePayload,
 } from "../types";
-import { CircleQuestionMarkIcon, Pencil } from "lucide-react";
+import { CircleQuestionMarkIcon, EyeIcon, Pencil } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
 import StoresCombobox from "@/features/product_stores/components/StoresCombobox";
@@ -62,11 +62,13 @@ const CandidateFormDialog: React.FC<Props> = ({
   const [uploadPhoto, { isLoading: isUploadingPhoto }] =
     useUploadCandidatePhotoMutation();
   const [addAadharPhoto] = useAddCandidateAadharMutation();
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [openConfirm, setOpenConfirm] = useState<boolean>(false);
 
   useState<CandidateItemWithStore | null>(null);
 
   const currentUserInfo = useSelector(selectAuth);
-  const isEditMode =
+  const canEdit =
     !!candidate &&
     (currentUserInfo.role === "admin" ||
       currentUserInfo.role === "super_admin" ||
@@ -89,6 +91,7 @@ const CandidateFormDialog: React.FC<Props> = ({
           city: candidate.city,
           state: candidate.state,
           division: candidate.division,
+          aadhar_number: candidate.aadhar_number,
 
           store_id: candidate.store_id,
           vendor_spoc_id: candidate.vendor_spoc_id,
@@ -147,6 +150,7 @@ const CandidateFormDialog: React.FC<Props> = ({
         city: candidate.city,
         state: candidate.state,
         division: candidate.division,
+        aadhar_number: candidate.aadhar_number,
 
         store_id: candidate.store_id,
         vendor_spoc_id: candidate.vendor_spoc_id,
@@ -204,7 +208,7 @@ const CandidateFormDialog: React.FC<Props> = ({
       <Input
         id={name}
         type={type}
-        readOnly={viewOnly || isReadOnly}
+        readOnly={viewOnly || !isEditMode || isReadOnly}
         {...register(
           name,
           required ? { required: `${label} is required` } : {}
@@ -227,11 +231,11 @@ const CandidateFormDialog: React.FC<Props> = ({
       }}
     >
       <DialogTrigger asChild>
-        {isEditMode && !toVerify ? (
+        {!!candidate && !toVerify ? (
           <Button variant="ghost" size="sm">
-            <Pencil className="w-4 h-4" />
+            <EyeIcon className="w-4 h-4" />
           </Button>
-        ) : isEditMode && toVerify ? (
+        ) : !!candidate && toVerify ? (
           <Button>Verify Candidate</Button>
         ) : (
           <Button>{viewOnly ? "View Candidate" : "Add Candidate"}</Button>
@@ -278,23 +282,80 @@ const CandidateFormDialog: React.FC<Props> = ({
                   later for facial recognition system.
                 </li>
               </ol>
-            ) : isEditMode ? (
-              "Edit Beneficiary"
+            ) : isEditMode || !!candidate ? (
+              "Beneficiary Details"
             ) : (
               "Add New Beneficiary"
             )}
           </div>
         </DialogDescription>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 py-2">
+          {canEdit && (
+            <div>
+              <Button
+                type="button"
+                variant={isEditMode ? "destructive" : "secondary"}
+                onClick={() => {
+                  if (isEditMode) {
+                    setOpenConfirm(true);
+                    return;
+                  }
+                  setIsEditMode(true);
+                }}
+              >
+                {isEditMode ? "Cancel" : "Edit"}
+              </Button>
+            </div>
+          )}
+          {openConfirm && (
+            <Dialog open={openConfirm} onOpenChange={setOpenConfirm}>
+              <DialogContent>
+                <DialogHeader>
+                  Are you sure you want to cancel editing?
+                </DialogHeader>
+
+                <DialogDescription>
+                  You will lose all unsaved data. Click{" "}
+                  <strong>Save & Exit</strong> to save & exit, or{" "}
+                  <strong>Cancel</strong> to discard changes.
+                </DialogDescription>
+
+                <div className="flex items-center justify-end gap-3">
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => {
+                      setIsEditMode(false);
+                      setOpenConfirm(false);
+                    }}
+                  >
+                    Cancel Editing
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      handleSubmit(onSubmit)();
+                      setOpenConfirm(false);
+                    }}
+                  >
+                    Save & Exit
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+
           <section className="flex flex-col gap-4">
             <h3 className="font-semibold text-lg mb-2">Candidate Details</h3>
-            {renderTextInput("id", "Employee ID", "text", true, !!candidate)}
+            {renderTextInput("id", "Employee ID", "text", true)}
             {renderTextInput("full_name", "Full Name")}
             {renderTextInput("mobile_number", "Mobile Number")}
             {renderTextInput("dob", "Date of Birth")}
             {renderTextInput("city", "City")}
             {renderTextInput("state", "State")}
-            {renderTextInput("division", "Division", "text", true, true)}
+            {renderTextInput("division", "Division", "text", false)}
+            {renderTextInput("aadhar_number", "Aadhar Number", "text", false)}
           </section>
 
           <section className="flex flex-col gap-4">
@@ -532,8 +593,13 @@ const CandidateFormDialog: React.FC<Props> = ({
 
           {!viewOnly && (
             <DialogFooter className="pt-4">
-              <Button type="submit" disabled={isAdding || isUpdating}>
-                {isEditMode
+              <Button
+                type="submit"
+                disabled={
+                  isAdding || isUpdating || (!!candidate && !isEditMode)
+                }
+              >
+                {!!candidate || isEditMode
                   ? isUpdating
                     ? `${toVerify ? "Verifying..." : "Updating..."}`
                     : `${toVerify ? "Verify" : "Update Candidate"}`

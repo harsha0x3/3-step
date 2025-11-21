@@ -32,10 +32,6 @@ const VendorsTable: React.FC<Props> = ({ vendors, isLoading, error }) => {
   const columnHelper = createColumnHelper<VendorItem>();
 
   const columns: ColumnDef<VendorItem, any>[] = [
-    columnHelper.accessor("id", {
-      header: "Vendor ID",
-      cell: (info) => info.getValue(),
-    }),
     columnHelper.accessor("vendor_name", {
       header: "Vendor Name",
       cell: (info) => info.getValue(),

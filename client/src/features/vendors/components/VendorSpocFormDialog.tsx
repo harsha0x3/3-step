@@ -16,6 +16,7 @@ import { useAddNewVendorSpocMutation } from "../store/vendorsApiSlice";
 import type { VendorSpocItem, VendorItem } from "../types";
 import { Pencil } from "lucide-react";
 import VendorsCombobox from "./VendorsCombobox";
+import VendorSpocPhotoCapture from "./VendorSpocPhotoCapture";
 
 type Props = {
   vendorSpoc?: VendorSpocItem | null;
@@ -53,6 +54,14 @@ const VendorSpocFormDialog: React.FC<Props> = ({
         }
       : {},
   });
+
+  const handleCameraPhotoSubmit = async (formData: FormData) => {
+    const file = formData.get("photo") as File;
+    if (file) {
+      setPhoto(file);
+      toast.success("Photo captured successfully!");
+    }
+  };
 
   const onSubmit = async (data: VendorSpocForm) => {
     if (viewOnly) return;
@@ -157,6 +166,7 @@ const VendorSpocFormDialog: React.FC<Props> = ({
               onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
             />
           </div>
+          <VendorSpocPhotoCapture onSubmit={handleCameraPhotoSubmit} />
 
           {!viewOnly && (
             <DialogFooter className="pt-4">

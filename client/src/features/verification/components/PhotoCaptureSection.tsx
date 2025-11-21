@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 interface PhotoCaptureSectionProps {
-  candidateId: string;
+  candidateId?: string;
   onSubmit: (formData: FormData) => Promise<any>; // generic mutation function
   title: string;
   successMessage?: string;

@@ -36,10 +36,6 @@ const VendorSpocTable: React.FC<Props> = ({
   const columnHelper = createColumnHelper<VendorSpocItem>();
 
   const columns: ColumnDef<VendorSpocItem, any>[] = [
-    columnHelper.accessor("id", {
-      header: "SPOC ID",
-      cell: (info) => info.getValue(),
-    }),
     columnHelper.accessor("full_name", {
       header: "Full Name",
       cell: (info) => info.getValue(),

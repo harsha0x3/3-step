@@ -20,10 +20,10 @@ const Sidebar: React.FC = () => {
     <div
       className="fixed bottom-0 left-0 right-0 md:relative md:h-screen 
                 bg-sidebar w-full md:w-44 flex md:flex-col 
-                flex-row justify-around md:justify-start items-center 
+                flex-row md:justify-start items-center 
                 py-2 md:py-4 z-50 border-t md:border-t-0 md:border-r border-sidebar-border"
     >
-      <div className="flex flex-row md:flex-col gap-1 md:gap-2 w-full md:w-auto justify-around md:justify-start px-2 md:px-0">
+      <div className="flex flex-row md:flex-col gap-1 md:gap-2 w-full md:w-auto md:justify-start px-2 md:px-0 items-start">
         <Button
           size="sm"
           className="bg-transparent hover:bg-sidebar-accent hover:cursor-pointer hover:text-sidebar-accent-foreground text-sidebar-foreground flex-col md:flex-row h-auto md:h-9 py-2 md:py-2 px-2 md:px-4 gap-0 md:gap-2 text-xs md:text-sm"
@@ -42,27 +42,27 @@ const Sidebar: React.FC = () => {
         <Button
           size="sm"
           className="bg-transparent hover:bg-sidebar-accent hover:cursor-pointer hover:text-sidebar-accent-foreground text-sidebar-foreground flex-col md:flex-row h-auto md:h-9 py-2 md:py-2 px-2 md:px-4 gap-0 md:gap-2 text-xs md:text-sm"
-          variant={selectedItemLabel === "candidates" ? "outline" : "ghost"}
+          variant={selectedItemLabel === "beneficiary" ? "outline" : "ghost"}
           onClick={() => {
-            setSelectedItemLabel("candidates");
+            setSelectedItemLabel("beneficiary");
             switch (currentUserRole) {
               case "admin":
-                navigate("/admin/candidates");
+                navigate("/admin/beneficiary");
                 break;
               case "super_admin":
-                navigate("/admin/candidates");
+                navigate("/admin/beneficiary");
                 break;
               case "registration_officer":
-                navigate("/verifier/candidates");
+                navigate("/verifier/beneficiary");
                 break;
               case "store_agent":
-                navigate("/store/candidates");
+                navigate("/store/beneficiary");
                 break;
             }
           }}
         >
           <UsersRoundIcon className="w-5 h-5 md:w-4 md:h-4" />
-          <span className="text-[10px] md:text-sm">Candidates</span>
+          <span className="text-[10px] md:text-sm">Beneficiaries</span>
         </Button>
 
         {currentUserRole === "admin" ||

@@ -9,6 +9,7 @@ export interface NewCandidatePayload {
   city?: string;
   state?: string;
   division?: string;
+  aadhar_number?: string;
 
   store_id?: string;
   vendor_spoc_id?: string;
@@ -22,6 +23,7 @@ export interface UpdateCandidatePayload {
   city?: string;
   state?: string;
   division?: string;
+  aadhar_number?: string;
 
   store_id?: string;
   vendor_spoc_id?: string;
@@ -52,4 +54,6 @@ export interface CandidatesSearchParams {
   sort_by?: string; // default: "created_at"
   sort_order?: string; // default: "desc"
   store_id?: string | null;
+  is_verified?: boolean | undefined;
+  is_issued?: boolean | undefined;
 }

@@ -66,6 +66,10 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
           searchParams.append("sort_by", String(params.sort_by));
         if (params?.sort_order)
           searchParams.append("sort_order", String(params.sort_order));
+        if (params?.is_issued)
+          searchParams.append("is_issued", String(params.is_issued));
+        if (params?.is_verified)
+          searchParams.append("is_verified", String(params.is_verified));
 
         const queryString = searchParams.toString();
         return `/candidates${queryString ? `?${queryString}` : ""}`;

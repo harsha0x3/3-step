@@ -1,5 +1,4 @@
 // LaptopPhotoCapture.tsx
-import React from "react";
 import { useUploadLaptopEvidenceMutation } from "../store/verificationApiSlice";
 import PhotoCaptureSection from "./PhotoCaptureSection";
 import {

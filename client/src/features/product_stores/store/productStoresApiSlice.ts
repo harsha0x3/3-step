@@ -29,7 +29,11 @@ export const productStoresApiSlice = rootApiSlice.injectEndpoints({
     }),
 
     getAllStores: builder.query<
-      ApiResponse<{ stores: StoreItemWithUser[] } | unknown>,
+      ApiResponse<{
+        stores: StoreItemWithUser[];
+        count: number;
+        cities: string[];
+      }>,
       { searchBy: string; searchTerm: string }
     >({
       query: ({ searchBy, searchTerm }) => {

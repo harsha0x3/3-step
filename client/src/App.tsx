@@ -1,16 +1,17 @@
 import "./index.css";
 import { Routes, Route } from "react-router-dom";
 import LoginPage from "./features/auth/pages/LoginPage";
-import RegisterPage from "./features/auth/pages/RegisterPage";
 import ProtectedLayout from "./layouts/ProtectedLayout";
-import { selectAuth } from "./features/auth/store/authSlice";
+import { selectAuth, selectError } from "./features/auth/store/authSlice";
 import { useSelector } from "react-redux";
 import type { AuthState } from "./features/auth/types";
 import { Toaster } from "./components/ui/sonner";
 import { useGetCurrentUserQuery } from "./features/auth/store/authApiSlice";
 
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Loader } from "lucide-react";
+import CandidateVoucherDistribution from "./features/candidates/components/CandidateVoucherDistribution";
+import { toast } from "sonner";
 
 function App() {
   const IndexPage = lazy(() => import("./features/dashboards/pages/IndexPage"));
@@ -20,15 +21,50 @@ function App() {
   const AllCandidates = lazy(
     () => import("./features/candidates/pages/AllCandidates")
   );
-  const CandidateVerification = lazy(
-    () => import("./features/verification/pages/CandidateVerification")
+  // const CandidateVerification = lazy(
+  //   () => import("./features/verification/pages/CandidateVerification")
+  // );
+  const ConsolidateVerification = lazy(
+    () => import("./features/verification/pages/ConsolidateVerification")
   );
+
   const AllVendors = lazy(() => import("./features/vendors/pages/AllVendors"));
   const AllVendorSpoc = lazy(
     () => import("./features/vendors/pages/AllVendorSpoc")
   );
   const CandidatesSearch = lazy(
     () => import("./features/candidates/components/CandidateSearch")
+  );
+  const UserManagement = lazy(
+    () => import("./features/auth/pages/UserManagement")
+  );
+  const PasswordResetRequest = lazy(
+    () => import("./features/auth/pages/PasswordResetRequest")
+  );
+  const PasswordResetVerify = lazy(
+    () => import("./features/auth/pages/PasswordResetVerify")
+  );
+  const NewCandidate = lazy(
+    () => import("./features/candidates/pages/NewCandidate")
+  );
+  const NewStore = lazy(
+    () => import("./features/product_stores/pages/NewStore")
+  );
+  const NewVendorSpoc = lazy(
+    () => import("./features/vendors/pages/NewVendorSpoc")
+  );
+  const NewVendor = lazy(() => import("./features/vendors/pages/NewVendor"));
+  const OtpVerification = lazy(
+    () => import("./features/verification/pages/OtpVerification")
+  );
+  const LaptopIssuancePage = lazy(
+    () => import("./features/verification/pages/LaptopIssuancePage")
+  );
+  const LaptopIssuanceSuccessPage = lazy(
+    () => import("./features/verification/pages/LaptopIssuanceSuccessPage")
+  );
+  const StoreCandidates = lazy(
+    () => import("./features/candidates/pages/StoreCandidates")
   );
 
   const RootLayout = lazy(() => import("@/layouts/RootLayout"));
@@ -37,8 +73,16 @@ function App() {
     skip: currentAuthState.isAuthenticated,
   });
 
+  const loginError = useSelector(selectError);
+
+  useEffect(() => {
+    if (loginError) {
+      toast.error(loginError);
+    }
+  });
+
   return (
-    <div className="min-h-screen w-full">
+    <div className="min-h-screen w-full overflow-hidden">
       <Toaster
         duration={10000}
         position="top-right"
@@ -50,7 +94,15 @@ function App() {
 
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route
+          path="/password-reset/request"
+          element={<PasswordResetRequest />}
+        />
+        <Route
+          path="/password-reset/verify"
+          element={<PasswordResetVerify />}
+        />
+
         <Route path="/" element={<ProtectedLayout />}>
           <Route
             path="/"
@@ -68,7 +120,15 @@ function App() {
             }
           >
             <Route
-              path="admin/stores"
+              path="admin/users"
+              element={
+                <Suspense fallback={<div>Loading users...</div>}>
+                  <UserManagement />
+                </Suspense>
+              }
+            />
+            <Route
+              path="stores"
               element={
                 <Suspense
                   fallback={
@@ -83,7 +143,22 @@ function App() {
               }
             />
             <Route
-              path="admin/beneficiary"
+              path="admin/stores/new"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col justify-center items-center">
+                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
+                      <p>Loading new stores page...</p>
+                    </div>
+                  }
+                >
+                  <NewStore />
+                </Suspense>
+              }
+            />
+            <Route
+              path="beneficiary/all"
               element={
                 <Suspense
                   fallback={
@@ -98,7 +173,7 @@ function App() {
               }
             />
             <Route
-              path="admin/dashboard"
+              path="dashboard"
               element={
                 <Suspense
                   fallback={
@@ -113,7 +188,22 @@ function App() {
               }
             />
             <Route
-              path="verifier/beneficiary"
+              path="admin/beneficiary/new"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col justify-center items-center">
+                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
+                      <p>Loading Index dashboard page...</p>
+                    </div>
+                  }
+                >
+                  <NewCandidate />
+                </Suspense>
+              }
+            />
+            <Route
+              path="registration_officer/beneficiary/verify"
               element={
                 <Suspense
                   fallback={
@@ -128,6 +218,37 @@ function App() {
               }
             />
             <Route
+              path="/registration_officer/beneficiary/verify/:candidateId"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col justify-center items-center">
+                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
+                      <p>Loading candidates page...</p>
+                    </div>
+                  }
+                >
+                  <CandidateVoucherDistribution />
+                </Suspense>
+              }
+            />
+            <Route
+              path="stores"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col justify-center items-center">
+                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
+                      <p>Loading stores page...</p>
+                    </div>
+                  }
+                >
+                  <AllStores />
+                </Suspense>
+              }
+            />
+
+            <Route
               path="store/beneficiary"
               element={
                 <Suspense
@@ -138,11 +259,70 @@ function App() {
                     </div>
                   }
                 >
-                  <CandidateVerification />
+                  <ConsolidateVerification />
                 </Suspense>
               }
             />
-            <Route path="store/dashboard" element={<div>store dash</div>} />
+            <Route
+              path="store/beneficiary/all"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col justify-center items-center">
+                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
+                      <p>Loading beneficiaries data page...</p>
+                    </div>
+                  }
+                >
+                  <StoreCandidates />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/store/beneficiary/:candidateId/verify/otp"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col justify-center items-center">
+                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
+                      <p>Loading beneficiaries verification page...</p>
+                    </div>
+                  }
+                >
+                  <OtpVerification />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/store/beneficiary/:candidateId/issuance"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col justify-center items-center">
+                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
+                      <p>Loading beneficiaries verification page...</p>
+                    </div>
+                  }
+                >
+                  <LaptopIssuancePage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/store/beneficiary/:candidateId/issuance/success"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col justify-center items-center">
+                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
+                      <p>Loading beneficiaries verification page...</p>
+                    </div>
+                  }
+                >
+                  <LaptopIssuanceSuccessPage />
+                </Suspense>
+              }
+            />
             <Route
               path="vendors"
               element={
@@ -159,17 +339,47 @@ function App() {
               }
             />
             <Route
+              path="vendors/new"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col justify-center items-center">
+                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
+                      <p>Loading vendors page...</p>
+                    </div>
+                  }
+                >
+                  <NewVendor />
+                </Suspense>
+              }
+            />
+            <Route
               path="vendor_spoc"
               element={
                 <Suspense
                   fallback={
                     <div className="flex flex-col justify-center items-center">
                       <Loader className="animate-spin w-10 h-10 text-amber-600" />
-                      <p>Loading vendors SPOC page...</p>
+                      <p>Loading vendors page...</p>
                     </div>
                   }
                 >
                   <AllVendorSpoc />
+                </Suspense>
+              }
+            />
+            <Route
+              path="vendor_spoc/new"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col justify-center items-center">
+                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
+                      <p>Loading new vendor contact person adding page...</p>
+                    </div>
+                  }
+                >
+                  <NewVendorSpoc />
                 </Suspense>
               }
             />

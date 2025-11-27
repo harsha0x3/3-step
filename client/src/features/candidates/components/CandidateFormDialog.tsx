@@ -9,6 +9,7 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogDescription,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +25,12 @@ import type {
   CandidateItemWithStore,
   UpdateCandidatePayload,
 } from "../types";
-import { CircleQuestionMarkIcon, EyeIcon, Pencil } from "lucide-react";
+import {
+  CircleQuestionMarkIcon,
+  EyeIcon,
+  Loader,
+  TicketCheckIcon,
+} from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
 import StoresCombobox from "@/features/product_stores/components/StoresCombobox";
@@ -33,6 +39,11 @@ import CandidatePhotoCapture from "./CandidatePhotoCapture";
 import VendorSpocFormDialog from "@/features/vendors/components/VendorSpocFormDialog";
 import AadharPhotoCapture from "./AadharPhotoCapture";
 import Hint from "@/components/ui/hint";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useNavigate } from "react-router-dom";
+import { flushSync } from "react-dom";
+
+import type { StoreItemWithUser } from "@/features/product_stores/types";
 
 type Props = {
   store_id?: string;
@@ -52,8 +63,15 @@ const CandidateFormDialog: React.FC<Props> = ({
   onOpenChange,
 }) => {
   const [open, setOpen] = React.useState(defOpen);
-  const [candPhoto, setCandPhoto] = useState<File | null>();
-  const [aadharPhoto, setAadharPhoto] = useState<File | null>();
+  const [showVerifyConfirm, setShowVerifyConfirm] = useState<boolean>(false);
+  const [selectedStore, setSelectedStore] = useState<StoreItemWithUser | null>(
+    null
+  );
+  useEffect(() => {
+    if (candidate?.store) {
+      setSelectedStore(candidate.store); // assuming backend returns store object
+    }
+  }, [candidate]);
 
   const [addNewCandidate, { isLoading: isAdding }] =
     useAddNewCandidateMutation();
@@ -61,9 +79,11 @@ const CandidateFormDialog: React.FC<Props> = ({
     useUpdateCandidateMutation();
   const [uploadPhoto, { isLoading: isUploadingPhoto }] =
     useUploadCandidatePhotoMutation();
-  const [addAadharPhoto] = useAddCandidateAadharMutation();
+  const [addAadharPhoto, { isLoading: isUploadingAadhar }] =
+    useAddCandidateAadharMutation();
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [openConfirm, setOpenConfirm] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   useState<CandidateItemWithStore | null>(null);
 
@@ -100,13 +120,25 @@ const CandidateFormDialog: React.FC<Props> = ({
       : { store_id: store_id || "" },
   });
 
-  useEffect(() => setOpen(defOpen), [defOpen]);
+  useEffect(() => {
+    if (defOpen) setOpen(true);
+  }, [defOpen]);
+
+  const isVerifiedChecked = watch("is_candidate_verified");
+  const closeAndGoBack = () => {
+    flushSync(() => {
+      setOpen(false);
+      onOpenChange?.(false);
+    });
+
+    navigate(-1);
+  };
 
   // ---------- FORM SUBMIT HANDLERS ----------
   const onSubmit = async (data: NewCandidatePayload) => {
     if (viewOnly) return;
     try {
-      if (isEditMode && candidate) {
+      if (isEditMode || !!candidate) {
         const dirty = Object.keys(dirtyFields);
         const payload: UpdateCandidatePayload = {};
         for (const key of dirty) {
@@ -114,8 +146,9 @@ const CandidateFormDialog: React.FC<Props> = ({
           payload[key] = data[key];
         }
 
-        if (Object.keys(payload).length === 0) {
-          toast.info("No changes detected.");
+        if (isEditMode && Object.keys(payload).length === 0) {
+          toast.info("No changes detected to save.");
+          setIsEditMode(false);
           return;
         }
 
@@ -123,16 +156,25 @@ const CandidateFormDialog: React.FC<Props> = ({
           candidateId: candidate.id,
           payload,
         }).unwrap();
-        toast.success("Candidate updated successfully!");
+        if (!isEditMode) {
+          closeAndGoBack();
+          return;
+        }
+        toast.success("Beneficiary details updated successfully!");
       } else {
+        console.log("Adding candidate");
         const res = await addNewCandidate(data).unwrap();
-        toast.success("Candidate added successfully!");
+        toast.success("Beneficiary added successfully!");
+        closeAndGoBack();
       }
 
       reset();
+      setIsEditMode(false);
     } catch (err: any) {
       const errMsg: string =
-        err?.data?.detail?.msg ?? err?.data?.detail ?? "Error adding candidate";
+        err?.data?.detail?.msg ??
+        err?.data?.detail ??
+        "Error adding Beneficiary details";
 
       const errDesc = err?.data?.detail?.msg
         ? err?.data?.detail?.err_stack
@@ -140,6 +182,16 @@ const CandidateFormDialog: React.FC<Props> = ({
       toast.error(errMsg, { description: errDesc });
     }
   };
+  const mode = isEditMode
+    ? "edit"
+    : viewOnly
+    ? "view"
+    : toVerify
+    ? "verify"
+    : candidate
+    ? "view"
+    : "add";
+
   useEffect(() => {
     if (candidate) {
       reset({
@@ -160,12 +212,15 @@ const CandidateFormDialog: React.FC<Props> = ({
   }, [candidate, reset]);
 
   const handleImageUpload = async (
-    photo: File,
-    type: "aadhar" | "candidate"
+    type: "aadhar" | "candidate",
+    e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    if (!photo) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.target.files?.[0];
+    if (!file) return;
     const formData = new FormData();
-    formData.append("photo", photo);
+    formData.append("photo", file);
 
     try {
       if (type === "candidate") {
@@ -200,15 +255,15 @@ const CandidateFormDialog: React.FC<Props> = ({
     required = true,
     isReadOnly = false
   ) => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
       <Label className="font-semibold text-md flex gap-2" htmlFor={name}>
-        {required && <span className="text-red-600">*</span>}
         {label}
+        {required && <span className="text-red-600">*</span>}
       </Label>
       <Input
         id={name}
         type={type}
-        readOnly={viewOnly || !isEditMode || isReadOnly}
+        readOnly={viewOnly || (!isEditMode && !!candidate) || isReadOnly}
         {...register(
           name,
           required ? { required: `${label} is required` } : {}
@@ -236,9 +291,9 @@ const CandidateFormDialog: React.FC<Props> = ({
             <EyeIcon className="w-4 h-4" />
           </Button>
         ) : !!candidate && toVerify ? (
-          <Button>Verify Candidate</Button>
+          <Button disabled={!isVerifiedChecked}>Issue Voucher</Button>
         ) : (
-          <Button>{viewOnly ? "View Candidate" : "Add Candidate"}</Button>
+          <Button>{viewOnly ? "View Beneficiary" : "Add Beneficiary"}</Button>
         )}
       </DialogTrigger>
 
@@ -247,171 +302,188 @@ const CandidateFormDialog: React.FC<Props> = ({
           e.preventDefault();
         }}
         className="w-[95vw] max-w-[650px] sm:max-w-[650px] 
-                          h-[90vh] sm:h-[98vh] overflow-auto 
-                          mx-auto"
+                          h-[90vh] sm:h-[98vh] overflow-hidden 
+                          mx-auto flex flex-col"
       >
-        <DialogHeader>
-          <DialogTitle>
-            {viewOnly
-              ? "View Beneficiary Employee Details"
-              : toVerify
-              ? "Verify Beneficiary Employee Details"
-              : isEditMode
-              ? "Edit Beneficiary Employee Details"
-              : "Add New Beneficiary Employee"}
-          </DialogTitle>
-        </DialogHeader>
-        <DialogDescription asChild>
-          <div>
-            {viewOnly ? (
-              "View Beneficiary"
-            ) : toVerify ? (
-              <ol className="text-muted-foreground list-decimal list-inside">
-                <li>
-                  This is to verify details of benificiary employee and make any
-                  necessary changes in fields like <b>Name</b> or{" "}
-                  <b>Mobile No.</b>
-                </li>
-                <li>
-                  Add the Beneficiary photo with the recieved voucher and a
-                  photo copy of his / her aadhar.
-                </li>
-                <li>
-                  Please make sure to take the benificiary photo is in passport
-                  size with clear background and ligting as it will be used
-                  later for facial recognition system.
-                </li>
-              </ol>
-            ) : isEditMode || !!candidate ? (
-              "Beneficiary Details"
-            ) : (
-              "Add New Beneficiary"
+        <ScrollArea className="flex-1 overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-center gap-3 text-lg font-semibold text-center">
+              {viewOnly
+                ? "View Beneficiary Details"
+                : toVerify
+                ? "Beneficiary Details"
+                : isEditMode || !!candidate
+                ? "Edit Beneficiary Details"
+                : "Add New Beneficiary"}
+
+              {candidate?.is_candidate_verified && (
+                <span className="text-green-400 bg-green-100 rounded flex gap-2 items-center px-2 py-1 text-sm">
+                  <TicketCheckIcon className="w-4 h-4" /> Voucher Issued
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <DialogDescription asChild>
+            <div className="pt-4">
+              {viewOnly ? (
+                "View Beneficiary"
+              ) : toVerify ? (
+                <ol className="text-muted-foreground">
+                  <li>
+                    Aadhar Number and beneficiary photo will be used to verify
+                    beneficiary at the time of issuing laptop at store
+                  </li>
+                </ol>
+              ) : (
+                ""
+              )}
+            </div>
+          </DialogDescription>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-5 py-2 overflow-auto"
+            id="candidate-form"
+          >
+            {openConfirm && (
+              <Dialog open={openConfirm} onOpenChange={setOpenConfirm}>
+                <DialogContent>
+                  <DialogHeader>
+                    Are you sure you want to cancel editing?
+                  </DialogHeader>
+
+                  <DialogDescription>
+                    You will lose all unsaved data. Click{" "}
+                    <strong>Save & Exit</strong> to save & exit, or{" "}
+                    <strong>Cancel</strong> to discard changes.
+                  </DialogDescription>
+
+                  <div className="flex items-center justify-end gap-3">
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={() => {
+                        setIsEditMode(false);
+                        setOpenConfirm(false);
+                      }}
+                    >
+                      Cancel Editing
+                    </Button>
+
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        handleSubmit(onSubmit)();
+                        setOpenConfirm(false);
+                      }}
+                      disabled={isUpdating}
+                    >
+                      {isUpdating ? "Saving..." : "Save & Exit"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             )}
-          </div>
-        </DialogDescription>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 py-2">
-          {canEdit && (
-            <div>
-              <Button
-                type="button"
-                variant={isEditMode ? "destructive" : "secondary"}
-                onClick={() => {
-                  if (isEditMode) {
-                    setOpenConfirm(true);
-                    return;
-                  }
-                  setIsEditMode(true);
-                }}
-              >
-                {isEditMode ? "Cancel" : "Edit"}
-              </Button>
-            </div>
-          )}
-          {openConfirm && (
-            <Dialog open={openConfirm} onOpenChange={setOpenConfirm}>
-              <DialogContent>
-                <DialogHeader>
-                  Are you sure you want to cancel editing?
-                </DialogHeader>
 
-                <DialogDescription>
-                  You will lose all unsaved data. Click{" "}
-                  <strong>Save & Exit</strong> to save & exit, or{" "}
-                  <strong>Cancel</strong> to discard changes.
-                </DialogDescription>
+            <section className="flex flex-col gap-4">
+              {renderTextInput("id", "Employee ID", "text", true)}
+              {renderTextInput("full_name", "Full Name")}
+              {renderTextInput("mobile_number", "Mobile Number")}
+              {renderTextInput("dob", "Date of Birth")}
+              {renderTextInput("city", "City")}
+              {renderTextInput("state", "State")}
+              {renderTextInput("division", "Division", "text", false)}
+              {renderTextInput(
+                "aadhar_number",
+                "Aadhar Number",
+                "text",
+                false,
+                isEditMode || !candidate
+                  ? false
+                  : toVerify && !!candidate?.aadhar_number
+              )}
+            </section>
 
-                <div className="flex items-center justify-end gap-3">
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={() => {
-                      setIsEditMode(false);
-                      setOpenConfirm(false);
-                    }}
-                  >
-                    Cancel Editing
-                  </Button>
-
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      handleSubmit(onSubmit)();
-                      setOpenConfirm(false);
-                    }}
-                  >
-                    Save & Exit
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-
-          <section className="flex flex-col gap-4">
-            <h3 className="font-semibold text-lg mb-2">Candidate Details</h3>
-            {renderTextInput("id", "Employee ID", "text", true)}
-            {renderTextInput("full_name", "Full Name")}
-            {renderTextInput("mobile_number", "Mobile Number")}
-            {renderTextInput("dob", "Date of Birth")}
-            {renderTextInput("city", "City")}
-            {renderTextInput("state", "State")}
-            {renderTextInput("division", "Division", "text", false)}
-            {renderTextInput("aadhar_number", "Aadhar Number", "text", false)}
-          </section>
-
-          <section className="flex flex-col gap-4">
-            <StoresCombobox
-              value={watch("store_id")}
-              onChange={(store) =>
-                setValue("store_id", store.id, { shouldDirty: true })
-              }
-              isDisabled={
-                currentUserInfo.role !== "admin" &&
-                currentUserInfo.role !== "super_admin"
-              }
-            />
-            <div className="flex gap-3 items-center">
-              <VendorSpocCombobox
-                value={watch("vendor_spoc_id")}
-                onChange={(vendor_spoc) =>
-                  setValue("vendor_spoc_id", vendor_spoc.id, {
-                    shouldDirty: true,
-                  })
-                }
-              />
-              <div className="pt-5">
-                <VendorSpocFormDialog />
+            <section className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
+                <Label className="font-semibold text-md flex ">Store</Label>
+                <StoresCombobox
+                  value={watch("store_id")}
+                  onChange={(store) => {
+                    setValue("store_id", store.id, { shouldDirty: true });
+                    setSelectedStore(store);
+                  }}
+                  isDisabled={!isEditMode}
+                />
               </div>
-            </div>
-            <p className="flex items-center gap-3 text-amber-700">
-              Add a new Vendor spoc if it doesn’t exist in the list
-            </p>
-          </section>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Label className="font-semibold text-md">Voucher Code</Label>
-            <Input
-              type="text"
-              readOnly
-              value={candidate?.coupon_code ?? "Error getting"}
-            />
-          </div>
+              {!!candidate && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
+                    <div>
+                      <Label className="font-semibold text-md flex ">
+                        Vendor Contact Person
+                      </Label>
+                      {!!candidate && toVerify && (
+                        <div className="flex gap-2 items-center pt-2">
+                          <Hint label="Add a new Vendor Contact if it doesn’t exist in the list.">
+                            <CircleQuestionMarkIcon className="w-3 h-5 text-amber-600" />
+                          </Hint>
+                          <VendorSpocFormDialog />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <VendorSpocCombobox
+                        value={watch("vendor_spoc_id")}
+                        onChange={(vendor_spoc) =>
+                          setValue("vendor_spoc_id", vendor_spoc.id, {
+                            shouldDirty: true,
+                          })
+                        }
+                        isDisabled={!isEditMode}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </section>
 
-          {!!candidate && (
-            <div className="border-t mt-4 pt-4 space-y-4 flex flex-col gap-3 ">
-              <h3 className="font-semibold text-lg">Photos</h3>
+            {!!candidate && (
+              <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
+                <Label className="font-semibold text-md">Voucher Code</Label>
+                <Input
+                  type="text"
+                  readOnly
+                  value={candidate?.coupon_code ?? "Error getting"}
+                />
+              </div>
+            )}
 
+            <div
+              className={`border-t mt-4 pt-4 space-y-4 flex w-full ${
+                !!candidate && toVerify
+                  ? "flex-col"
+                  : "flex-row justify-between gap-3"
+              }`}
+            >
               {/* Candidate Photo */}
-              <div className="border relative p-2">
+              <div
+                className={`border relative p-2 ${
+                  !!candidate && toVerify ? "" : "w-1/2"
+                }`}
+              >
                 <p className="absolute -translate-y-5 bg-background rounded px-2">
-                  Beneficiary Employee Photo with voucher
+                  Beneficiary Photo with voucher
                 </p>
-                <p className="flex gap-3 items-center text-amber-700">
-                  <span>
-                    <CircleQuestionMarkIcon className="w-3 h-3 text-blue-600" />
-                  </span>
-                  Capture the photo of beneficiary with the recieved voucher or
-                  upload a captured one.
-                </p>
+                {!!candidate && toVerify && (
+                  <p className="flex gap-3 items-center text-amber-700">
+                    <span>
+                      <CircleQuestionMarkIcon className="w-3 h-3 text-blue-600" />
+                    </span>
+                    Capture / upload the photo of beneficiary with the recieved
+                    voucher
+                  </p>
+                )}
 
                 <div className="flex items-center gap-3">
                   {candidate?.photo ? (
@@ -420,61 +492,67 @@ const CandidateFormDialog: React.FC<Props> = ({
                         import.meta.env.VITE_API_BASE_API_URL
                       }/hard_verify/api/v1.0/uploads/${candidate?.photo}`}
                       alt="Candidate"
-                      className="w-25 h-25 object-cover rounded-md border"
+                      className="w-30 h-30 object-cover rounded-md border"
                     />
                   ) : (
-                    <div className="w-25 h-25 border rounded-md flex items-center justify-center text-gray-400">
+                    <div className="w-30 h-30 border rounded-md flex items-center justify-center text-gray-400">
                       No Photo
                     </div>
                   )}
-                  {!viewOnly &&
+                  {!!candidate &&
+                    toVerify &&
                     (currentUserInfo.role === "admin" ||
                       currentUserInfo.role === "super_admin" ||
                       currentUserInfo.role === "registration_officer") && (
                       <div className="flex gap-3 items-center">
-                        <CandidatePhotoCapture candidateId={candidate?.id} />
-                        <p>(OR)</p>
-                        <div className="flex flex-col gap-1">
+                        <div className="flex gap-1 items-center">
+                          <Label
+                            htmlFor="candidateFileInput"
+                            className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer"
+                          >
+                            Choose File
+                          </Label>
                           <Input
+                            id="candidateFileInput"
                             type="file"
                             accept="image/*"
-                            onChange={(e) =>
-                              setCandPhoto(e.target.files?.[0] || null)
-                            }
+                            onChange={(e) => handleImageUpload("candidate", e)}
+                            className="hidden"
                           />
-                          <Button
-                            type="button"
-                            disabled={isUploadingPhoto || !candPhoto}
-                            onClick={() =>
-                              handleImageUpload(candPhoto!, "candidate")
-                            }
-                          >
-                            {isUploadingPhoto ? "Uploading..." : "Upload Photo"}
-                          </Button>
+                          {isUploadingPhoto && (
+                            <Loader className="w-3 h-3 animate-spin" />
+                          )}
                         </div>
+                        <p>(OR)</p>
+                        <CandidatePhotoCapture candidateId={candidate?.id} />
                       </div>
                     )}
                 </div>
               </div>
 
               {/* Aadhar photo */}
-              <div className="relative border p-2">
+              <div
+                className={`border relative p-2 ${
+                  !!candidate && toVerify ? "" : "w-1/2"
+                }`}
+              >
                 <p className="absolute -translate-y-5 bg-background rounded px-2">
-                  Beneficiary Employee's Aadhar card photo.
+                  Beneficiary's Aadhar card photo.
                 </p>
-                <p className="flex gap-3 items-center text-amber-700">
-                  <Hint
-                    label={
-                      "Take a photo of beneficiary employee's aadhar for future proof with number clearly visible."
-                    }
-                  >
-                    <span>
-                      <CircleQuestionMarkIcon className="w-3 h-3 text-blue-600" />
-                    </span>
-                  </Hint>
-                  Capture the photo of beneficiary employee's aadhar card or
-                  upload a captured one.
-                </p>
+                {!!candidate && toVerify && (
+                  <p className="flex gap-3 items-center text-amber-700">
+                    <Hint
+                      label={
+                        "Take a photo of beneficiary's aadhar for future proof with number clearly visible."
+                      }
+                    >
+                      <span>
+                        <CircleQuestionMarkIcon className="w-3 h-3 text-blue-600" />
+                      </span>
+                    </Hint>
+                    Capture /upload the photo of beneficiary's aadhar card
+                  </p>
+                )}
                 <div className="flex items-center gap-3">
                   {candidate?.aadhar_photo ? (
                     <img
@@ -484,105 +562,73 @@ const CandidateFormDialog: React.FC<Props> = ({
                         candidate?.aadhar_photo
                       }`}
                       alt="Candidate"
-                      className="w-25 h-25 object-cover rounded-md border"
+                      className="w-30 h-30 object-cover rounded-md border"
                     />
                   ) : (
-                    <div className="w-25 h-25 border rounded-md flex items-center justify-center text-gray-400">
+                    <div className="w-30 h-30 border rounded-md flex items-center justify-center text-gray-400">
                       No Aadhar
                     </div>
                   )}
-                  {!viewOnly &&
+                  {!!candidate &&
+                    toVerify &&
                     (currentUserInfo.role === "admin" ||
                       currentUserInfo.role === "super_admin" ||
                       currentUserInfo.role === "registration_officer") && (
                       <div className="flex gap-3 items-center">
-                        <AadharPhotoCapture candidateId={candidate?.id} />
-                        <p>(OR)</p>
-                        <div className="flex flex-col gap-1">
+                        <div className="flex gap-1 items-center">
+                          <Label
+                            htmlFor="aadharFileInput"
+                            className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer"
+                          >
+                            Choose File
+                          </Label>
                           <Input
+                            id="aadharFileInput"
                             type="file"
                             accept="image/*"
-                            onChange={(e) =>
-                              setAadharPhoto(e.target.files?.[0] || null)
-                            }
+                            onChange={(e) => handleImageUpload("aadhar", e)}
+                            className="hidden"
                           />
-                          <Button
-                            type="button"
-                            disabled={isUploadingPhoto || !aadharPhoto}
-                            onClick={() =>
-                              handleImageUpload(aadharPhoto!, "aadhar")
-                            }
-                          >
-                            {isUploadingPhoto
-                              ? "Uploading..."
-                              : "Upload Aadhar"}
-                          </Button>
+                          {isUploadingPhoto && (
+                            <Loader className="w-3 h-3 animate-spin" />
+                          )}
+                          {isUploadingAadhar && (
+                            <Loader className="w-3 h-3 animate-spin" />
+                          )}
                         </div>
+                        <p>(OR)</p>
+                        <AadharPhotoCapture candidateId={candidate?.id} />
                       </div>
                     )}
                 </div>
               </div>
+            </div>
 
-              {/* Parent Photo */}
-              {/* <div className="flex items-center gap-3">
-            {candidate?.parent_photo_url || candidateData?.parent_photo_url ? (
-              <img
-                src={`${
-                  import.meta.env.VITE_API_BASE_API_URL
-                }/hard_verify/api/v1.0/uploads/${
-                  candidateData?.parent_photo_url ?? candidate?.parent_photo_url
-                }`}
-                alt="Parent"
-                className="w-20 h-20 object-cover rounded-md border"
-              />
-            ) : (
-              <div className="w-20 h-20 border rounded-md flex items-center justify-center text-gray-400">
-                No Photo
-              </div>
-            )}
-            {!viewOnly && currentUserInfo.role === "admin" || currentUserInfo.role === "super_admin" && (
-              <div className="flex flex-col gap-1">
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setParentPhoto(e.target.files?.[0] || null)}
-                />
-                <Button
-                  type="button"
-                  disabled={isUploadingPhoto || !parentPhoto}
-                  onClick={() => handleImageUpload(parentPhoto!, "parent")}
+            {toVerify && (
+              <div className="flex items-center gap-3 mt-2">
+                <Hint label="Check the box if all the details have been filled and verified.">
+                  <Input
+                    type="checkbox"
+                    id="is_candidate_verified"
+                    {...register("is_candidate_verified")}
+                    disabled={viewOnly}
+                    className="w-7 h-7 hover:cursor-pointer"
+                  />
+                </Hint>
+                <Label
+                  className="font-semibold text-md"
+                  htmlFor="is_candidate_verified"
                 >
-                  {isUploadingPhoto ? "Uploading..." : "Upload Parent Photo"}
-                </Button>
+                  Beneficiary Details Verified
+                </Label>
+                <p className="flex gap-3">
+                  <CircleQuestionMarkIcon className="w-3 h-3 text-blue-600" />
+                  Check the box if all the details of employee is verified.
+                </p>
               </div>
             )}
-          </div> */}
-            </div>
-          )}
 
-          {isEditMode && (
-            <div className="flex items-center gap-3 mt-2">
-              <Input
-                type="checkbox"
-                id="is_candidate_verified"
-                {...register("is_candidate_verified")}
-                disabled={viewOnly}
-                className="w-7 h-7"
-              />
-              <Label
-                className="font-semibold text-md"
-                htmlFor="is_candidate_verified"
-              >
-                Candidate Verified
-              </Label>
-              <p className="flex gap-3">
-                <CircleQuestionMarkIcon className="w-3 h-3 text-blue-600" />
-                Check the box if all the details of employee is verified.
-              </p>
-            </div>
-          )}
-
-          {/* <section>
+            {/* <section>
             <h3 className="font-semibold text-lg mb-2">Parent Details</h3>
             {renderTextInput("parent_name", "Parent Name")}
             {renderTextInput("parent_employee_code", "Parent Employee Code")}
@@ -590,26 +636,148 @@ const CandidateFormDialog: React.FC<Props> = ({
             {renderTextInput("parent_mobile_number", "Parent Mobile Number")}
             {renderTextInput("parent_email", "Parent Email", "email")}
           </section> */}
+          </form>
+        </ScrollArea>
+        {/* Verification Confirmation Dialog */}
+        <Dialog open={showVerifyConfirm} onOpenChange={setShowVerifyConfirm}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-center">Confirmation</DialogTitle>
+              <DialogDescription>
+                Verify the details before proceeding:
+              </DialogDescription>
+            </DialogHeader>
 
-          {!viewOnly && (
-            <DialogFooter className="pt-4">
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-[120px_1fr] gap-3">
+                <span className="font-semibold">Full Name</span>
+                <span>{watch("full_name")}</span>
+
+                <span className="font-semibold">Mobile Number</span>
+                <span>{watch("mobile_number")}</span>
+
+                <span className="font-semibold">Employee ID</span>
+                <span>{watch("id")}</span>
+
+                <span className="font-semibold">Coupon Code</span>
+                <span className="text-lg font-bold">
+                  {candidate?.coupon_code ?? "-"}
+                </span>
+
+                <span className="font-semibold">Aadhar Number</span>
+                <span>{watch("aadhar_number")}</span>
+                <span className="font-semibold">Store</span>
+                <div className="flex flex-col">
+                  {selectedStore ? (
+                    <>
+                      <span className="font-medium">{selectedStore.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {selectedStore.address}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {selectedStore.city}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-red-500">No store selected</span>
+                  )}
+                </div>
+              </div>
+
+              <p className="mt-3 text-amber-700 font-medium">
+                Are you sure everything is correct and you want to proceed?
+              </p>
+            </div>
+
+            <DialogFooter className="mt-4">
               <Button
-                type="submit"
-                disabled={
-                  isAdding || isUpdating || (!!candidate && !isEditMode)
-                }
+                variant="outline"
+                onClick={() => setShowVerifyConfirm(false)}
               >
-                {!!candidate || isEditMode
-                  ? isUpdating
-                    ? `${toVerify ? "Verifying..." : "Updating..."}`
-                    : `${toVerify ? "Verify" : "Update Candidate"}`
-                  : isAdding
-                  ? "Adding..."
-                  : "Add Candidate"}
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowVerifyConfirm(false);
+                  document.getElementById("candidate-form")?.requestSubmit(); // ⬅ submits original form
+                }}
+              >
+                Ok
               </Button>
             </DialogFooter>
-          )}
-        </form>
+          </DialogContent>
+        </Dialog>
+
+        {!viewOnly && (
+          <DialogFooter className="w-full">
+            <div className="flex justify-center gap-2 items-center w-full">
+              {/* Left side — secondary actions */}
+              <div>
+                {(mode === "view" || mode === "verify") && canEdit && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setIsEditMode(true)}
+                  >
+                    Edit Details
+                  </Button>
+                )}
+
+                {mode === "edit" && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => setOpenConfirm(true)}
+                  >
+                    Discard Changes
+                  </Button>
+                )}
+              </div>
+
+              {/* Right side — primary actions */}
+              <div className="flex gap-2">
+                {!isEditMode && (
+                  <DialogClose asChild>
+                    <Button variant="outline">Cancel</Button>
+                  </DialogClose>
+                )}
+
+                {mode === "add" && (
+                  <Button type="submit" form="candidate-form">
+                    Add Beneficiary
+                  </Button>
+                )}
+
+                {mode === "edit" && (
+                  <Button type="submit" form="candidate-form">
+                    Save Changes
+                  </Button>
+                )}
+
+                {mode === "verify" && (
+                  <div className="relative group w-full flex justify-center">
+                    <Button
+                      type="submit"
+                      className={`${
+                        !isVerifiedChecked ? "cursor-not-allowed" : ""
+                      }`}
+                      disabled={!isVerifiedChecked}
+                      onClick={() => setShowVerifyConfirm(true)}
+                    >
+                      Issue Voucher
+                    </Button>
+                    {!isVerifiedChecked && (
+                      <div className="absolute -top-25 text-xs bg-black text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition w-full">
+                        Check the <strong>Beneficiary details verified</strong>{" "}
+                        checkbox to proceed.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

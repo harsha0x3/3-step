@@ -34,6 +34,31 @@ export const vendorsApiSlice = rootApiSlice.injectEndpoints({
       },
       providesTags: ["Vendors"],
     }),
+
+    updateVendor: builder.mutation<
+      ApiResponse<VendorSpocItem | unknown>,
+      { vendorId: string; payload: Partial<NewVendor> }
+    >({
+      query: ({ vendorId, payload }) => ({
+        url: `/vendors/${vendorId}`,
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: ["Vendors"],
+    }),
+
+    updateVendorSpoc: builder.mutation<
+      ApiResponse<VendorSpocItem | unknown>,
+      { vendorSpocId: string; formData: FormData }
+    >({
+      query: ({ vendorSpocId, formData }) => ({
+        url: `/vendors/spoc/${vendorSpocId}`,
+        method: "PATCH",
+        body: formData,
+      }),
+      invalidatesTags: ["VendorsSpoc"],
+    }),
+
     getAllVendorSpoc: builder.query<
       ApiResponse<VendorSpocItem[]>,
       { searchTerm: string }
@@ -52,4 +77,6 @@ export const {
   useAddNewVendorSpocMutation,
   useGetAllVendorSpocQuery,
   useGetAllVendorsQuery,
+  useUpdateVendorMutation,
+  useUpdateVendorSpocMutation,
 } = vendorsApiSlice;

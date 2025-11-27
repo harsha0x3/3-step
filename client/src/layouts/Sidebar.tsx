@@ -6,119 +6,368 @@ import {
   StoreIcon,
   Users2Icon,
   UserCircle2Icon,
+  ChevronDown,
+  ChevronRight,
+  TicketIcon,
+  LaptopIcon,
+  BarChart3Icon,
+  Menu,
+  X,
+  CopyPlusIcon,
 } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+
+interface MenuItem {
+  label: string;
+  icon: React.ElementType;
+  path?: string;
+  roles: string[];
+  children?: MenuItem[];
+}
+
+interface SidebarItemProps {
+  item: MenuItem;
+  depth?: number;
+  onNavigate: (path: string) => void;
+  isActiveRoute: (path?: string) => boolean;
+  hasAccessToItem: (roles: string[]) => boolean;
+}
+
+const SidebarItem: React.FC<SidebarItemProps> = ({
+  item,
+  depth = 0,
+  onNavigate,
+  isActiveRoute,
+  hasAccessToItem,
+}) => {
+  const [open, setOpen] = useState(true);
+
+  if (!hasAccessToItem(item.roles)) return null;
+
+  const Icon = item.icon;
+  const isActive = isActiveRoute(item.path);
+  const hasChildren = !!item.children?.length;
+
+  // ✅ COLLAPSIBLE MENU
+  if (hasChildren) {
+    return (
+      <Collapsible open={open} onOpenChange={setOpen} className="w-full">
+        <CollapsibleTrigger asChild>
+          <Button
+            size="sm"
+            className={`bg-transparent w-full hover:bg-sidebar-accent hover:text-sidebar-accent-foreground
+      text-sidebar-foreground flex items-center justify-start h-9 py-2 gap-2 text-sm
+      ${depth > 0 ? "pl-8" : "px-2"}
+    `}
+            variant={isActive ? "outline" : "ghost"}
+            onClick={() => item.path && onNavigate(item.path)}
+          >
+            <div className="flex items-center gap-2">
+              <Icon className="w-4 h-4" />
+              <span>{item.label}</span>
+            </div>
+            {open ? (
+              <ChevronDown className="w-4 h-4" />
+            ) : (
+              <ChevronRight className="w-4 h-4" />
+            )}
+          </Button>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent className="pl-4">
+          <div className="flex flex-col gap-1 mt-1 pl-1 border-l-2">
+            {item.children?.map((child) => (
+              <SidebarItem
+                key={child.label}
+                item={child}
+                depth={depth + 1}
+                onNavigate={onNavigate}
+                isActiveRoute={isActiveRoute}
+                hasAccessToItem={hasAccessToItem}
+              />
+            ))}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  }
+
+  // ✅ LEAF MENU
+  return (
+    <Button
+      size="sm"
+      className={`bg-transparent w-full hover:bg-sidebar-accent hover:text-sidebar-accent-foreground
+        text-sidebar-foreground flex items-center justify-start h-9 py-2 gap-2 text-sm
+        ${depth > 0 ? "pl-8" : "px-4"}
+      `}
+      variant={isActive ? "outline" : "ghost"}
+      onClick={() => item.path && onNavigate(item.path)}
+    >
+      <Icon className="w-4 h-4" />
+      <span>{item.label}</span>
+    </Button>
+  );
+};
 
 const Sidebar: React.FC = () => {
-  const [selectedItemLabel, setSelectedItemLabel] = useState<string>("Home");
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const currentUserRole = useSelector(selectUserRole);
 
-  return (
-    <div
-      className="fixed bottom-0 left-0 right-0 md:relative md:h-screen 
-                bg-sidebar w-full md:w-44 flex md:flex-col 
-                flex-row md:justify-start items-center 
-                py-2 md:py-4 z-50 border-t md:border-t-0 md:border-r border-sidebar-border"
-    >
-      <div className="flex flex-row md:flex-col gap-1 md:gap-2 w-full md:w-auto md:justify-start px-2 md:px-0 items-start">
-        <Button
-          size="sm"
-          className="bg-transparent hover:bg-sidebar-accent hover:cursor-pointer hover:text-sidebar-accent-foreground text-sidebar-foreground flex-col md:flex-row h-auto md:h-9 py-2 md:py-2 px-2 md:px-4 gap-0 md:gap-2 text-xs md:text-sm"
-          variant={
-            selectedItemLabel === "admin-dashboard" ? "outline" : "ghost"
-          }
-          onClick={() => {
-            setSelectedItemLabel("admin-dashboard");
-            navigate("/admin/dashboard");
-          }}
-        >
-          <LayoutDashboardIcon className="w-5 h-5 md:w-4 md:h-4" />
-          <span className="text-[10px] md:text-sm">Dashboard</span>
-        </Button>
+  const menuItems: MenuItem[] = [
+    {
+      label: "Dashboards",
+      icon: LayoutDashboardIcon,
+      roles: ["admin", "super_admin", "registration_officer"],
+      children: [
+        {
+          label: "Stats",
+          icon: BarChart3Icon,
+          path: "/dashboard",
+          roles: [
+            "admin",
+            "super_admin",
+            "registration_officer",
+            "store_agent",
+          ],
+        },
+        {
+          label: "Beneficiaries",
+          icon: UsersRoundIcon,
+          path: "/beneficiary/all",
+          roles: ["admin", "super_admin", "registration_officer"],
+        },
+        {
+          label: "Stores",
+          icon: StoreIcon,
+          path: "/stores",
+          roles: ["admin", "super_admin", "registration_officer"],
+        },
+        {
+          label: "Vendors",
+          icon: Users2Icon,
+          path: "/vendors",
+          roles: ["admin", "super_admin"],
+        },
+        {
+          label: "Vendor Contact Persons",
+          icon: UserCircle2Icon,
+          path: "/vendor_spoc",
+          roles: ["admin", "super_admin", "registration_officer"],
+        },
+      ],
+    },
+    {
+      label: "Register",
+      icon: CopyPlusIcon,
+      roles: ["admin", "super_admin", "registration_officer"],
+      children: [
+        {
+          label: "Beneficiary",
+          icon: UsersRoundIcon,
+          path: "/admin/beneficiary/new",
+          roles: ["admin", "super_admin"],
+        },
+        {
+          label: "Store",
+          icon: StoreIcon,
+          path: "/admin/stores/new",
+          roles: ["admin", "super_admin"],
+        },
+        {
+          label: "Vendor",
+          icon: Users2Icon,
+          path: "/vendors/new",
+          roles: ["admin", "super_admin"],
+        },
+        {
+          label: "Vendor Contact Person",
+          icon: UserCircle2Icon,
+          path: "/vendor_spoc/new",
+          roles: ["admin", "super_admin", "registration_officer"],
+        },
+      ],
+    },
+    {
+      label: "User Management",
+      icon: Users2Icon,
+      path: "/admin/users",
+      roles: ["admin", "super_admin"],
+    },
+    {
+      label: "Issue Voucher",
+      icon: TicketIcon,
+      path: "/registration_officer/beneficiary/verify",
+      roles: ["registration_officer"],
+    },
+    {
+      label: "Dashboard",
+      icon: LayoutDashboardIcon,
+      path: "/dashboard",
+      roles: ["store_agent"],
+    },
+    {
+      label: "Laptop Distribution",
+      icon: LaptopIcon,
+      path: "/store/beneficiary",
+      roles: ["store_agent"],
+    },
+  ];
 
-        <Button
-          size="sm"
-          className="bg-transparent hover:bg-sidebar-accent hover:cursor-pointer hover:text-sidebar-accent-foreground text-sidebar-foreground flex-col md:flex-row h-auto md:h-9 py-2 md:py-2 px-2 md:px-4 gap-0 md:gap-2 text-xs md:text-sm"
-          variant={selectedItemLabel === "beneficiary" ? "outline" : "ghost"}
-          onClick={() => {
-            setSelectedItemLabel("beneficiary");
-            switch (currentUserRole) {
-              case "admin":
-                navigate("/admin/beneficiary");
-                break;
-              case "super_admin":
-                navigate("/admin/beneficiary");
-                break;
-              case "registration_officer":
-                navigate("/verifier/beneficiary");
-                break;
-              case "store_agent":
-                navigate("/store/beneficiary");
-                break;
-            }
-          }}
-        >
-          <UsersRoundIcon className="w-5 h-5 md:w-4 md:h-4" />
-          <span className="text-[10px] md:text-sm">Beneficiaries</span>
-        </Button>
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    setIsMobileOpen(false);
+  };
 
-        {currentUserRole === "admin" ||
-          (currentUserRole === "super_admin" && (
-            <Button
-              size="sm"
-              className="bg-transparent hover:bg-sidebar-accent hover:cursor-pointer hover:text-sidebar-accent-foreground text-sidebar-foreground flex-col md:flex-row h-auto md:h-9 py-2 md:py-2 px-2 md:px-4 gap-0 md:gap-2 text-xs md:text-sm"
-              variant={selectedItemLabel === "stores" ? "outline" : "ghost"}
-              onClick={() => {
-                setSelectedItemLabel("stores");
-                navigate("/admin/stores");
-              }}
-            >
-              <StoreIcon className="w-5 h-5 md:w-4 md:h-4" />
-              <span className="text-[10px] md:text-sm">Stores</span>
-            </Button>
-          ))}
+  const isActiveRoute = (path?: string) => {
+    if (!path) return false;
+    return location.pathname === path || location.pathname.startsWith(path);
+  };
 
-        {(currentUserRole === "admin" ||
-          currentUserRole === "super_admin" ||
-          currentUserRole === "registration_officer") && (
-          <>
-            <Button
-              size="sm"
-              className="bg-transparent hover:bg-sidebar-accent hover:cursor-pointer hover:text-sidebar-accent-foreground text-sidebar-foreground flex-col md:flex-row h-auto md:h-9 py-2 md:py-2 px-2 md:px-4 gap-0 md:gap-2 text-xs md:text-sm"
-              variant={selectedItemLabel === "vendors" ? "outline" : "ghost"}
-              onClick={() => {
-                setSelectedItemLabel("vendors");
-                navigate("vendors");
-              }}
-            >
-              <Users2Icon className="w-5 h-5 md:w-4 md:h-4" />
-              <span className="text-[10px] md:text-sm">Vendors</span>
-            </Button>
+  const hasAccessToItem = (roles: string[]) => {
+    return roles.includes(currentUserRole);
+  };
 
-            <Button
-              size="sm"
-              className="bg-transparent hover:bg-sidebar-accent hover:cursor-pointer hover:text-sidebar-accent-foreground text-sidebar-foreground flex-col md:flex-row h-auto md:h-9 py-2 md:py-2 px-2 md:px-4 gap-0 md:gap-2 text-xs md:text-sm"
-              variant={
-                selectedItemLabel === "vendor_spoc" ? "outline" : "ghost"
-              }
-              onClick={() => {
-                setSelectedItemLabel("vendor_spoc");
-                navigate("vendor_spoc");
-              }}
-            >
-              <UserCircle2Icon className="w-5 h-5 md:w-4 md:h-4" />
-              <span className="text-[10px] md:text-sm hidden md:inline">
-                Vendor SPOC
-              </span>
-              <span className="text-[10px] md:hidden">SPOC</span>
-            </Button>
-          </>
-        )}
-      </div>
+  // const renderMenuItem = (item: MenuItem, depth: number = 0) => {
+  //   if (!hasAccessToItem(item.roles)) return null;
+
+  //   const Icon = item.icon;
+  //   const isActive = isActiveRoute(item.path);
+  //   const hasChildren = !!item.children?.length;
+
+  //   // If menu has children → Collapsible section
+  //   if (hasChildren) {
+  //     const [open, setOpen] = useState(true); // default open; set false if you want collapsed initially
+
+  //     return (
+  //       <Collapsible
+  //         key={item.label}
+  //         open={open}
+  //         onOpenChange={setOpen}
+  //         className="w-full"
+  //       >
+  //         <CollapsibleTrigger asChild>
+  //           <Button
+  //             size="sm"
+  //             variant="ghost"
+  //             className={`bg-transparent w-full hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground flex items-center justify-between h-9 py-2 px-4 gap-2 text-sm ${
+  //               depth > 0 ? "pl-8" : ""
+  //             }`}
+  //           >
+  //             <div className="flex items-center gap-2">
+  //               <Icon className="w-4 h-4" />
+  //               <span>{item.label}</span>
+  //             </div>
+  //             {open ? (
+  //               <ChevronDown className="w-4 h-4" />
+  //             ) : (
+  //               <ChevronRight className="w-4 h-4" />
+  //             )}
+  //           </Button>
+  //         </CollapsibleTrigger>
+
+  //         <CollapsibleContent>
+  //           <div className="flex flex-col gap-1 mt-1 pl-2">
+  //             {item.children?.map((child) => renderMenuItem(child, depth + 1))}
+  //           </div>
+  //         </CollapsibleContent>
+  //       </Collapsible>
+  //     );
+  //   }
+
+  //   // If leaf menu → normal nav button
+  //   return (
+  //     <Button
+  //       key={item.label}
+  //       size="sm"
+  //       className={`bg-transparent w-full hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground flex items-center justify-start h-9 py-2 gap-2 text-sm ${
+  //         depth > 0 ? "pl-8" : "px-4"
+  //       }`}
+  //       variant={isActive ? "outline" : "ghost"}
+  //       onClick={() => item.path && handleNavigation(item.path)}
+  //     >
+  //       <Icon className="w-4 h-4" />
+  //       <span>{item.label}</span>
+  //     </Button>
+  //   );
+  // };
+
+  const sidebarContent = (
+    <div className="flex flex-col gap-1 w-full px-2 py-4">
+      {menuItems.map((item) => (
+        <SidebarItem
+          key={item.label}
+          item={item}
+          onNavigate={handleNavigation}
+          isActiveRoute={isActiveRoute}
+          hasAccessToItem={hasAccessToItem}
+        />
+      ))}
     </div>
+  );
+
+  return (
+    <>
+      {/* Mobile Hamburger Button */}
+      <Button
+        className="md:hidden fixed top-4 left-4 z-50 bg-sidebar hover:bg-sidebar-accent"
+        size="sm"
+        variant="ghost"
+        onClick={() => setIsMobileOpen(!isMobileOpen)}
+      >
+        {isMobileOpen ? (
+          <X className="w-5 h-5 text-sidebar-foreground" />
+        ) : (
+          <Menu className="w-5 h-5 text-sidebar-foreground" />
+        )}
+      </Button>
+
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`
+          fixed md:relative inset-y-0 left-0 z-40
+          bg-sidebar w-64 md:w-60 h-screen
+          border-r border-sidebar-border
+          transform transition-transform duration-200 ease-in-out
+          ${
+            isMobileOpen
+              ? "translate-x-0"
+              : "-translate-x-full md:translate-x-0"
+          }
+          overflow-y-auto
+        `}
+      >
+        {/* Logo/Brand Area */}
+        <div className="h-16 flex items-center justify-center border-b border-sidebar-border">
+          <h1 className="text-lg font-semibold text-sidebar-foreground">
+            {currentUserRole === "admin" || currentUserRole === "super_admin"
+              ? "Admin User"
+              : currentUserRole === "registration_officer"
+              ? "Beneficiary Registration"
+              : "Store User"}
+          </h1>
+        </div>
+
+        {sidebarContent}
+      </div>
+    </>
   );
 };
 

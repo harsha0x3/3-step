@@ -16,10 +16,10 @@ const CandidateDetailsSection: React.FC<Props> = ({ candidate }) => {
     <div
       className="border rounded-md shadow-sm space-y-6 w-[95vw] max-w-[500px] sm:max-w-[600px] 
                           h-[90vh] sm:h-[80vh] overflow-auto 
-                          mx-auto"
+                          mx-auto px-2 py-4"
     >
       <h2 className="text-xl font-semibold text-center mb-4">
-        Candidate Details
+        Beneficiary Details
       </h2>
 
       {/* Candidate Info */}

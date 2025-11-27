@@ -20,6 +20,14 @@ import { Loader } from "lucide-react";
 import CandidateFormDialog from "./CandidateFormDialog";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import IssuanceDetailsDialog from "./IssuanceDetailsDialog";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 type Props = {
   candidates: CandidateItemWithStore[];
@@ -29,6 +37,7 @@ type Props = {
 
 const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
   const currentUserInfo = useSelector(selectAuth);
+  const navigate = useNavigate();
 
   const columnHelper = createColumnHelper<CandidateItemWithStore>();
 
@@ -45,6 +54,18 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
     columnHelper.accessor("mobile_number", {
       header: "Mobile",
       cell: (info) => info.getValue(),
+    }),
+    columnHelper.accessor("coupon_code", {
+      id: "coupon",
+      header: "Voucher Code",
+      cell: ({ row }) => {
+        const coupon = row.original.coupon_code;
+        return coupon ? (
+          <span className="font-medium">{coupon}</span>
+        ) : (
+          <span className="text-muted-foreground">No Coupon</span>
+        );
+      },
     }),
     columnHelper.accessor("city", {
       header: "City",
@@ -64,32 +85,78 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
     }),
 
     columnHelper.accessor("is_candidate_verified", {
-      header: "Is Verified",
-      cell: (info) => (
-        <span
-          className={`px-2 py-1 rounded text-xs font-medium ${
-            info.getValue()
-              ? "bg-green-300/50 text-green-600"
-              : "bg-red-300/50 text-red-600"
-          }`}
-        >
-          {info.getValue() ? "Verified" : "Not Verified"}
-        </span>
-      ),
+      header: "Voucher Issue Status",
+      cell: ({ row, getValue }) => {
+        const verified = getValue();
+        const verifier = row.original.verified_by; // <-- access full name
+
+        return (
+          <div className="flex flex-col">
+            <span className={``}>
+              {verified ? (
+                <>
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium hover:cursor-default ${
+                          verified ? "bg-green-300/50 text-green-600" : ""
+                        }`}
+                      >
+                        Issued
+                      </span>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-80">
+                      <div className="grid grid-cols-[100px_1fr]">
+                        <strong>Issuer Name:</strong>
+                        <p>{verifier?.full_name}</p>
+                      </div>
+                      <div className="grid grid-cols-[100px_1fr]">
+                        <strong>Issuer Email:</strong>
+                        <p>{verifier?.email}</p>
+                      </div>
+                      <div className="grid grid-cols-[100px_1fr]">
+                        <strong>Issued Location:</strong>
+                        <p>{verifier?.location}</p>
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
+                </>
+              ) : (
+                <span
+                  className={`px-2 py-1 rounded text-xs font-medium ${
+                    verified ? "" : "bg-red-300/50 text-red-600"
+                  }`}
+                >
+                  Not Issued
+                </span>
+              )}
+            </span>
+          </div>
+        );
+      },
     }),
+
     columnHelper.accessor("issued_status", {
-      header: "Issued Status",
-      cell: (info) => (
-        <span
-          className={`px-2 py-1 rounded text-xs font-medium ${
-            info.getValue() === "issued"
-              ? "bg-green-100 text-green-700"
-              : "bg-yellow-100 text-yellow-700"
-          }`}
-        >
-          {info.getValue()}
-        </span>
-      ),
+      header: "Laptop Issue Status",
+      cell: ({ row, getValue }) => {
+        const status = getValue();
+        return (
+          <div className="flex items-center justify-center">
+            <span
+              className={`px-2 py-1 rounded text-xs font-medium ${
+                status === "issued"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-yellow-100 text-yellow-700"
+              }`}
+            >
+              {status === "issued" ? "Issued" : "Not Issued"}
+            </span>
+            {status === "issued" && (
+              <IssuanceDetailsDialog candidate={row.original} />
+            )}
+          </div>
+        );
+      },
     }),
     columnHelper.accessor("store", {
       header: "Store Info",
@@ -108,38 +175,39 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
     }),
     columnHelper.display({
       id: "verify-candidate",
-      header: "inspect",
+      header: "Actions",
       cell: ({ row }) => {
         const candidate = row.original;
+        if (currentUserInfo.role === "registration_officer") {
+          return (
+            <Button
+              size="sm"
+              onClick={() => {
+                navigate(
+                  `/registration_officer/beneficiary/verify/${candidate.id}`
+                );
+              }}
+            >
+              Issue Voucher
+            </Button>
+          );
+        }
         if (
           currentUserInfo.role === "admin" ||
-          currentUserInfo.role === "super_admin" ||
-          currentUserInfo.role === "registration_officer"
+          currentUserInfo.role === "super_admin"
         ) {
           return (
             <div className="flex items-center gap-2">
               <CandidateFormDialog
                 candidate={candidate}
                 store_id={candidate.store_id}
-                toVerify={currentUserInfo.role === "registration_officer"}
+                toVerify={false}
               />
             </div>
           );
         } else {
           return null;
         }
-      },
-    }),
-    columnHelper.accessor("coupon_code", {
-      id: "coupon",
-      header: "Coupon",
-      cell: ({ row }) => {
-        const coupon = row.original.coupon_code;
-        return coupon ? (
-          <span className="font-medium">{coupon}</span>
-        ) : (
-          <span className="text-muted-foreground">No Coupon</span>
-        );
       },
     }),
   ];
@@ -197,7 +265,7 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
                   colSpan={columns.length}
                   className="text-center py-6"
                 >
-                  No candidates found.
+                  No data found.
                 </TableCell>
               </TableRow>
             ) : (

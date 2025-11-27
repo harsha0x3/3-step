@@ -37,7 +37,7 @@ router = APIRouter(prefix="/candidates", tags=["Candidates"])
 
 
 # ✅ Add a new candidate
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_candidate(
     payload: NewCandidatePayload,
     db: Annotated[Session, Depends(get_db_conn)],
@@ -198,15 +198,8 @@ async def list_candidates_of_store(
     )
 
     candidates = get_candidates_of_store(db, store.id, params)
-    if not candidates:
-        return {
-            "msg": "No candidates present",
-            "data": {"candidates": candidates, "count": 0},
-        }
-    return {
-        "msg": "Candidates fetched successfully",
-        "data": {"candidates": candidates, "count": len(candidates)},
-    }
+
+    return candidates
 
 
 # ✅ Update an existing candidate

@@ -24,14 +24,12 @@ export const authApiSlice = rootApiSlice.injectEndpoints({
           const { data } = await queryFulfilled;
           dispatch(loginSuccess(data));
         } catch (err: any) {
-          let message = "Unexpected error in registering";
+          const errMsg: string =
+            err?.data?.detail?.msg ??
+            err?.data?.detail ??
+            "Unexpected error in Logging in. Try again.";
 
-          // Check the correct error structure from RTK Query
-          if (err.error?.data?.msg) {
-            message = err.error.data.msg;
-          }
-
-          dispatch(setError(message));
+          dispatch(setError(errMsg));
         } finally {
           dispatch(setIsLoading(false));
         }
@@ -67,10 +65,10 @@ export const authApiSlice = rootApiSlice.injectEndpoints({
       },
     }),
 
-    getAllUsers: builder.query<RegisterResponse[], void>({
-      query: () => "/auth/all",
-      providesTags: ["AllUsers"],
-    }),
+    // getAllUsers: builder.query<RegisterResponse[], void>({
+    //   query: () => "/auth/all",
+    //   providesTags: ["AllUsers"],
+    // }),
 
     getCurrentUser: builder.query<LoginResponse, void>({
       query: () => "/auth/me",
@@ -79,9 +77,14 @@ export const authApiSlice = rootApiSlice.injectEndpoints({
         try {
           const { data } = await queryFulfilled;
           dispatch(loginSuccess(data));
-        } catch {
+        } catch (err) {
           dispatch(userLogout());
-          console.error("LOGGEDOUT");
+          // const errMsg: string =
+          //   err?.data?.detail?.msg ??
+          //   err?.data?.detail ??
+          //   "Unexpected error in Auorization.";
+
+          // dispatch(setError(errMsg + " Login again."));
         }
       },
     }),
@@ -92,6 +95,6 @@ export const {
   useLoginMutation,
   useRegisterMutation,
   useLogoutMutation,
-  useGetAllUsersQuery,
+  // useGetAllUsersQuery,
   useGetCurrentUserQuery,
 } = authApiSlice;

@@ -57,7 +57,63 @@ class UserOut(BaseModel):
     full_name: str | None = None
     role: str
     store_id: str | None = None
+    location: str | None = None
 
     created_at: datetime | None = None
     updated_at: datetime | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Add these new schemas
+
+
+class AdminCreateUserRequest(BaseModel):
+    username: str
+    email: EmailStr
+    full_name: str
+    role: RoleEnum
+    location: str | None = None
+    store_id: str | None = None  # Required for store_agent role
+
+
+class AdminUpdateUserRequest(BaseModel):
+    username: str | None = None
+    email: EmailStr | None = None
+    full_name: str | None = None
+    role: RoleEnum | None = None
+    store_id: str | None = None
+    is_active: bool | None = None
+    location: str | None = None
+
+
+class PasswordResetRequestSchema(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetVerifySchema(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: str
+
+
+class PasswordChangeSchema(BaseModel):
+    current_password: str
+    new_password: str
+
+
+class UserDetailOut(BaseModel):
+    id: str
+    username: str
+    email: str
+    full_name: str | None = None
+    role: str
+    store_id: str | None = None
+    is_active: bool
+    is_first_login: bool
+    must_change_password: bool
+    location: str | None = None
+    mfa_enabled: bool
+    created_at: datetime
+    updated_at: datetime
+
     model_config = ConfigDict(from_attributes=True)

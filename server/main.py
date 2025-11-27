@@ -8,6 +8,7 @@ from routes import (
     verification_routes,
     vendor_routes,
     dashboard_routes,
+    user_management_routes,
 )
 from db.connection import init_db
 from fastapi.staticfiles import StaticFiles
@@ -52,3 +53,4 @@ app.include_router(candidate_routes.router)
 app.include_router(verification_routes.router)
 app.include_router(vendor_routes.router)
 app.include_router(dashboard_routes.router)
+app.include_router(user_management_routes.router)

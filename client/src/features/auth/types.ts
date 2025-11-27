@@ -38,6 +38,9 @@ export interface LoginResponse {
   email: string;
   full_name: string;
   role: string;
+  is_first_login?: boolean;
+  must_change_password?: boolean;
+  mfa_enabled?: boolean;
 }
 
 export interface UserItem {
@@ -46,7 +49,10 @@ export interface UserItem {
   email: string;
   full_name: string;
   role: string;
+  location?: string;
+  store_id: string;
   mfa_secret?: string;
   created_at: string;
   updated_at: string;
+  must_change_password?: boolean;
 }

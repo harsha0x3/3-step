@@ -5,6 +5,7 @@ import type {
   CandidateItemWithStore,
   CandidatesSearchParams,
   UpdateCandidatePayload,
+  PartialCandidateItem,
 } from "../types";
 
 export const candidatesApiSlice = rootApiSlice.injectEndpoints({
@@ -66,9 +67,11 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
           searchParams.append("sort_by", String(params.sort_by));
         if (params?.sort_order)
           searchParams.append("sort_order", String(params.sort_order));
-        if (params?.is_issued)
+        if (!(params?.is_issued === null || params?.is_issued === undefined))
           searchParams.append("is_issued", String(params.is_issued));
-        if (params?.is_verified)
+        if (
+          !(params?.is_verified === null || params?.is_verified === undefined)
+        )
           searchParams.append("is_verified", String(params.is_verified));
 
         const queryString = searchParams.toString();
@@ -81,15 +84,36 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
     getCandidatesOfStore: builder.query<
       ApiResponse<
         | {
-            candidates: CandidateItemWithStore[];
+            candidates: PartialCandidateItem[];
             count: number;
             total_count: number;
           }
         | unknown
       >,
-      void
+      CandidatesSearchParams | void
     >({
-      query: () => `/candidates/store`,
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.search_by)
+          searchParams.append("search_by", params.search_by);
+        if (params?.search_term)
+          searchParams.append("search_term", params.search_term);
+        if (params?.page) searchParams.append("page", String(params.page));
+        if (params?.page_size)
+          searchParams.append("page_size", String(params.page_size));
+        if (params?.sort_by)
+          searchParams.append("sort_by", String(params.sort_by));
+        if (params?.sort_order)
+          searchParams.append("sort_order", String(params.sort_order));
+        if (!(params?.is_issued === null || params?.is_issued === undefined))
+          searchParams.append("is_issued", String(params.is_issued));
+        if (
+          !(params?.is_verified === null || params?.is_verified === undefined)
+        )
+          searchParams.append("is_verified", String(params.is_verified));
+        return `/candidates/store`;
+      },
+
       providesTags: ["Candidates"],
     }),
 

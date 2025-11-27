@@ -29,16 +29,11 @@ async def register(
 async def login(
     db: Annotated[Session, Depends(get_db_conn)],
     response: Annotated[Response, "response to pass down to set cookies"],
-    login_data: Annotated[
-        LoginRequest, "Login form fields, including email/username and password"
-    ],
-) -> Annotated[dict[str, Any], "Logs in users and returns Tokens"]:
-    log_user = LoginRequest(
-        email_or_username=login_data.email_or_username,
-        password=login_data.password,
-        mfa_code=login_data.mfa_code,
-    )
-    return login_user(log_user=log_user, db=db, response=response)
+    login_data: Annotated[LoginRequest, "Login form fields"],
+):
+    user_data = login_user(log_user=login_data, db=db, response=response)
+
+    return user_data
 
 
 @router.post("/refresh")

@@ -8,19 +8,23 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 const VendorSpocPhotoCapture = ({ onSubmit }) => {
+  const [open, setOpen] = useState<boolean>(false);
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>Capture Photo</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Capture Photo of vendor spoc.</DialogTitle>
+          <DialogTitle className="text-center">
+            Capture Photo of Vendor Contact Person
+          </DialogTitle>
           <DialogDescription>
-            Vendor spoc person is accountable for the integrity of the
-            beneficiary employee.
+            Vendor contact person is responsible for identifying the
+            beneficiary.
           </DialogDescription>
         </DialogHeader>
         <PhotoCaptureSection
@@ -28,6 +32,7 @@ const VendorSpocPhotoCapture = ({ onSubmit }) => {
           title="Vendor Spoc Photo"
           successMessage="Vendor Spoc Photo recorded successfully!"
           submitLabel="Submit Vendor Spoc Photo"
+          onSuccess={() => setOpen(false)}
         />
       </DialogContent>
     </Dialog>

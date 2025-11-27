@@ -46,6 +46,7 @@ async def save_image_file(
     candidate_id: str | None = None,
     isVerify: bool = False,
     isLaptopIssuance: bool = False,
+    prefix: str | None = None,
 ):
     store_name = store_id if store_id else "no_store"
     try:
@@ -85,6 +86,7 @@ async def save_image_file(
         ext = photo.filename.split(".")[-1].lower()
 
         filename = f"{candidate_id}.{ext}" if candidate_id else photo.filename
+        filename = f"{prefix}_{filename}" if prefix else filename
         uploaded_img_path = os.path.join(upload_img_dir, filename)
         norm_uploaded_img_path = normalize_path(uploaded_img_path)
 

@@ -10,19 +10,23 @@ interface PhotoCaptureSectionProps {
   title: string;
   successMessage?: string;
   submitLabel?: string;
+  onSuccess?: () => void;
 }
 
 const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
   candidateId,
   onSubmit,
   title,
-  successMessage = "Photo submitted successfully",
+  successMessage,
   submitLabel = "Submit Photo",
+  onSuccess,
 }) => {
   const webcamRef = useRef<Webcam | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedCam, setSelectedCam] = useState<"front" | "rear">("front");
+  const [selectedCam, setSelectedCam] = useState<
+    "front_camera" | "rear_camera"
+  >("front_camera");
   const [videoConstraints, setVideoConstraints] = useState({
     facingMode: "user",
   });
@@ -50,7 +54,9 @@ const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
     try {
       setIsLoading(true);
       await onSubmit(formData);
-      toast.success(successMessage);
+      // if (successMessage) {
+      //   toast.success(successMessage);
+      // }
       setPreview(null);
     } catch (err: any) {
       const errMsg: string =
@@ -58,13 +64,12 @@ const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
       toast.error(errMsg);
     } finally {
       setIsLoading(false);
+      onSuccess?.();
     }
   };
 
   return (
     <div className="flex flex-col gap-4 p-4 border rounded-md max-w-md">
-      <h2 className="text-xl font-semibold">{title}</h2>
-
       {!preview ? (
         <div className="flex flex-col items-center gap-3">
           <Webcam
@@ -76,25 +81,25 @@ const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
           />
           <div className="flex justify-between items-center">
             <Button
-              variant={selectedCam === "front" ? "outline" : "secondary"}
+              variant={selectedCam === "front_camera" ? "outline" : "secondary"}
               onClick={() => {
                 setVideoConstraints({ facingMode: "user" });
-                setSelectedCam("front");
+                setSelectedCam("front_camera");
               }}
             >
-              Front
+              Front Camera
             </Button>
             <Button
-              variant={selectedCam === "rear" ? "outline" : "secondary"}
+              variant={selectedCam === "rear_camera" ? "outline" : "secondary"}
               onClick={() => {
                 setVideoConstraints({ facingMode: { exact: "environment" } });
-                setSelectedCam("rear");
+                setSelectedCam("rear_camera");
               }}
             >
-              Rear
+              Rear Camera
             </Button>
           </div>
-          <Button onClick={capturePhoto}>Capture Photo</Button>
+          <Button onClick={capturePhoto}>Capture</Button>
         </div>
       ) : (
         <div className="flex flex-col items-center gap-3">

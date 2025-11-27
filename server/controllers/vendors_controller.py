@@ -55,7 +55,8 @@ async def add_new_vendor_spoc(
         new_vendor_spoc = VendorSpoc(
             vendor_id=vendor.id,
             full_name=payload.full_name,
-            contact=payload.contact,
+            mobile_number=payload.mobile_number,
+            email=payload.email,
             photo=photo_url,
         )
         db.add(new_vendor_spoc)
@@ -87,7 +88,8 @@ def get_all_vendor_spoc(db: Session, search_term: str | None = None):
                 id=vendor_spoc.id,
                 vendor_id=vendor_spoc.vendor_id,
                 full_name=vendor_spoc.full_name,
-                contact=vendor_spoc.contact,
+                mobile_number=vendor_spoc.mobile_number,
+                email=vendor_spoc.email,
                 photo=get_relative_upload_path(vendor_spoc.photo),
                 vendor=vendor_spoc.vendor,
             )
@@ -98,4 +100,70 @@ def get_all_vendor_spoc(db: Session, search_term: str | None = None):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get vendors",
+        )
+
+
+async def update_vendor_spoc(
+    payload: vendor_schemas.UpdateVendorSpoc,
+    vendor_spoc_id: str,
+    db: Session,
+    photo: UploadFile | None = None,
+):
+    try:
+        vendor_spoc = db.get(VendorSpoc, vendor_spoc_id)
+        if not vendor_spoc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Vendor Contact Person Not found",
+            )
+        for key, val in payload.model_dump(
+            exclude_none=True, exclude_unset=True
+        ).items():
+            if hasattr(vendor_spoc, key):
+                print(f"Updating key - {key}; val - {val}")
+                setattr(vendor_spoc, key, val)
+        if photo:
+            photo_url = await save_vendor_spoc_img(photo=photo)
+            vendor_spoc.photo = photo_url
+
+        db.add(vendor_spoc)
+        db.commit()
+        db.refresh(vendor_spoc)
+        return vendor_spoc
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected Error while updating vendor contact person",
+        )
+
+
+async def update_vendor(
+    payload: vendor_schemas.UpdateVendor, vendor_id: str, db: Session
+):
+    try:
+        vendor = db.get(Vendor, vendor_id)
+        if not vendor:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Vendor Contact Person Not found",
+            )
+        for key, val in payload.model_dump(
+            exclude_none=True, exclude_unset=True
+        ).items():
+            if hasattr(vendor, key):
+                setattr(vendor, key, val)
+
+        db.add(vendor)
+        db.commit()
+        db.refresh(vendor)
+        return vendor
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected Error while updating vendor contact person",
         )

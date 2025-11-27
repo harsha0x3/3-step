@@ -16,14 +16,38 @@ export const dashboardApiAlice = rootApiSlice.injectEndpoints({
         responseHandler: async (response) => response.blob(),
       }),
     }),
-    getDashboardStats: builder.query<
-      { msg: string; data: DashboardStats },
-      void
-    >({
-      query: () => "/dashboard/stats/brief",
+
+    getRoleBasedStats: builder.query({
+      query: () => "/dashboard/stats/role-based",
+      providesTags: ["Dashboard"],
+    }),
+
+    bulkUploadIssuance: builder.mutation({
+      query: (file: File) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return {
+          url: "/dashboard/bulk-upload/issuance",
+          method: "POST",
+          body: formData,
+        };
+      },
+      invalidatesTags: ["Dashboard", "Candidates", "Issuance"],
+    }),
+
+    downloadBulkTemplate: builder.query({
+      query: () => ({
+        url: "/dashboard/bulk-upload/template",
+        method: "GET",
+        responseHandler: async (response) => response.blob(),
+      }),
     }),
   }),
 });
 
-export const { useDownloadCandidatesMutation, useGetDashboardStatsQuery } =
-  dashboardApiAlice;
+export const {
+  useDownloadCandidatesMutation,
+  useGetRoleBasedStatsQuery,
+  useBulkUploadIssuanceMutation,
+  useLazyDownloadBulkTemplateQuery,
+} = dashboardApiAlice;

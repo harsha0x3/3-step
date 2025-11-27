@@ -2,30 +2,29 @@ import React, { useEffect, useState } from "react";
 import { useLazyGetAllCandidatesQuery } from "../store/candidatesApiSlice";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import type { CandidateItemWithStore } from "../types";
 import Hint from "@/components/ui/hint";
-import { Loader } from "lucide-react";
+import { Loader, SearchIcon, SearchSlash } from "lucide-react";
 
 const CandidateSearch: React.FC = () => {
   const [fetchCandidates, { data: candidatesData, isFetching }] =
     useLazyGetAllCandidatesQuery();
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [searchBy, setSearchBy] = useState<string>("id");
+
+  const [employeeId, setEmployeeId] = useState<string>("");
+  const [fullName, setFullName] = useState<string>("");
+  const [searchBy, setSearchBy] = useState<"id" | "full_name" | "">("");
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
+
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const searchTerm = searchBy === "id" ? employeeId : fullName;
+
     if (!searchTerm.trim()) {
       setShowDropdown(false);
       return;
@@ -47,123 +46,124 @@ const CandidateSearch: React.FC = () => {
       toast.error(errMsg, { description: errDesc });
     }
   };
+
   const handleSelect = (candidate: CandidateItemWithStore) => {
     setShowDropdown(false);
-    //   setSelectedCandidate(candidate);
-    // setOpenForm(true);
-    navigate(`/verifier/candidates/${candidate.id}`);
+    navigate(`/registration_officer/beneficiary/verify/${candidate.id}`);
   };
+
   const candidates = candidatesData?.data?.candidates || [];
 
-  useEffect(() => {
-    if (searchTerm.trim() === "") {
+  // Auto-reset logic
+  const handleIdChange = (val: string) => {
+    setEmployeeId(val);
+    if (val.trim()) {
+      setFullName("");
+      setSearchBy("id");
+    } else setSearchBy("");
+  };
+
+  const handleNameChange = (val: string) => {
+    setFullName(val);
+    if (val.trim()) {
+      setEmployeeId("");
+      setSearchBy("full_name");
+    } else setSearchBy("");
+    if (showDropdown) {
       setShowDropdown(false);
     }
-  }, [searchTerm]);
+  };
+
+  // Hide dropdown when no search term
+  useEffect(() => {
+    if (!employeeId.trim() && !fullName.trim()) setShowDropdown(false);
+  }, [employeeId, fullName]);
 
   return (
-    <div className="flex flex-col">
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col gap-2 md:flex-row items-center"
-      >
-        <Input
-          type="text"
-          value={searchTerm}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setSearchTerm(e.target.value)
-          }
-          placeholder={`Search by ${
-            searchBy === "id" ? "Employee ID" : "Employee Name"
-          }`}
-          className="w-64"
-        />
-        <div className="px-3 flex gap-2 items-center">
-          <p>Search By: </p>
-          <Select
-            value={String(searchBy)}
-            aria-label="Select page"
-            onValueChange={(value) => setSearchBy(value)}
-          >
-            <Hint label="Select the search method">
-              <SelectTrigger
-                id="select-page"
-                className="whitespace-nowrap w-32 hover:bg-accent hover:text-accent-foreground hover:cursor-pointer"
-                aria-label="Select page"
-              >
-                <SelectValue placeholder="Search by" />
-              </SelectTrigger>
-            </Hint>
-            <SelectContent className="">
-              <SelectItem value="full_name">Full Name</SelectItem>
-              <SelectItem value="id">Employee Id</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+    <div className="flex flex-col w-full max-w-3xl mx-auto">
+      {/* SEARCH PANEL */}
+      <div className="w-full border rounded-lg shadow-sm bg-card p-6 mt-3">
+        <h2 className="text-lg font-semibold mb-1 text-center">
+          Search Employee
+        </h2>
+        <p className="text-sm text-muted-foreground text-center mb-4">
+          Enter Employee ID or Name
+        </p>
 
-        <Hint
-          label={
-            searchTerm.trim() === ""
-              ? "Button disabled Search Box is empty"
-              : "Click to search employees"
-          }
-        >
-          <span
-            className={`inline-block ${
-              searchTerm.trim() === "" ? "hover:cursor-not-allowed" : ""
-            }`}
-          >
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          {/* ID INPUT */}
+          <Input
+            type="text"
+            value={employeeId}
+            onChange={(e) => handleIdChange(e.target.value)}
+            placeholder="🔎 Search by Employee ID"
+            className="w-full"
+          />
+
+          {/* OR Divider */}
+          <div className="flex items-center gap-2">
+            <div className="h-[1px] flex-1 bg-muted" />
+            <span className="text-muted-foreground text-xs font-medium">
+              OR
+            </span>
+            <div className="h-[1px] flex-1 bg-muted" />
+          </div>
+
+          {/* NAME INPUT */}
+          <Input
+            type="text"
+            value={fullName}
+            onChange={(e) => handleNameChange(e.target.value)}
+            placeholder="🔎 Search by Full Name"
+            className="w-full"
+          />
+
+          <div className="flex justify-between">
+            <div />
             <Button
               type="submit"
-              disabled={searchTerm.trim() === ""}
-              className="w-30"
+              disabled={!employeeId.trim() && !fullName.trim()}
+              className="h-11 text-base font-semibold"
             >
               Search
             </Button>
-          </span>
-        </Hint>
-      </form>
-
-      {showDropdown && candidates.length > 0 && (
-        <div className="w-full border rounded-md shadow-md mt-1 z-20 max-h-64 overflow-y-auto">
-          {candidates.map((c: any) => (
-            <div
-              key={c.id}
-              onClick={() => handleSelect(c)}
-              className="px-4 pt-2 cursor-pointer hover:bg-accent hover:text-accent-foreground"
-            >
-              <p className="font-medium">{c.full_name}</p>
-              <p className="text-sm text-muted-foreground">
-                Employee ID: {c.id} • Mobile Number: {c.mobile_number}
-              </p>
-              <DropdownMenuSeparator />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {showDropdown && candidates.length === 0 && !isFetching && (
-        <div className="w-full bg-white border rounded-md shadow-md mt-1 px-4 py-3 text-gray-500">
-          No candidates found
-        </div>
-      )}
-
-      {isFetching && !candidates && (
-        <div className="w-full border rounded-md shadow-md mt-1 z-20 max-h-64 overflow-y-auto">
-          <div className="flex items-center justify-center">
-            <Loader className="w-7 h-7 animate-spin" />
-            <p>Loading Employees</p>
           </div>
+        </form>
+      </div>
+
+      {/* RESULTS */}
+      {showDropdown && (
+        <div className="w-full border rounded-lg shadow-md mt-3 bg-card max-h-64 overflow-y-auto animate-in fade-in duration-200">
+          {isFetching && (
+            <div className="flex items-center justify-center gap-2 py-4">
+              <Loader className="w-5 h-5 animate-spin" />
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            </div>
+          )}
+
+          {!isFetching &&
+            candidates.length > 0 &&
+            candidates.map((c: any) => (
+              <div
+                key={c.id}
+                onClick={() => handleSelect(c)}
+                className="px-4 py-3 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors"
+              >
+                <p className="font-medium">{c.full_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  Employee ID: {c.id} • Mobile: {c.mobile_number}
+                </p>
+                <DropdownMenuSeparator />
+              </div>
+            ))}
+
+          {!isFetching && candidates.length === 0 && (
+            <div className="px-4 py-4 text-center text-muted-foreground">
+              No employees match the search
+            </div>
+          )}
         </div>
       )}
-      <ol className="pt-6 mb-3 text-sm text-muted-foreground list-decimal list-inside">
-        <li>Select a search method.</li>
-        <li>Type an employee name or ID based on the selected method.</li>
-        <li>
-          Click <b>Search</b>. The dropdown will display matching employees.
-        </li>
-        <li>Select the correct employee to proceed to the next steps.</li>
-      </ol>
     </div>
   );
 };

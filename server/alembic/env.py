@@ -16,6 +16,7 @@ from models import (
     verification_statuses,
     coupons,
     vendors,
+    PasswordResetOtp,
 )
 
 load_dotenv()

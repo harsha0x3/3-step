@@ -33,7 +33,6 @@ const FacialRecognition: React.FC<props> = ({ candidateId, onSuccess }) => {
       candidateId={candidateId}
       onSubmit={handleFaceSubmit}
       title="Facial Verification"
-      successMessage="Face verified successfully"
       submitLabel="Verify Face"
     />
   );

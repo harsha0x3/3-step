@@ -49,6 +49,7 @@ const AadharPhotoCapture = ({ candidateId }: { candidateId: string }) => {
           title="Aadhar photo of Benificiary Employee"
           successMessage="Photo uploaded successfully!"
           submitLabel="Submit Photo"
+          onSuccess={() => setOpen(false)}
         />
       </DialogContent>
     </Dialog>

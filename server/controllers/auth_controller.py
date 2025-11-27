@@ -7,7 +7,7 @@ from services.auth.jwt_handler import (
     set_jwt_cookies,
     verify_refresh_token,
 )
-from models.schemas.auth_schemas import LoginRequest, RegisterRequest
+from models.schemas.auth_schemas import LoginRequest, RegisterRequest, UserDetailOut
 from models.users import User
 
 
@@ -70,7 +70,7 @@ def register_user(
 
 def login_user(
     log_user: LoginRequest, db: Session, response: Response
-) -> dict[str, Any]:
+) -> UserDetailOut:
     user = db.scalar(
         select(User).where(
             or_(
@@ -108,7 +108,7 @@ def login_user(
     )
     set_jwt_cookies(response=response, access_token=access, refresh_token=refresh)
 
-    return user.to_dict_safe()
+    return UserDetailOut.model_validate(user)
 
 
 def refresh_access_token(

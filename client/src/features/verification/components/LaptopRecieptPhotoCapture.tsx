@@ -10,6 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 const LaptopRecieptPhotoCapture = ({
   candidateId,
@@ -17,13 +18,14 @@ const LaptopRecieptPhotoCapture = ({
   candidateId: string;
 }) => {
   const [uploadreciept] = useUploadLaptopRecieptMutation();
+  const [open, setOpen] = useState<boolean>(false);
 
   const handleLaptopPhotoSubmit = async (formData: FormData) => {
     return uploadreciept({ candidateId, formData }).unwrap();
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>Capture Photo</Button>
       </DialogTrigger>
@@ -40,6 +42,7 @@ const LaptopRecieptPhotoCapture = ({
           title="Laptop Reciept Photo"
           successMessage="Laptop reciept photo recorded successfully!"
           submitLabel="Submit reciept Photo"
+          onSuccess={() => setOpen(false)}
         />
       </DialogContent>
     </Dialog>

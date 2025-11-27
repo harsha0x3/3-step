@@ -1,6 +1,12 @@
 import { rootApiSlice } from "@/store/rootApiSlice";
 import type { ApiResponse } from "@/store/rootTypes";
-
+import type {
+  IssuanceDetailsItem,
+  OverrideRequest,
+  OverrideResult,
+  VerificationResult,
+  VerificationStatusItem,
+} from "../types";
 export const verificationApi = rootApiSlice.injectEndpoints({
   endpoints: (builder) => ({
     verifyFace: builder.mutation<
@@ -14,9 +20,22 @@ export const verificationApi = rootApiSlice.injectEndpoints({
       }),
       invalidatesTags: ["VerificationStatus"],
     }),
-    sendOtp: builder.mutation({
+    sendOtp: builder.mutation<ApiResponse<{ expires_at: string }>, string>({
       query: (candidateId: string) => ({
         url: `/verify/otp/re-send/candidate/${candidateId}`,
+        method: "POST",
+      }),
+    }),
+    sendOtpToAdmin: builder.mutation<
+      ApiResponse<{
+        expires_at: string;
+        admin_mail?: string;
+        admin_phone?: string;
+      }>,
+      string
+    >({
+      query: (candidateId: string) => ({
+        url: `/verify/otp/send/to_admin/candidate/${candidateId}`,
         method: "POST",
       }),
     }),
@@ -60,16 +79,22 @@ export const verificationApi = rootApiSlice.injectEndpoints({
       }),
       invalidatesTags: ["Candidates"],
     }),
-    getCandidateVerificationStatus: builder.query({
-      query: (candidateId: string) => ({
+    getCandidateVerificationStatus: builder.query<
+      ApiResponse<VerificationStatusItem>,
+      string
+    >({
+      query: (candidateId) => ({
         url: `/verify/status/candidate/${candidateId}`,
         method: "GET",
       }),
       providesTags: ["VerificationStatus"],
     }),
 
-    getCandidateIssuanceDetails: builder.query({
-      query: (candidateId: string) => ({
+    getCandidateIssuanceDetails: builder.query<
+      ApiResponse<IssuanceDetailsItem>,
+      string
+    >({
+      query: (candidateId) => ({
         url: `/verify/issuance-details/candidate/${candidateId}`,
         method: "GET",
       }),
@@ -117,6 +142,29 @@ export const verificationApi = rootApiSlice.injectEndpoints({
     >({
       query: ({ couponCode }) => `/verify/coupon-details/${couponCode}`,
     }),
+
+    consolidateVerification: builder.mutation<
+      ApiResponse<VerificationResult>,
+      FormData
+    >({
+      query: (payload) => ({
+        url: "/verify/canidate-details/consolidate",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["VerificationStatus"],
+    }),
+    overrideVerification: builder.mutation<
+      ApiResponse<OverrideResult>,
+      { candidateId: string; payload: OverrideRequest }
+    >({
+      query: ({ candidateId, payload }) => ({
+        url: `/verify/override/${candidateId}`,
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["VerificationStatus"],
+    }),
   }),
 });
 
@@ -128,10 +176,14 @@ export const {
   useVerifyCouponMutation,
   useAddCouponToCandidateMutation,
   useLazyGetCandidateVerificationStatusQuery,
+  useGetCandidateVerificationStatusQuery,
   useVerifyCandidateAadharMutation,
   useIssueLaptopMutation,
   useLazyGetCandidateByCouponQuery,
   useUploadLaptopEvidenceMutation,
   useUploadLaptopRecieptMutation,
   useGetCandidateIssuanceDetailsQuery,
+  useConsolidateVerificationMutation,
+  useOverrideVerificationMutation,
+  useSendOtpToAdminMutation,
 } = verificationApi;

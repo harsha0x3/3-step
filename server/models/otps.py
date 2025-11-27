@@ -1,5 +1,5 @@
 from db.base import Base, BaseMixin
-from sqlalchemy import DateTime, String, ForeignKey, TIMESTAMP
+from sqlalchemy import String, ForeignKey, TIMESTAMP
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime, timezone, timedelta
 import random

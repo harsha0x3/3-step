@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,13 +19,20 @@ import {
 } from "../store/productStoresApiSlice";
 import type { NewStorePayload, StoreItemWithUser } from "../types";
 import { toast } from "sonner";
+import { flushSync } from "react-dom";
 
 type Props = {
   store?: StoreItemWithUser;
+  defOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
-const StoreFormDialog: React.FC<Props> = ({ store }) => {
-  const [open, setOpen] = React.useState(false);
+const StoreFormDialog: React.FC<Props> = ({
+  store,
+  defOpen = false,
+  onOpenChange,
+}) => {
+  const [open, setOpen] = React.useState(defOpen);
   const [addNewStore, { isLoading: isAdding }] = useAddNewStoreMutation();
   const [updateStore, { isLoading: isUpdating }] = useUpdateStoreMutation();
 
@@ -46,6 +54,13 @@ const StoreFormDialog: React.FC<Props> = ({ store }) => {
         }
       : {},
   });
+
+  const closeAndGoBack = () => {
+    flushSync(() => {
+      setOpen(false);
+      onOpenChange?.(false);
+    });
+  };
 
   const onSubmit = async (data: NewStorePayload) => {
     try {
@@ -79,29 +94,30 @@ const StoreFormDialog: React.FC<Props> = ({ store }) => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={() => {
+        closeAndGoBack();
+      }}
+    >
       <DialogTrigger asChild>
         {isEditMode ? (
           <Button variant="outline">Edit</Button>
         ) : (
-          <Button>Create Store</Button>
+          <Button>Add Store</Button>
         )}
       </DialogTrigger>
 
-      <DialogContent
-        className="w-[95vw] max-w-[650px] sm:max-w-[650px] 
-                          h-[90vh] sm:h-[80vh] overflow-auto 
-                          mx-auto"
-      >
+      <DialogContent className="">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-center">
             {isEditMode ? "Edit Store Details" : "Add a New Store"}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
           {/* Store City */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-[130px_1fr] gap-2">
             <Label htmlFor="store_city">City</Label>
             <Input
               id="store_city"
@@ -117,7 +133,7 @@ const StoreFormDialog: React.FC<Props> = ({ store }) => {
           </div>
 
           {/* Store Name */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-3">
             <Label htmlFor="name">Store Name</Label>
             <Input
               id="name"
@@ -133,7 +149,7 @@ const StoreFormDialog: React.FC<Props> = ({ store }) => {
           </div>
 
           {/* Address */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-3">
             <Label htmlFor="address">Address</Label>
             <Input id="address" {...register("address", { required: true })} />
             {errors.address && (
@@ -144,7 +160,7 @@ const StoreFormDialog: React.FC<Props> = ({ store }) => {
           </div>
 
           {/* Store Email */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-3">
             <Label htmlFor="address">Email</Label>
             <Input id="email" {...register("email", { required: true })} />
             {errors.email && (
@@ -154,7 +170,7 @@ const StoreFormDialog: React.FC<Props> = ({ store }) => {
             )}
           </div>
           {/* Store Mobile_number */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-3">
             <Label htmlFor="address">Mobile Number</Label>
             <Input
               id="mobile_number"
@@ -168,15 +184,14 @@ const StoreFormDialog: React.FC<Props> = ({ store }) => {
           </div>
 
           <DialogFooter className="pt-4">
-            <Button type="submit" disabled={isAdding || isUpdating}>
-              {isAdding || isUpdating
-                ? isEditMode
-                  ? "Saving..."
-                  : "Creating..."
-                : isEditMode
-                ? "Save Changes"
-                : "Create Store"}
-            </Button>
+            <div className="flex justify-end gap-2">
+              <DialogClose asChild>
+                <Button variant={"outline"}>Cancel</Button>
+              </DialogClose>
+              <Button type="submit" disabled={isAdding || isUpdating}>
+                {isAdding || isUpdating ? "Saving.." : "Save"}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>

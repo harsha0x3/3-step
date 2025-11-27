@@ -61,7 +61,6 @@ const VendorsCombobox: React.FC<VendorsComboboxProps> = ({
 
   return (
     <div className="w-full max-w-sm space-y-2">
-      <Label htmlFor="vendor">Vendor</Label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button

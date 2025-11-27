@@ -67,6 +67,15 @@ class CandidateItemWithStore(BaseModel):
     verified_by: UserOut | None = None
 
 
+class PartialCandidateItem(BaseModel):
+    id: str
+    full_name: str
+    mobile_number: str
+    issued_status: str | None = None
+    is_candidate_verified: bool
+    store: StoreItemOut | None = None
+
+
 class CandidateOut(BaseModel):
     id: str
     coupon_code: str

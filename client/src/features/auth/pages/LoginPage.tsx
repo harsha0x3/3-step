@@ -11,10 +11,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import React, { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { LoginPayload } from "../types";
 import { useSelector } from "react-redux";
 import { selectIsAuthenticated } from "../store/authSlice";
+import { toast } from "sonner";
+import Hint from "@/components/ui/hint";
 
 // import {
 //   InputOTP,
@@ -27,7 +29,7 @@ import { selectIsAuthenticated } from "../store/authSlice";
 
 const LoginPage: React.FC = () => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const [credentails, setCredentails] = useState<LoginPayload>({
+  const [credentials, setCredentials] = useState<LoginPayload>({
     email_or_username: "",
     password: "",
     mfa_code: "",
@@ -45,7 +47,7 @@ const LoginPage: React.FC = () => {
       //   loginSuccess({
       //     id: "asd",
       //     username: "harsha",
-      //     email: credentails.email,
+      //     email: credentials.email,
       //     firstName: "First",
       //     lastName: "last",
       //     role: "admin",
@@ -54,8 +56,14 @@ const LoginPage: React.FC = () => {
       //     error: null,
       //   })
       // );
-      const res = await login(credentails).unwrap();
-      console.log("LOGIN RESPONSE", res);
+      const res = await login(credentials).unwrap();
+      if (res.must_change_password) {
+        navigate("/password-reset/request", {
+          state: { email: credentials.email_or_username },
+        });
+        toast.info("You must change your password before continuing");
+        return;
+      }
       navigate("/");
     } catch (error) {
       console.error("ERROR looging in login page", error);
@@ -64,7 +72,7 @@ const LoginPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { id, value } = e.target;
-    setCredentails((prev) => ({ ...prev, [id]: value }));
+    setCredentials((prev) => ({ ...prev, [id]: value }));
   };
 
   useEffect(() => {
@@ -76,87 +84,87 @@ const LoginPage: React.FC = () => {
   }, [isAuthenticated]);
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <Card className=" flex-1 w-ful max-w-md min-w-sm">
+    <div className="flex flex-col items-center h-screen gap-10">
+      {/* Heading */}
+      <h1 className="text-3xl font-bold text-center mt-28">
+        Laptop Distribution - Login
+      </h1>
+
+      {/* Card */}
+      <Card className="w-full max-w-md min-w-sm mt-10">
         <CardHeader>
-          <CardTitle>Login to your account</CardTitle>
-          <CardDescription>
-            Enter your email below to login to your account
-          </CardDescription>
+          <CardTitle className="text-center text-lg">
+            Enter your credentials below.
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <form id="login-form" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+              {/* Email */}
+              <div className="flex items-center gap-4">
+                <Label htmlFor="email_or_username" className="w-32 text-right">
+                  User-ID
+                </Label>
                 <Input
                   id="email_or_username"
                   type="email"
-                  placeholder="m@titan.co.in"
-                  value={credentails.email_or_username}
+                  value={credentials.email_or_username}
                   onChange={handleChange}
                   required
                 />
               </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                  <a
-                    href="#"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                  >
-                    Forgot your password?
-                  </a>
-                </div>
+
+              {/* Password */}
+              <div className="flex items-center gap-4">
+                <Label htmlFor="password" className="w-32 text-right">
+                  Password
+                </Label>
                 <Input
                   id="password"
                   type="password"
-                  value={credentails.password}
+                  value={credentials.password}
                   onChange={handleChange}
                   required
                 />
               </div>
-              {/* <div className="grid gap-2">
-                <Label htmlFor="mfa_code">MFA Code</Label>
-                <InputOTP
-                  id="mfa_code"
-                  maxLength={6}
-                  pattern={REGEXP_ONLY_DIGITS}
-                  value={credentails.mfa_code}
-                  onChange={(val) =>
-                    setCredentails((prev) => ({ ...prev, mfa_code: val }))
-                  }
-                >
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSeparator />
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                </InputOTP>
-              </div> */}
             </div>
           </form>
         </CardContent>
-        <CardFooter className="flex-col gap-2">
-          <Button
-            type="submit"
-            form="login-form"
-            className="w-full"
-            disabled={isLoggingIn}
-          >
-            {isLoggingIn ? "Logging in..." : "Login"}
-          </Button>
-          <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{" "}
-            <Button variant="link" className="p-0" asChild>
-              <Link to={"/register"} className="underline underline-offset-4">
-                Sign up
-              </Link>
-            </Button>
+
+        <CardFooter className="flex flex-col gap-2">
+          <p className="text-accent-foreground">
+            Contact admin for password related issues.
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            <div>
+              <Hint label="Reset the credentials" side="left">
+                <Button
+                  type="button"
+                  variant={"destructive"}
+                  onClick={() =>
+                    setCredentials({
+                      email_or_username: "",
+                      password: "",
+                      mfa_code: "",
+                    })
+                  }
+                >
+                  Cancel
+                </Button>
+              </Hint>
+            </div>
+            <div>
+              <Hint label="Login to your account" side="right">
+                <Button
+                  type="submit"
+                  form="login-form"
+                  className="w-full"
+                  disabled={isLoggingIn}
+                >
+                  {isLoggingIn ? "Logging in..." : "Login"}
+                </Button>
+              </Hint>
+            </div>
           </div>
         </CardFooter>
       </Card>

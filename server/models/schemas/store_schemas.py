@@ -22,7 +22,7 @@ class UpdateStorePayload(BaseModel):
 
 
 class StoreSearchParams(BaseModel):
-    search_by: Literal["id", "name"] | None = None
+    search_by: Literal["city", "name"] | None = None
     search_term: str | None = None
 
 
@@ -40,3 +40,5 @@ class StoreItemOut(BaseModel):
 
 class StoreItemWithUser(StoreItemOut, BaseModel):
     store_agents: list[UserOut] | None = None
+    total_assigned_candidates: int | None = None
+    total_laptops_issued: int | None = None

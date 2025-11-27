@@ -22,7 +22,6 @@ const CandidatePhotoCapture = ({ candidateId }: { candidateId: string }) => {
         candidateId: candidateId,
         formData,
       }).unwrap();
-      toast.success(`${"candidate"} photo uploaded successfully`);
       setOpen(false);
     } catch (err: any) {
       toast.error("Photo upload failed", {
@@ -38,7 +37,9 @@ const CandidatePhotoCapture = ({ candidateId }: { candidateId: string }) => {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Capture benificiary employees photo</DialogTitle>
+          <DialogTitle className="text-center">
+            Capture benificiary employees photo
+          </DialogTitle>
           <DialogDescription>
             Capture the photo with proper lighting and background since, this
             picture is going to be used for facial recognition authentication of
@@ -51,6 +52,7 @@ const CandidatePhotoCapture = ({ candidateId }: { candidateId: string }) => {
           title="Benificiary photo"
           successMessage="Photo uploaded successfully!"
           submitLabel="Submit Photo"
+          onSuccess={() => setOpen(false)}
         />
       </DialogContent>
     </Dialog>

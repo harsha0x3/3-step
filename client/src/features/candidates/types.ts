@@ -46,6 +46,15 @@ export interface CandidateItemWithStore extends NewCandidatePayload {
   verified_by?: UserItem | null | undefined;
 }
 
+export interface PartialCandidateItem {
+  id: string;
+  full_name: string;
+  mobile_number: string;
+  issued_status?: string | null;
+  is_candidate_verified: boolean;
+  store?: StoreItemWithUser | null;
+}
+
 export interface CandidatesSearchParams {
   search_by?: string | null;
   search_term?: string | null;

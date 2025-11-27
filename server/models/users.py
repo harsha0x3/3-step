@@ -37,6 +37,13 @@ class User(Base, BaseMixin):
     last_login: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     disabled: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # Add these new fields to the User class
+    is_first_login: Mapped[bool] = mapped_column(Boolean, default=True)
+    password_reset_required: Mapped[bool] = mapped_column(Boolean, default=True)
+    must_change_password: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    location: Mapped[str] = mapped_column(String(122), nullable=True)
+
     store_id: Mapped[str] = mapped_column(
         String(40), ForeignKey("stores.id", ondelete="set null"), nullable=True
     )

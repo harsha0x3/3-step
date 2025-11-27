@@ -26,20 +26,20 @@ const ProtectedLayout: React.FC = () => {
 
     switch (currentUserRole) {
       case "admin":
-        navigate("/admin/stores", { state: { from: location }, replace: true });
+        navigate("/dashboard", { state: { from: location }, replace: true });
         break;
       case "super_admin":
-        navigate("/admin/stores", { state: { from: location }, replace: true });
+        navigate("/dashboard", { state: { from: location }, replace: true });
         break;
 
       case "store_agent":
-        navigate("/store/candidates", {
+        navigate("/store/beneficiary", {
           state: { from: location },
           replace: true,
         });
         break;
       case "registration_officer":
-        navigate("/verifier/candidates", {
+        navigate("/registration_officer/beneficiary/verify", {
           state: { from: location },
           replace: true,
         });

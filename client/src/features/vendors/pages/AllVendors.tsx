@@ -1,12 +1,20 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
 import { useGetAllVendorsQuery } from "../store/vendorsApiSlice";
 import VendorsTable from "../components/VendorsTable";
-import VendorFormDialog from "../components/VendorFormDialog";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ArrowBigLeftDashIcon } from "lucide-react";
+// import VendorFormDialog from "../components/VendorFormDialog";
 
 const AllVendors: React.FC = () => {
   const currentUserInfo = useSelector(selectAuth);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const fromDashboardRef = useRef(location.state?.from === "dashboard");
+  const fromDashboard = fromDashboardRef.current;
 
   const {
     data: vendorsData,
@@ -36,10 +44,22 @@ const AllVendors: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex justify-between items-center">
+      {/* <div className="flex justify-between items-center">
         <div />
         <VendorFormDialog />
-      </div>
+      </div> */}
+      {fromDashboard && (
+        <div className="w-full flex justify-start">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/dashboard")}
+            className="flex items-center gap-2 w-fit text-blue-500 underline"
+          >
+            <ArrowBigLeftDashIcon />
+            Back to Dashboard
+          </Button>
+        </div>
+      )}
       <div className="flex-1">
         <VendorsTable
           vendors={vendorsList}

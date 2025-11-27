@@ -46,7 +46,7 @@ async def list_stores(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
     search_by: Annotated[
-        Literal["id", "name"] | None,
+        Literal["city", "name"] | None,
         Query(title="Search stores By"),
     ] = None,
     search_term: Annotated[str | None, Query(title="Search stores Term")] = None,
@@ -66,8 +66,15 @@ async def list_stores(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorised to add store"
         )
     params = StoreSearchParams(search_by=search_by, search_term=search_term)
-    stores = await get_all_stores(db, params)
-    return {"msg": "Stores fetched", "data": {"stores": stores, "count": len(stores)}}
+    result = await get_all_stores(db, params)
+    return {
+        "msg": "Stores fetched",
+        "data": {
+            "stores": result.get("stores", []),
+            "count": len(result.get("stores", [])),
+            "cities": result.get("cities", []),
+        },
+    }
 
 
 @router.get("/my-store", status_code=status.HTTP_200_OK)

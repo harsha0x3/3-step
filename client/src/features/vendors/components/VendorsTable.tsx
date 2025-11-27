@@ -40,18 +40,15 @@ const VendorsTable: React.FC<Props> = ({ vendors, isLoading, error }) => {
       header: "Location",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("contact", {
-      header: "Contact",
+    columnHelper.accessor("mobile_number", {
+      header: "Mobile Number",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("created_at", {
-      header: "Created At",
-      cell: (info) => new Date(info.getValue()).toLocaleString(),
+    columnHelper.accessor("email", {
+      header: "E-Mail",
+      cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("updated_at", {
-      header: "Updated At",
-      cell: (info) => new Date(info.getValue()).toLocaleString(),
-    }),
+
     columnHelper.display({
       id: "actions",
       header:
@@ -108,6 +105,10 @@ const VendorsTable: React.FC<Props> = ({ vendors, isLoading, error }) => {
 
   return (
     <div className="w-full">
+      <div className="flex justify-between">
+        <div />
+        <p>Total Vendors: {vendors.length}</p>
+      </div>
       <div className="rounded-md border">
         <Table className="min-w-full">
           <TableCaption>List of Vendors</TableCaption>

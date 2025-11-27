@@ -6,3 +6,4 @@ from .verification_statuses import VerificationStatus
 from .issued_statuses import IssuedStatus
 from .coupons import Coupon
 from .vendors import Vendor, VendorSpoc
+from .password_reset_otps import PasswordResetOtp

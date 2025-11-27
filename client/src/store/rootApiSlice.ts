@@ -20,6 +20,8 @@ export const rootApiSlice = createApi({
     "Vendors",
     "VendorsSpoc",
     "Issuance",
+    "Users",
+    "Dashboard",
   ],
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

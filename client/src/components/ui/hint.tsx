@@ -16,7 +16,7 @@ interface HintProps {
 const Hint: React.FC<HintProps> = ({ label, children, side, align }) => {
   return (
     <TooltipProvider>
-      <Tooltip delayDuration={50}>
+      <Tooltip delayDuration={0}>
         <TooltipTrigger asChild>{children}</TooltipTrigger>
         <TooltipContent side={side} align={align} className="">
           <p className="font-medium text-xs">{label}</p>

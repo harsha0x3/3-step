@@ -36,20 +36,24 @@ const VendorSpocTable: React.FC<Props> = ({
   const columnHelper = createColumnHelper<VendorSpocItem>();
 
   const columns: ColumnDef<VendorSpocItem, any>[] = [
-    columnHelper.accessor("full_name", {
-      header: "Full Name",
-      cell: (info) => info.getValue(),
-    }),
-    columnHelper.accessor("contact", {
-      header: "Contact",
-      cell: (info) => info.getValue(),
-    }),
     columnHelper.accessor("vendor.vendor_name", {
       header: "Vendor",
       cell: (info) => info.getValue(),
     }),
+    columnHelper.accessor("full_name", {
+      header: "Contact Person Name",
+      cell: (info) => info.getValue(),
+    }),
+    columnHelper.accessor("mobile_number", {
+      header: "Contact Person Mobile Number",
+      cell: (info) => info.getValue(),
+    }),
+    columnHelper.accessor("email", {
+      header: "Contact Person E-Mail",
+      cell: (info) => info.getValue(),
+    }),
     columnHelper.accessor("photo", {
-      header: "Photo",
+      header: "Contact Person Photo",
       cell: (info) => {
         const photo = info.getValue();
         if (!photo)
@@ -65,33 +69,38 @@ const VendorSpocTable: React.FC<Props> = ({
         );
       },
     }),
-    columnHelper.display({
-      id: "actions",
-      header:
-        currentUserInfo.role === "admin" ||
-        currentUserInfo.role === "super_admin"
-          ? "Actions"
-          : "View Details",
-      cell: ({ row }) => {
-        const vendorSpoc = row.original;
-        if (
-          currentUserInfo.role === "admin" ||
-          currentUserInfo.role === "super_admin" ||
-          currentUserInfo.role === "registration_officer"
-        ) {
-          return (
-            <div className="flex items-center gap-2">
-              <VendorSpocFormDialog
-                vendorSpoc={vendorSpoc}
-                viewOnly={currentUserInfo.role === "registration_officer"}
-              />
-            </div>
-          );
-        }
-        return null;
-      },
-    }),
   ];
+
+  if (["admin", "super_admin"].includes(currentUserInfo.role)) {
+    columns.push(
+      columnHelper.display({
+        id: "actions",
+        header:
+          currentUserInfo.role === "admin" ||
+          currentUserInfo.role === "super_admin"
+            ? "Actions"
+            : "View Details",
+        cell: ({ row }) => {
+          const vendorSpoc = row.original;
+          if (
+            currentUserInfo.role === "admin" ||
+            currentUserInfo.role === "super_admin" ||
+            currentUserInfo.role === "registration_officer"
+          ) {
+            return (
+              <div className="flex items-center gap-2">
+                <VendorSpocFormDialog
+                  vendorSpoc={vendorSpoc}
+                  viewOnly={currentUserInfo.role === "registration_officer"}
+                />
+              </div>
+            );
+          }
+          return null;
+        },
+      })
+    );
+  }
 
   const table = useReactTable({
     data: vendorSpocs,
@@ -121,9 +130,13 @@ const VendorSpocTable: React.FC<Props> = ({
 
   return (
     <div className="w-full">
+      <div className="flex justify-between items-center">
+        <div />
+        <p>Total Vendor Contact Persons: {vendorSpocs?.length}</p>
+      </div>
       <div className="rounded-md border">
         <Table className="min-w-full">
-          <TableCaption>List of Vendor SPOCs</TableCaption>
+          <TableCaption>List of Vendors and Contact Persons</TableCaption>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

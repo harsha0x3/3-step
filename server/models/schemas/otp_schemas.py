@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 
 class CandidateInOtp(BaseModel):
@@ -15,3 +15,18 @@ class CandidateInOtp(BaseModel):
 
 class OtpVerifyRequest(BaseModel):
     otp: str
+
+
+class AdminOTPPayload(BaseModel):
+    otp: str
+    expiry_minutes: str
+
+    beneficiary_id: str
+    beneficiary_name: str
+    beneficiary_phone: str
+
+    store_name: str
+    store_address: str
+
+    support_email: EmailStr | None = None
+    support_phone: str | None = None

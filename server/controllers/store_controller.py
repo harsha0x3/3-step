@@ -8,9 +8,11 @@ from models.schemas.store_schemas import (
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import select
+from sqlalchemy import select, func, and_
+from models import IssuedStatus
 from models.stores import Store
 from models.users import User
+from models import Candidate
 from models.schemas.auth_schemas import UserOut, RegisterRequest
 
 MAX_RETRIES = 3
@@ -35,20 +37,42 @@ async def get_all_stores(db: Session, params: StoreSearchParams | None = None):
         query = select(Store)
 
         if params and params.search_by and params.search_term:
-            if params.search_by.lower() == "id":
-                query = query.where(Store.id.ilike(f"%{params.search_term}%"))
+            if params.search_by.lower() == "city":
+                query = query.where(Store.city.ilike(f"%{params.search_term}%"))
             elif params.search_by.lower() == "name":
                 query = query.where(Store.name.ilike(f"%{params.search_term}%"))
             else:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Invalid search_by value: {params.search_by}. Must be 'store_id' or 'name'.",
+                    detail=f"Invalid search_by value: {params.search_by}. Must be 'city' or 'name'.",
                 )
 
         stores = db.scalars(query).all()
+        cities = db.scalars(
+            select(Store.city)
+            .distinct()
+            .where(Store.city.is_not(None))
+            .order_by(Store.city.asc())
+        ).all()
         result = []
         for store in stores:
             store_agents = []
+            total_assigned_candidates = db.scalar(
+                select(func.count(Candidate.id)).where(Candidate.store_id == store.id)
+            )
+
+            total_laptops_issued = db.scalar(
+                select(func.count(IssuedStatus.candidate_id))
+                .select_from(Candidate)
+                .join(IssuedStatus, IssuedStatus.candidate_id == Candidate.id)
+                .where(
+                    and_(
+                        Candidate.store_id == store.id,
+                        IssuedStatus.issued_status == "issued",
+                    )
+                )
+            )
+
             if store.store_agents:
                 for agent in store.store_agents:
                     store_agents.append(UserOut.model_validate(agent))
@@ -61,10 +85,12 @@ async def get_all_stores(db: Session, params: StoreSearchParams | None = None):
                     mobile_number=store.mobile_number,
                     email=store.email,
                     store_agents=store_agents,
+                    total_assigned_candidates=total_assigned_candidates,
+                    total_laptops_issued=total_laptops_issued,
                 )
             )
 
-        return result
+        return {"stores": result, "cities": cities}
 
     except Exception as e:
         raise HTTPException(

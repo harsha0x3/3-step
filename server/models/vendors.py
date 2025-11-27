@@ -8,7 +8,8 @@ class Vendor(Base, BaseMixin):
 
     vendor_name: Mapped[str] = mapped_column(String(222), nullable=False)
     location: Mapped[str] = mapped_column(Text, nullable=True)
-    contact: Mapped[str] = mapped_column(String(100), nullable=True)
+    mobile_number: Mapped[str] = mapped_column(String(15), nullable=True)
+    email: Mapped[str] = mapped_column(String(64), nullable=True)
 
     vendor_spocs = relationship("VendorSpoc", back_populates="vendor")
 
@@ -22,7 +23,8 @@ class VendorSpoc(Base, BaseMixin):
         nullable=False,
     )
     full_name: Mapped[str] = mapped_column(String(222), nullable=False)
-    contact: Mapped[str] = mapped_column(String(100), nullable=True)
+    mobile_number: Mapped[str] = mapped_column(String(15), nullable=True)
+    email: Mapped[str] = mapped_column(String(64), nullable=True)
     photo: Mapped[str] = mapped_column(Text, nullable=True)
 
     vendor = relationship("Vendor", back_populates="vendor_spocs")

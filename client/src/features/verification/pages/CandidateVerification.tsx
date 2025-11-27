@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import FacialRecognition from "../components/FacialRecognition";
-import OtpVerification from "../components/OtpVerification";
+import OtpVerification from "./OtpVerification";
 import {
   useGetCandidateIssuanceDetailsQuery,
   useLazyGetCandidateByCouponQuery,
@@ -18,7 +18,7 @@ import { CheckCheckIcon, XCircleIcon } from "lucide-react";
 import type { CandidateItemWithStore } from "@/features/candidates/types";
 import LaptopIssuanceForm from "../components/LaptopIssuanceForm";
 import { useSearchParams } from "react-router-dom";
-import LaptopIssuanceSuccess from "../components/LaptopIssuanceSuccess";
+import LaptopIssuanceSuccess from "../components/IssuanceDetails";
 
 const CandidateVerification: React.FC = () => {
   const [candidate, setCandidate] = useState<CandidateItemWithStore | null>(
@@ -171,14 +171,14 @@ const CandidateVerification: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-center px-2">
         <div className="flex gap-3 items-center">
           <h1 className="text-2xl font-bold text-center ">
-            Laptop Issuance Verification
+            Laptop Distribution
           </h1>
           <Button
             onClick={() => {
               resetFlow();
             }}
           >
-            Verify new Candidate
+            Distribute New
           </Button>
         </div>
         {candidate && candidateVerificationStatus && (
@@ -200,14 +200,6 @@ const CandidateVerification: React.FC = () => {
                   <XCircleIcon className="text-red-600" />
                 )}
                 <span>OTP Verification</span>
-              </div>
-              <div className="flex gap-1 border rounded-md px-2 py-1">
-                {candidateVerificationStatus?.data?.is_coupon_verified ? (
-                  <CheckCheckIcon className="text-green-600" />
-                ) : (
-                  <XCircleIcon className="text-red-600" />
-                )}
-                <span>Coupon Verification</span>
               </div>
             </div>
           </div>

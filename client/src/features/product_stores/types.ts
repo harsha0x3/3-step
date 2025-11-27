@@ -21,6 +21,8 @@ export interface StoreItem {
 
 export interface StoreItemWithUser extends StoreItem {
   store_agents?: UserItem[];
+  total_assigned_candidates?: number;
+  total_laptops_issued?: number;
 }
 
 export interface StoreSearchParams {

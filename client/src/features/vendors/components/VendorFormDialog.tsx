@@ -8,23 +8,43 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { useAddNewVendorMutation } from "../store/vendorsApiSlice";
+import {
+  useAddNewVendorMutation,
+  useUpdateVendorMutation,
+} from "../store/vendorsApiSlice";
 import type { NewVendor, VendorItem } from "../types";
-import { Pencil } from "lucide-react";
+import { CircleQuestionMarkIcon, Pencil } from "lucide-react";
+import { flushSync } from "react-dom";
 
 type Props = {
   vendor?: VendorItem | null;
   viewOnly?: boolean;
+  defOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
-const VendorFormDialog: React.FC<Props> = ({ vendor, viewOnly = false }) => {
-  const [open, setOpen] = React.useState(false);
+const VendorFormDialog: React.FC<Props> = ({
+  vendor,
+  viewOnly = false,
+  defOpen = false,
+  onOpenChange,
+}) => {
+  const [open, setOpen] = React.useState(defOpen);
 
   const [addNewVendor, { isLoading: isAdding }] = useAddNewVendorMutation();
+  const [updateVendor, { isLoading: isUpdating }] = useUpdateVendorMutation();
+
+  const closeAndGoBack = (nextOpen) => {
+    flushSync(() => {
+      setOpen(false);
+      onOpenChange?.(nextOpen);
+    });
+  };
 
   const {
     register,
@@ -36,7 +56,8 @@ const VendorFormDialog: React.FC<Props> = ({ vendor, viewOnly = false }) => {
       ? {
           vendor_name: vendor.vendor_name,
           location: vendor.location,
-          contact: vendor.contact,
+          email: vendor.email,
+          mobile_number: vendor.mobile_number,
         }
       : {},
   });
@@ -48,10 +69,16 @@ const VendorFormDialog: React.FC<Props> = ({ vendor, viewOnly = false }) => {
     if (viewOnly) return;
 
     try {
-      const res = await addNewVendor(data).unwrap();
-      toast.success("Vendor added successfully!");
-      reset();
-      setOpen(false);
+      if (!vendor) {
+        const res = await addNewVendor(data).unwrap();
+        toast.success("Vendor added successfully!");
+        reset();
+        setOpen(false);
+        onOpenChange?.(true);
+      } else {
+        await updateVendor({ vendorId: vendor?.id, payload: data }).unwrap();
+        toast.success("Vendor details updated successfully!");
+      }
     } catch (err: any) {
       const errMsg: string =
         err?.data?.detail?.msg ?? err?.data?.detail ?? "Error adding vendor";
@@ -66,8 +93,10 @@ const VendorFormDialog: React.FC<Props> = ({ vendor, viewOnly = false }) => {
     type: string = "text",
     required = true
   ) => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      <Label htmlFor={name}>{label}</Label>
+    <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-0">
+      <Label htmlFor={name}>
+        {label} {required && <span className="text-red-500"> *</span>}
+      </Label>
       <Input
         id={name}
         type={type}
@@ -87,7 +116,12 @@ const VendorFormDialog: React.FC<Props> = ({ vendor, viewOnly = false }) => {
 
   // ---------- JSX ----------
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        closeAndGoBack();
+      }}
+    >
       <DialogTrigger asChild>
         {isEditMode ? (
           <Button variant="ghost" size="sm">
@@ -99,7 +133,7 @@ const VendorFormDialog: React.FC<Props> = ({ vendor, viewOnly = false }) => {
       </DialogTrigger>
 
       <DialogContent
-        className="w-[95vw] max-w-[650px] sm:max-w-[650px] 
+        className="w-[95vw] max-w-[550px] sm:max-w-[550px] 
                           overflow-auto 
                           mx-auto"
       >
@@ -113,16 +147,26 @@ const VendorFormDialog: React.FC<Props> = ({ vendor, viewOnly = false }) => {
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 py-2">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 py-2">
           {renderTextInput("vendor_name", "Vendor Name")}
           {renderTextInput("location", "Location")}
-          {renderTextInput("contact", "Contact")}
+          <p className="flex items-center gap-2 text-amber-600">
+            <CircleQuestionMarkIcon className="w-4 h-4" />
+            <span>Any one of email or mobile number is required.</span>
+          </p>
+          {renderTextInput("email", "E-Mail", "text", false)}
+          {renderTextInput("mobile_number", "Mobile Number", "text", false)}
 
           {!viewOnly && (
             <DialogFooter className="pt-4">
-              <Button type="submit" disabled={isAdding}>
-                {isAdding ? "Saving..." : "Save Vendor"}
-              </Button>
+              <div className="flex justify-end gap-2">
+                <DialogClose asChild>
+                  <Button variant={"outline"}>Cancel</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isAdding}>
+                  {isAdding ? "Saving..." : isUpdating ? "Updating..." : "Save"}
+                </Button>
+              </div>
             </DialogFooter>
           )}
         </form>

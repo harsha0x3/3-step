@@ -21,13 +21,13 @@ import {
 type VendorSpocComboboxProps = {
   value?: string; // vendor_spoc_id
   onChange?: (spoc: VendorSpocItem) => void;
-  disabled?: boolean;
+  isDisabled?: boolean;
 };
 
 const VendorSpocCombobox: React.FC<VendorSpocComboboxProps> = ({
   value,
   onChange,
-  disabled = false,
+  isDisabled = false,
 }) => {
   const [open, setOpen] = useState(false);
   const [selectedSpoc, setSelectedSpoc] = useState<VendorSpocItem>();
@@ -43,7 +43,10 @@ const VendorSpocCombobox: React.FC<VendorSpocComboboxProps> = ({
   }, [searchInput]);
 
   // query API
-  const { data } = useGetAllVendorSpocQuery({ searchTerm }, { skip: disabled });
+  const { data } = useGetAllVendorSpocQuery(
+    { searchTerm },
+    { refetchOnMountOrArgChange: true }
+  );
 
   // set selected item if value changes
   useEffect(() => {
@@ -55,8 +58,7 @@ const VendorSpocCombobox: React.FC<VendorSpocComboboxProps> = ({
 
   return (
     <div className="w-full max-w-sm space-y-2">
-      <Label htmlFor="vendor-spoc">Vendor SPOC</Label>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={isDisabled ? false : open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             id="vendor-spoc"
@@ -64,7 +66,7 @@ const VendorSpocCombobox: React.FC<VendorSpocComboboxProps> = ({
             role="combobox"
             aria-expanded={open}
             className="w-[95vw] sm:w-[340px] max-w-[340px] h-16 justify-between"
-            disabled={disabled}
+            disabled={isDisabled}
           >
             {selectedSpoc ? (
               <div className="flex items-center gap-3 text-left w-full overflow-hidden">
@@ -108,6 +110,7 @@ const VendorSpocCombobox: React.FC<VendorSpocComboboxProps> = ({
               className="h-9"
               value={searchInput}
               onValueChange={(val) => setSearchInput(val)}
+              disabled={isDisabled}
             />
             <CommandList>
               <CommandEmpty>No Vendor SPOCs found</CommandEmpty>
@@ -123,6 +126,7 @@ const VendorSpocCombobox: React.FC<VendorSpocComboboxProps> = ({
                         setOpen(false);
                         onChange?.(spoc);
                       }}
+                      disabled={isDisabled}
                     >
                       <div className="flex items-center gap-3 w-full">
                         {spoc.photo ? (

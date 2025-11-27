@@ -1,5 +1,5 @@
 from models.candidates import Candidate
-from sqlalchemy import select, and_, func, desc, asc, or_
+from sqlalchemy import select, and_, func, desc, asc, or_, case
 from sqlalchemy.orm import Session
 from models.schemas.candidate_schemas import (
     NewCandidatePayload,
@@ -7,6 +7,7 @@ from models.schemas.candidate_schemas import (
     CandidateItemWithStore,
     UpdatedCandidatePayload,
     CandidateOut,
+    PartialCandidateItem,
 )
 from sqlalchemy.exc import IntegrityError
 from utils.helpers import generate_readable_id
@@ -130,7 +131,37 @@ def get_candidate_by_id(candidate_id: str, db: Session):
                 detail="Employee is not verified yet",
             )
 
-        return candidate
+        store = candidate.store
+
+        return CandidateItemWithStore(
+            id=candidate.id,
+            full_name=candidate.full_name,
+            mobile_number=candidate.mobile_number,
+            dob=candidate.dob,
+            state=candidate.state,
+            city=candidate.city,
+            division=candidate.division,
+            store_id=candidate.store_id,
+            photo=candidate.photo if candidate.photo else None,
+            issued_status=candidate.issued_status.issued_status
+            if candidate.issued_status
+            else "not_issued",
+            vendor_spoc_id=candidate.vendor_spoc_id,
+            aadhar_number=candidate.aadhar_number,
+            aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
+            is_candidate_verified=candidate.is_candidate_verified,
+            coupon_code=candidate.coupon_code,
+            store=StoreItemOut(
+                name=store.name,
+                id=store.id,
+                city=store.city,
+                email=store.email,
+                mobile_number=store.mobile_number,
+                address=store.address,
+            )
+            if store
+            else None,
+        )
 
     except HTTPException:
         raise
@@ -197,9 +228,14 @@ def get_candidate_details_by_coupon_code(coupon_code: str, db: Session):
         )
         if not candidate:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Invalid Voucher code.",
             )
         store = candidate.store
+        verified_by_u = db.get(User, candidate.verified_by)
+        verified_by_user = (
+            UserOut.model_validate(verified_by_u) if candidate.verified_by else None
+        )
         return CandidateItemWithStore(
             id=candidate.id,
             full_name=candidate.full_name,
@@ -218,6 +254,7 @@ def get_candidate_details_by_coupon_code(coupon_code: str, db: Session):
             aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
             is_candidate_verified=candidate.is_candidate_verified,
             coupon_code=candidate.coupon_code,
+            verified_by=verified_by_user,
             store=StoreItemOut(
                 name=store.name,
                 id=store.id,
@@ -294,7 +331,18 @@ def get_candidate_by_photo_url(photo_url, db: Session):
 def get_all_candidates(db: Session, params: CandidatesSearchParams):
     try:
         stmt = select(Candidate)
-        total_candidates = db.scalar(select(func.count()).select_from(stmt.subquery()))
+        count_stats = db.execute(
+            select(
+                func.count(Candidate.id).label("total_candidates"),
+                func.sum(case((Candidate.is_candidate_verified, 1), else_=0)).label(
+                    "total_vouchers_issued"
+                ),
+                func.sum(
+                    case((IssuedStatus.issued_status == "issued", 1), else_=0)
+                ).label("total_laptops_issued"),
+            )
+        ).one()
+
         # Filter by verification
         if params.is_verified is not None:
             stmt = stmt.where(Candidate.is_candidate_verified == params.is_verified)
@@ -383,7 +431,9 @@ def get_all_candidates(db: Session, params: CandidatesSearchParams):
             "msg": "Employees fetched successfully",
             "data": {
                 "candidates": result,
-                "total_count": total_candidates,
+                "total_count": count_stats.total_candidates,
+                "total_vouchers_issued": count_stats.total_vouchers_issued,
+                "total_laptops_issued": count_stats.total_laptops_issued,
                 "count": len(result),
             },
         }
@@ -402,11 +452,22 @@ def get_candidates_of_store(db: Session, store_id: str, params: CandidatesSearch
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Store not found"
             )
-        print("Store ID", store_id)
         stmt = select(Candidate).where(
             and_(Candidate.store_id == store_id, Candidate.is_candidate_verified)
         )
-        total_candidates = db.scalar(select(func.count()).select_from(stmt.subquery()))
+        count_stats = db.execute(
+            select(
+                func.count(Candidate.id).label("total_count"),
+                func.sum(
+                    case((IssuedStatus.issued_status == "issued", 1), else_=0)
+                ).label("total_laptops_issued"),
+            )
+            .where(
+                and_(Candidate.store_id == store_id, Candidate.is_candidate_verified)
+            )
+            .outerjoin(IssuedStatus, IssuedStatus.candidate_id == Candidate.id)
+        ).one()
+
         if params.search_by and params.search_term and params.search_term != "null":
             setattr(params, "page", -1)
             column_attr = getattr(Candidate, params.search_by)
@@ -432,24 +493,14 @@ def get_candidates_of_store(db: Session, store_id: str, params: CandidatesSearch
         for candidate in candidates:
             print("Candidate", candidate)
             store = candidate.store
-            data = CandidateItemWithStore(
+            data = PartialCandidateItem(
                 id=candidate.id,
                 full_name=candidate.full_name,
                 mobile_number=candidate.mobile_number,
-                dob=candidate.dob,
-                state=candidate.state,
-                city=candidate.city,
-                division=candidate.division,
-                store_id=candidate.store_id,
-                photo=candidate.photo if candidate.photo else None,
+                is_candidate_verified=candidate.is_candidate_verified,
                 issued_status=candidate.issued_status.issued_status
                 if candidate.issued_status
                 else "not_issued",
-                vendor_spoc_id=candidate.vendor_spoc_id,
-                aadhar_number=candidate.aadhar_number,
-                aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
-                is_candidate_verified=candidate.is_candidate_verified,
-                coupon_code=candidate.coupon_code,
                 store=StoreItemOut(
                     name=store.name,
                     id=store.id,
@@ -466,9 +517,12 @@ def get_candidates_of_store(db: Session, store_id: str, params: CandidatesSearch
 
         return {
             "msg": "Employees fetched for store",
-            "data": result,
-            "total_count": total_candidates,
-            "count": len(result),
+            "data": {
+                "candidates": result,
+                "total_count": count_stats.total_count,
+                "total_laptops_issued": count_stats.total_laptops_issued,
+                "count": len(result),
+            },
         }
 
     except HTTPException:
@@ -615,7 +669,7 @@ def update_candidate_details(
 def is_candidate_ready_to_verify(payload):
     null_vals = []
     for key, val in payload.items():
-        if not val and (key != "issued_status" or key != "aadhar_number"):
+        if not val and key not in ["issued_status", "aadhar_number"]:
             null_vals.append(key)
     if len(null_vals) > 0:
         return {

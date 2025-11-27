@@ -3,7 +3,6 @@ import { useGetAllStoresQuery } from "../store/productStoresApiSlice";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
 import type { StoreItemWithUser } from "../types";
-import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -31,7 +30,7 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
   onChange,
   isDisabled = false,
 }) => {
-  const [searchBy, setSearchBy] = useState<string>("name");
+  const [searchBy, setSearchBy] = useState<string>("city");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchInput, setSearchInput] = useState<string>("");
   const [open, setOpen] = useState(false);
@@ -70,7 +69,6 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
 
   return (
     <div className="w-full max-w-sm space-y-2">
-      <Label htmlFor={selectedStore?.id ?? "selected-store"}>Stores</Label>
       <Popover open={isDisabled ? false : open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -101,7 +99,7 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
         <PopoverContent className="w-[95vw] sm:w-[340px] max-w-[340px] p-0">
           <Command shouldFilter={false}>
             <CommandInput
-              placeholder="Search Store"
+              placeholder="Search Store by City name"
               className="h-9"
               value={searchInput || ""}
               onValueChange={(val) => setSearchInput(val)}

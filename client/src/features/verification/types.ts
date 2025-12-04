@@ -23,7 +23,6 @@ export interface ConsolidateVerificationRequest {
 }
 
 export interface OverrideRequest {
-  overriding_user: string;
   overriding_reason: string;
 }
 
@@ -42,6 +41,12 @@ export interface IssuanceDetailsItem {
   bill_reciept?: string;
   evidence_photo?: string;
   issued_user?: UserItem;
+}
+
+export interface LatestIssuer {
+  store_employee_name?: string | null;
+  store_employee_mobile?: string | null;
+  store_employee_photo?: string | null;
 }
 
 export interface VerificationStatusItem {

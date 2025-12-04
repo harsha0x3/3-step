@@ -36,7 +36,7 @@ const Header: React.FC = () => {
     if (path.includes("registration_officer/stores")) return "Store Details";
 
     return "Dashboard";
-  }, [location.pathname]);
+  }, [location.pathname, currentUserInfo.role]);
 
   if (isLoading) {
     return <Loader className="animate-spin w-5 h-5" />;
@@ -61,7 +61,7 @@ const Header: React.FC = () => {
                 userStore?.data?.store?.name
               )
             ) : (
-              currentUserInfo.full_name || currentUserInfo.username
+              currentUserInfo.full_name
             )}
           </span>
         </div>

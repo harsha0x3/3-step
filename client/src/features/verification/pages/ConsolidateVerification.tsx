@@ -7,9 +7,9 @@ import {
 } from "@/components/ui/card";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import {
+import type {
   VerificationResult,
-  type ConsolidateVerificationRequest,
+  ConsolidateVerificationRequest,
 } from "../types";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useConsolidateVerificationMutation } from "../store/verificationApiSlice";
 import CandidateFaceCapture from "../components/CandidateFaceCapture";
-import { Loader2, Loader2Icon, XIcon } from "lucide-react";
+import { Loader2Icon, XIcon } from "lucide-react";
 import Hint from "@/components/ui/hint";
 import OverrideAlert from "../components/OverrideAlert";
 import { useNavigate } from "react-router-dom";
@@ -79,7 +79,7 @@ const ConsolidateVerification: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto py-6 max-w-2xl">
+    <div className="container mx-auto py-6 px-4 sm:px-6 md:px-8 max-w-full md:max-w-2xl">
       {!!verificationResult && verificationResult?.requires_consent && (
         <OverrideAlert
           data={verificationResult}
@@ -108,14 +108,16 @@ const ConsolidateVerification: React.FC = () => {
                 {errors.coupon_code.message}
               </span>
             )}
-            <div className="grid grid-cols-[130px_1fr] gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-2 items-center">
               <Label htmlFor="coupon_code">Voucher Code</Label>
               <Input
                 id="coupon_code"
                 {...register("coupon_code", {
                   required: "Voucher Code is required field",
                 })}
-                className="w-74"
+                className="w-full sm:w-72"
+                maxLength={8}
+                minLength={8}
               />
             </div>
 
@@ -124,20 +126,22 @@ const ConsolidateVerification: React.FC = () => {
                 {errors.aadhar_number.message}
               </span>
             )}
-            <div className="grid grid-cols-[130px_1fr] gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-2 items-center">
               <Label htmlFor="aadhar_number">Aadhar Number</Label>
               <Input
                 id="aadhar_number"
                 {...register("aadhar_number", {
                   required: "Aadhar Number is required field",
                 })}
-                className="w-74"
+                className="w-full sm:w-72"
+                maxLength={12}
+                minLength={12}
               />
             </div>
 
-            <div className="grid grid-cols-[130px_1fr] gap-2">
+            <div className="grid sm:grid-cols-[130px_1fr] grid-cols- gap-2">
               <Label htmlFor="candidate_photo">Facial Recognition</Label>
-              <div className="w-74">
+              <div className="w-full sm:w-72">
                 <CandidateFaceCapture
                   onSubmit={handleCameraPhotoSubmit}
                   triggerTitle={photo && photoPreview ? "Retake" : "Capture"}

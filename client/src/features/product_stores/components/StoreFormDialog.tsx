@@ -1,5 +1,5 @@
 // src/features/product_stores/components/StoreFormDialog.tsx
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +38,10 @@ const StoreFormDialog: React.FC<Props> = ({
 
   const isEditMode = !!store;
 
+  useEffect(() => {
+    setOpen(defOpen);
+  }, [defOpen]);
+
   const {
     register,
     handleSubmit,
@@ -46,9 +50,10 @@ const StoreFormDialog: React.FC<Props> = ({
   } = useForm<NewStorePayload>({
     defaultValues: store
       ? {
+          id: store.id ?? "",
           name: store.name,
           city: store.city ?? "",
-          address: store.address ?? "",
+          count: store.count ?? 0,
           email: store.email ?? "",
           mobile_number: store.mobile_number ?? "",
         }
@@ -84,6 +89,7 @@ const StoreFormDialog: React.FC<Props> = ({
         await addNewStore(data).unwrap();
         toast.success("Store created successfully!");
       }
+      closeAndGoBack();
 
       reset();
       setOpen(false);
@@ -100,13 +106,13 @@ const StoreFormDialog: React.FC<Props> = ({
         closeAndGoBack();
       }}
     >
-      <DialogTrigger asChild>
+      {/* <DialogTrigger asChild>
         {isEditMode ? (
           <Button variant="outline">Edit</Button>
         ) : (
           <Button>Add Store</Button>
         )}
-      </DialogTrigger>
+      </DialogTrigger> */}
 
       <DialogContent className="">
         <DialogHeader>
@@ -116,13 +122,26 @@ const StoreFormDialog: React.FC<Props> = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
+          {/* Store Code */}
+          <div className="grid grid-cols-[130px_1fr] gap-2">
+            <Label htmlFor="store_code">Store Code</Label>
+            <Input
+              id="store_code"
+              {...register("id", {
+                required: "Store Code is required",
+              })}
+            />
+            {errors.id && (
+              <span className="text-sm text-red-500">{errors.id.message}</span>
+            )}
+          </div>
           {/* Store City */}
           <div className="grid grid-cols-[130px_1fr] gap-2">
             <Label htmlFor="store_city">City</Label>
             <Input
               id="store_city"
               {...register("city", {
-                required: "First name is required",
+                required: "City name is required",
               })}
             />
             {errors.city && (
@@ -131,7 +150,6 @@ const StoreFormDialog: React.FC<Props> = ({
               </span>
             )}
           </div>
-
           {/* Store Name */}
           <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-3">
             <Label htmlFor="name">Store Name</Label>
@@ -147,20 +165,19 @@ const StoreFormDialog: React.FC<Props> = ({
               </span>
             )}
           </div>
-
-          {/* Address */}
+          ``
+          {/* Count */}
           <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-3">
-            <Label htmlFor="address">Address</Label>
-            <Input id="address" {...register("address", { required: true })} />
-            {errors.address && (
+            <Label htmlFor="count">Total Stock</Label>
+            <Input id="count" {...register("count", { required: true })} />
+            {errors.count && (
               <span className="text-sm text-red-500">
-                {errors.address.message}
+                {errors.count.message}
               </span>
             )}
           </div>
-
           {/* Store Email */}
-          <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-3">
+          {/* <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-3">
             <Label htmlFor="address">Email</Label>
             <Input id="email" {...register("email", { required: true })} />
             {errors.email && (
@@ -168,7 +185,7 @@ const StoreFormDialog: React.FC<Props> = ({
                 {errors.email.message}
               </span>
             )}
-          </div>
+          </div> */}
           {/* Store Mobile_number */}
           <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-3">
             <Label htmlFor="address">Mobile Number</Label>
@@ -182,7 +199,6 @@ const StoreFormDialog: React.FC<Props> = ({
               </span>
             )}
           </div>
-
           <DialogFooter className="pt-4">
             <div className="flex justify-end gap-2">
               <DialogClose asChild>

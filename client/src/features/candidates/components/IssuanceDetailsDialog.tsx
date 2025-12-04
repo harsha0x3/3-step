@@ -15,21 +15,32 @@ import { useGetCandidateByIdQuery } from "../store/candidatesApiSlice";
 interface IssuanceDetailsDialogProps {
   candidate?: CandidateItemWithStore;
   candidateId?: string;
+  defOpen?: boolean;
+  onOpenChange?: () => void;
 }
 
 const IssuanceDetailsDialog: React.FC<IssuanceDetailsDialogProps> = ({
   candidate,
   candidateId,
+  defOpen = false,
+  onOpenChange,
 }) => {
   const IssuanceDetails = lazy(
     () => import("@/features/verification/components/IssuanceDetails")
   );
-  const [open, setOpen] = useState<boolean>(false);
-  const { data, isLoading, isError } = useGetCandidateByIdQuery(candidateId!, {
-    skip: !!candidate && !candidateId,
+  const [open, setOpen] = useState<boolean>(defOpen);
+  console.log("Candidate ID", candidateId);
+  const { data, isLoading, isError } = useGetCandidateByIdQuery(candidateId, {
+    skip: !candidateId || !open,
   });
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={() => {
+        setOpen(false);
+        onOpenChange?.();
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant={"link"} size={"sm"}>
           View
@@ -42,7 +53,7 @@ const IssuanceDetailsDialog: React.FC<IssuanceDetailsDialogProps> = ({
       >
         <DialogHeader>
           <DialogTitle className="text-center">
-            Laptop Issuance Details
+            Laptop Issuance Details {candidateId}
           </DialogTitle>
         </DialogHeader>
         <ScrollArea className="flex-1 overflow-auto">
@@ -64,7 +75,7 @@ const IssuanceDetailsDialog: React.FC<IssuanceDetailsDialogProps> = ({
                 </div>
               }
             >
-              <IssuanceDetails candidate={candidate ?? data?.data} />
+              <IssuanceDetails candidate={candidate ?? data?.data?.candidate} />
             </Suspense>
           ) : (
             <div>

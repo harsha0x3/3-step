@@ -27,7 +27,7 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
         method: "POST",
         body: payload,
       }),
-      invalidatesTags: ["Candidates"],
+      invalidatesTags: ["Candidates", "Stores"],
     }),
 
     updateCandidate: builder.mutation<
@@ -42,7 +42,7 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
         method: "PATCH",
         body: payload,
       }),
-      invalidatesTags: ["Candidates"],
+      invalidatesTags: ["Candidates", "Stores"],
     }),
 
     // 📋 Get all candidates (with optional search)
@@ -111,7 +111,7 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
           !(params?.is_verified === null || params?.is_verified === undefined)
         )
           searchParams.append("is_verified", String(params.is_verified));
-        return `/candidates/store`;
+        return `/candidates/store?${searchParams.toString()}`;
       },
 
       providesTags: ["Candidates"],
@@ -148,6 +148,14 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
       }),
       invalidatesTags: ["Candidates"],
     }),
+
+    downloadCandidates: builder.mutation({
+      query: () => ({
+        url: "/download/candidates",
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
   }),
 });
 
@@ -161,4 +169,5 @@ export const {
   useGetCandidateByIdQuery,
   useLazyGetAllCandidatesQuery,
   useAddCandidateAadharMutation,
+  useDownloadCandidatesMutation,
 } = candidatesApiSlice;

@@ -39,7 +39,7 @@ const VendorFormDialog: React.FC<Props> = ({
   const [addNewVendor, { isLoading: isAdding }] = useAddNewVendorMutation();
   const [updateVendor, { isLoading: isUpdating }] = useUpdateVendorMutation();
 
-  const closeAndGoBack = (nextOpen) => {
+  const closeAndGoBack = (nextOpen: bool) => {
     flushSync(() => {
       setOpen(false);
       onOpenChange?.(nextOpen);
@@ -55,8 +55,7 @@ const VendorFormDialog: React.FC<Props> = ({
     defaultValues: vendor
       ? {
           vendor_name: vendor.vendor_name,
-          location: vendor.location,
-          email: vendor.email,
+          vendor_owner: vendor.vendor_owner,
           mobile_number: vendor.mobile_number,
         }
       : {},
@@ -119,7 +118,7 @@ const VendorFormDialog: React.FC<Props> = ({
     <Dialog
       open={open}
       onOpenChange={(nextOpen) => {
-        closeAndGoBack();
+        closeAndGoBack(nextOpen);
       }}
     >
       <DialogTrigger asChild>
@@ -149,13 +148,14 @@ const VendorFormDialog: React.FC<Props> = ({
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 py-2">
           {renderTextInput("vendor_name", "Vendor Name")}
-          {renderTextInput("location", "Location")}
-          <p className="flex items-center gap-2 text-amber-600">
-            <CircleQuestionMarkIcon className="w-4 h-4" />
-            <span>Any one of email or mobile number is required.</span>
-          </p>
-          {renderTextInput("email", "E-Mail", "text", false)}
-          {renderTextInput("mobile_number", "Mobile Number", "text", false)}
+          {renderTextInput("vendor_owner", "Owner Name")}
+
+          {renderTextInput(
+            "mobile_number",
+            "Owner Mobile Number",
+            "text",
+            false
+          )}
 
           {!viewOnly && (
             <DialogFooter className="pt-4">

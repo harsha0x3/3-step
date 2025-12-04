@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, and_, case, extract
-from models.candidates import Candidate
+from models import Candidate, User
 from models.stores import Store
 from models.issued_statuses import IssuedStatus
 from fastapi import HTTPException, status
@@ -286,4 +286,17 @@ def get_laptop_issuance_stats_of_all(db: Session):
         raise HTTPException(
             status_code=500,
             detail="Failed to get the stats",
+        )
+
+
+def get_registration_office_locations(db: Session):
+    try:
+        locations = db.scalars(
+            select(User.location).distinct().where(User.role == "registration_officer")
+        ).all()
+        return locations
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error fetching registration office locations",
         )

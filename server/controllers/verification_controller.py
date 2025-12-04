@@ -11,6 +11,7 @@ from models.otps import Otp
 from datetime import datetime, timezone
 from models.schemas.otp_schemas import CandidateInOtp, AdminOTPPayload
 from models.schemas import verification_schemas as v_schemas
+from models.schemas.auth_schemas import UserOut
 from models.issued_statuses import IssuedStatus
 from deepface import DeepFace
 import os
@@ -182,7 +183,7 @@ async def otp_resend(candidate_id: str, db: Session, to_admin: bool = False):
 
 async def facial_recognition(img_path: str, store_id: str):
     try:
-        norm_input_img_path = normalize_path(os.path.join("uploads", img_path))
+        norm_input_img_path = normalize_path(img_path)
         print(f"RECIEVED IMG PATH - {img_path}")
         print(f"NORM IMG PATH - {norm_input_img_path}")
         cand_imgs_path = os.path.join(BASE_CANDIDATE_IMG_PATH, store_id)
@@ -215,6 +216,15 @@ async def facial_recognition(img_path: str, store_id: str):
 
     except HTTPException:
         raise
+    except ValueError as e:
+        err = str(e).lower()
+        if "face could not be detected" in err or "no face" in err:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="No face detected in the uploaded image",
+            )
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -245,10 +255,22 @@ async def verify_otp(candidate_id: str, otp_input: str, db: Session):
 
         db.delete(otp_record)
         verification_status = db.get(VerificationStatus, candidate_id)
-        if not verification_status or not verification_status.is_facial_verified:
+        if not verification_status or (
+            not verification_status.is_facial_verified
+            and not verification_status.overriding_user
+        ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Candidate has not been facially verified yet",
+                detail="Beneficiary has not been facially verified yet",
+            )
+
+        if not verification_status or (
+            not verification_status.is_aadhar_verified
+            and not verification_status.overriding_user
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary's aadhar is not verified yet",
             )
 
         verification_status.is_otp_verified = True
@@ -304,6 +326,12 @@ async def candidate_verification_consolidate(
         )
     except Exception as e:
         raise
+
+    if not candidate.is_candidate_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Beneficiary details is not verified by the HR / Registration Officer yet",
+        )
 
     if candidate.store_id != store_id:
         raise HTTPException(
@@ -406,9 +434,7 @@ async def candidate_verification_consolidate(
 
 
 def override_verification_process(
-    candidate_id: str,
-    payload: v_schemas.OverridingRequest,
-    db: Session,
+    candidate_id: str, payload: v_schemas.OverridingRequest, db: Session, user: UserOut
 ):
     """
     Store agent can give consent to proceed despite verification failures
@@ -427,8 +453,7 @@ def override_verification_process(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Beneficiary's voucher code is not yet verified",
             )
-
-        verification_status.overriding_user = payload.overriding_user
+        verification_status.overriding_user = user.full_name or ""
         verification_status.overriding_reason = payload.overriding_reason
 
         db.add(verification_status)
@@ -502,6 +527,25 @@ async def upload_laptop_issuance_details(
                 "msg": "Error in updating issued status. Try again",
                 "err_stack": str(e),
             },
+        )
+
+
+def get_latest_issuer_details(db: Session, store_user_id: str):
+    try:
+        print("store_user_id", store_user_id)
+        latest_issued_status = db.scalar(
+            select(IssuedStatus)
+            .where(IssuedStatus.issued_by == store_user_id)
+            .order_by(IssuedStatus.issued_at.desc())
+            .limit(1)
+        )
+        if not latest_issued_status:
+            return
+        return v_schemas.LatestIssuer.model_validate(latest_issued_status)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error fetching latest Issuer details.",
         )
 
 

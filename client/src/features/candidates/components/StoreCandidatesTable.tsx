@@ -97,7 +97,10 @@ const StoreCandidatesTable: React.FC<Props> = ({
               {status === "issued" ? "Issued" : "Not Issued"}
             </span>
             {status === "issued" && (
-              <IssuanceDetailsDialog candidateId={row.original.id} />
+              <div>
+                <p>{JSON.stringify(row.original.id)}</p>
+                <IssuanceDetailsDialog candidateId={row.original.id} />
+              </div>
             )}
           </div>
         );

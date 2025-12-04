@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import FileResponse
 from sqlalchemy import text
 import pandas as pd
 from typing import Annotated
@@ -14,13 +14,10 @@ from controllers.dashboard_controller import (
     get_store_agent_dashboard_stats,
     get_registration_officer_dashboard_stats,
     get_laptop_issuance_stats_of_all,
+    get_registration_office_locations,
 )
-from controllers.bulk_upload_controller import (
-    process_bulk_issuance_upload,
-    generate_bulk_upload_template,
-)
+
 from controllers.store_controller import get_store_of_user
-import io
 
 BASE_SERVER_DIR = os.getenv("BASE_SERVER_DIR")
 BASE_CSV_UPLOAD_DIR = os.path.join("downloads")
@@ -116,49 +113,13 @@ async def get_role_based_stats(
     return {"msg": "Dashboard statistics retrieved", "data": stats}
 
 
-@router.post("/bulk-upload/issuance", status_code=status.HTTP_200_OK)
-async def bulk_upload_issuance(
-    file: Annotated[UploadFile, File(...)],
+@router.get("/registration_office-locations")
+async def list_registration_office_locations(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
 ):
-    """Bulk upload laptop issuance data (CSV/Excel)"""
-
-    if current_user.role != "store_agent":
+    if current_user.role not in ["admin", "super_admin", "registration_officer"]:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only store agents can bulk upload",
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
-
-    store = get_store_of_user(db, current_user)
-    return await process_bulk_issuance_upload(file, store.id, db)
-
-
-@router.get("/bulk-upload/template", status_code=status.HTTP_200_OK)
-async def download_bulk_upload_template(
-    db: Annotated[Session, Depends(get_db_conn)],
-    current_user: Annotated[UserOut, Depends(get_current_user)],
-):
-    """Download CSV template for bulk upload"""
-
-    if current_user.role != "store_agent":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only store agents can download template",
-        )
-
-    store = get_store_of_user(db, current_user)
-    df = generate_bulk_upload_template(store.id, db)
-
-    # Convert to CSV
-    stream = io.StringIO()
-    df.to_csv(stream, index=False)
-    stream.seek(0)
-
-    return StreamingResponse(
-        io.BytesIO(stream.getvalue().encode()),
-        media_type="text/csv",
-        headers={
-            "Content-Disposition": f"attachment; filename=bulk_upload_template_{store.id}.csv"
-        },
-    )
+    return get_registration_office_locations(db)

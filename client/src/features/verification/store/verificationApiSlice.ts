@@ -2,6 +2,7 @@ import { rootApiSlice } from "@/store/rootApiSlice";
 import type { ApiResponse } from "@/store/rootTypes";
 import type {
   IssuanceDetailsItem,
+  LatestIssuer,
   OverrideRequest,
   OverrideResult,
   VerificationResult,
@@ -142,6 +143,10 @@ export const verificationApi = rootApiSlice.injectEndpoints({
     >({
       query: ({ couponCode }) => `/verify/coupon-details/${couponCode}`,
     }),
+    getLatestLaptopIssuer: builder.query<ApiResponse<LatestIssuer>, void>({
+      query: () => `/verify/latest-issuer`,
+      providesTags: ["Issuance"],
+    }),
 
     consolidateVerification: builder.mutation<
       ApiResponse<VerificationResult>,
@@ -186,4 +191,5 @@ export const {
   useConsolidateVerificationMutation,
   useOverrideVerificationMutation,
   useSendOtpToAdminMutation,
+  useGetLatestLaptopIssuerQuery,
 } = verificationApi;

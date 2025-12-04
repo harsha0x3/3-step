@@ -33,7 +33,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import Hint from "@/components/ui/hint";
-import type { UserItem } from "../types";
+import type { User, UserItem } from "../types";
 
 type Props = {
   users: UserItem[];
@@ -67,8 +67,8 @@ const UserManagementTable: React.FC<Props> = ({ users, onEdit }) => {
   const columnHelper = createColumnHelper<User>();
 
   const columns: ColumnDef<User, any>[] = [
-    columnHelper.accessor("username", {
-      header: "Username",
+    columnHelper.accessor("mobile_number", {
+      header: "Mobile Number",
       cell: (info) => info.getValue(),
     }),
     columnHelper.accessor("email", {
@@ -161,7 +161,7 @@ const UserManagementTable: React.FC<Props> = ({ users, onEdit }) => {
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={() => handleResetPassword(row.original.id)}
+                  onClick={() => handleResetPassword(row.original.id!)}
                 >
                   Reset Password
                 </AlertDialogAction>
@@ -188,7 +188,7 @@ const UserManagementTable: React.FC<Props> = ({ users, onEdit }) => {
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={() => handleDelete(row.original.id)}
+                  onClick={() => handleDelete(row.original.id!)}
                   className="bg-red-500 hover:bg-red-600"
                 >
                   Deactivate

@@ -80,9 +80,9 @@ async def update_vendor(
 async def create_vendor_spoc(
     vendor_id: Annotated[str, Path(...)],
     full_name: Annotated[str, Form(...)],
-    photo: Annotated[UploadFile, File(title="vendor spoc photo")],
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
+    photo: Annotated[UploadFile | None, File(title="vendor spoc photo")] = None,
     email: Annotated[str | None, Form(...)] = None,
     mobile_number: Annotated[str | None, Form(...)] = None,
 ):

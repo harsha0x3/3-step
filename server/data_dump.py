@@ -11,7 +11,8 @@ REQUIRED_COLS = ["E.No", "Name", "Mobile Number", "DOB", "State", "City"]
 def dump_candidate_data():
     print("IN")
     df = pd.read_csv(
-        r"C:\Users\harshavardhancg\Titan\hard_verify\server\notebooks\data_head.csv"
+        r"C:\Users\harshavardhancg\Titan\hard_verify\server\notebooks\filtered_data.csv",
+        dtype={"Mobile Number": str},
     )
     # missing_cols = []
     # for col in REQUIRED_COLS:
@@ -33,17 +34,18 @@ def dump_candidate_data():
     #         "City": "city",
     #     }
     # )
-    print("renamed")
 
     for _, row in df.iterrows():
         print(f"Processing {_}")
+        mobile = row["Mobile Number"]
         payload = candidate_schemas.NewCandidatePayload(
-            id=row["id"],
-            full_name=row["full_name"],
-            mobile_number=str(row["mobile_number"]),
-            dob=row["dob"],
-            city=row["city"],
-            state=row["state"],
+            id=row["E.No"],
+            full_name=row["Name"],
+            mobile_number=None
+            if pd.isna(mobile) or str(mobile).strip() == ""
+            else str(mobile),
+            city=row["City"],
+            state=row["State"],
             division=row["Division Name"],
         )
         for db in get_db_conn():
@@ -54,4 +56,35 @@ def dump_candidate_data():
                 continue
 
 
-dump_candidate_data()
+# dump_candidate_data()
+
+payload = (
+    candidate_schemas.NewCandidatePayload(
+        id="147700011",
+        full_name="ABDUL AWUAL MOLLICK",
+        mobile_number="987654321",
+        city="HYDERABAD",
+        state="Telangana",
+        division="Eyecare Division",
+    ),
+)
+
+
+for db in get_db_conn():
+    try:
+        print("started")
+        new_c = add_new_candidate(
+            payload=candidate_schemas.NewCandidatePayload(
+                id="145800368",
+                full_name="MUNIRAJU ",
+                mobile_number=None,
+                city="CHIKKABALLAPURA",
+                state="Karnataka",
+                division="Eyecare Division",
+            ),
+            db=db,
+        )
+        print("done", new_c)
+    except Exception as e:
+        print(e)
+        continue

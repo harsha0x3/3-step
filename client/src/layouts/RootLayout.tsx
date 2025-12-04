@@ -17,7 +17,7 @@ const RootLayout: React.FC = () => {
 
         {/* Scrollable Content Area */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden bg-background">
-          <div className="container mx-auto p-4 md:p-6">
+          <div className="container mx-auto py-2">
             <Outlet />
           </div>
         </main>

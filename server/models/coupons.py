@@ -9,7 +9,7 @@ class Coupon(Base):
 
     candidate_id: Mapped[str] = mapped_column(
         String(36),
-        ForeignKey("candidates.id"),
+        ForeignKey("candidates.id", onupdate="cascade"),
         primary_key=True,
         nullable=False,
     )

@@ -25,7 +25,7 @@ import { useGetAllStoresQuery } from "@/features/product_stores/store/productSto
 import { toast } from "sonner";
 
 type UserFormData = {
-  username: string;
+  mobile_number: string;
   email: string;
   full_name: string;
   role: string;
@@ -66,7 +66,7 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
       reset(user);
     } else {
       reset({
-        username: "",
+        mobile_number: "",
         email: "",
         full_name: "",
         role: "",
@@ -78,6 +78,10 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
 
   const onSubmit = async (data: UserFormData) => {
     try {
+      if (!data.email && !data.mobile_number) {
+        toast.error("any one of email or mobile number is required.");
+        return;
+      }
       if (user) {
         await updateUser({ userId: user.id, payload: data }).unwrap();
         toast.success("User updated successfully");
@@ -104,30 +108,13 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
-            <Input
-              id="username"
-              {...register("username", { required: "Username is required" })}
-            />
-            {errors.username && (
-              <span className="text-sm text-red-500">
-                {errors.username.message}
-              </span>
-            )}
+            <Label htmlFor="mobile_number">Mobile Number</Label>
+            <Input id="mobile_number" {...register("mobile_number")} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              {...register("email", { required: "Email is required" })}
-            />
-            {errors.email && (
-              <span className="text-sm text-red-500">
-                {errors.email.message}
-              </span>
-            )}
+            <Input id="email" type="email" {...register("email")} />
           </div>
 
           <div className="space-y-2">
@@ -170,7 +157,7 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
 
           {selectedRole === "registration_officer" && (
             <div className="space-y-2">
-              <Label htmlFor="full_name">Office Location</Label>
+              <Label htmlFor="full_name">Voucher Distribution Location</Label>
               <Input
                 id="location"
                 {...register("location", {

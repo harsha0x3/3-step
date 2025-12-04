@@ -8,8 +8,8 @@ from .auth_schemas import UserOut
 class NewCandidatePayload(BaseModel):
     id: str
     full_name: str
-    mobile_number: str
-    dob: date
+    mobile_number: str | None = None
+    dob: date | None = None
     city: str
     state: str
     division: str
@@ -48,7 +48,7 @@ class CandidateItemWithStore(BaseModel):
     id: str
     coupon_code: str
     full_name: str
-    mobile_number: str
+    mobile_number: str | None = None
     dob: date | None = None
     city: str | None = None
     state: str | None = None
@@ -70,7 +70,7 @@ class CandidateItemWithStore(BaseModel):
 class PartialCandidateItem(BaseModel):
     id: str
     full_name: str
-    mobile_number: str
+    mobile_number: str | None = None
     issued_status: str | None = None
     is_candidate_verified: bool
     store: StoreItemOut | None = None

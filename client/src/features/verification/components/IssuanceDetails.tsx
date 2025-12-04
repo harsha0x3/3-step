@@ -15,6 +15,7 @@ import {
   XCircleIcon,
   TicketCheck,
   MapPinCheck,
+  UserIcon,
 } from "lucide-react";
 import type { IssuanceDetailsItem } from "../types";
 import { useGetCandidateIssuanceDetailsQuery } from "../store/verificationApiSlice";
@@ -40,11 +41,11 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
     isLoading: isLoadingIssuanceDetails,
     isError,
     error: issueDetailsFetchError,
-  } = useGetCandidateIssuanceDetailsQuery(candidate.id!, {
+  } = useGetCandidateIssuanceDetailsQuery(candidate.id, {
     skip: !candidate || !!issuanceDetails,
   });
   const { data: verificationStatus, isLoading: isFetchingVerificationStatus } =
-    useGetCandidateVerificationStatusQuery(candidate.id!, {
+    useGetCandidateVerificationStatusQuery(candidate.id, {
       skip: !candidate,
       refetchOnMountOrArgChange: true,
     });
@@ -107,7 +108,7 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
       <CardContent className="flex justify-center">
         {image ? (
           <img
-            src={`${baseUrl}/hard_verify/api/v1.0/uploads/${image}?t=${Date.now()}`}
+            src={`${baseUrl}/hard_verify/api/v1.0/${image}?t=${Date.now()}`}
             className="w-64 h-64 rounded-md object-cover border"
           />
         ) : (
@@ -125,7 +126,7 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
       {isLoadingIssuanceDetails ? (
         <Loader className="animate-spin w-10 h-10" />
       ) : isError && issueDetailsFetchError ? (
-        <p>Error fetching issuance details</p>
+        <p>Error fetching issuance details {JSON.stringify(candidate)}</p>
       ) : candidateIssuanceDetails ? (
         <div className="space-y-6">
           <ScrollArea className="overflow-auto">
@@ -249,6 +250,12 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
                 title="Bill / Receipt"
                 icon={ReceiptText}
                 image={candidateIssuanceDetails.bill_reciept}
+                fallback="No Receipt Uploaded"
+              />
+              <PhotoCard
+                title="Laptop Issued By"
+                icon={UserIcon}
+                image={candidateIssuanceDetails.store_employee_photo}
                 fallback="No Receipt Uploaded"
               />
             </div>

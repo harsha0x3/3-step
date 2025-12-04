@@ -16,10 +16,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader } from "lucide-react";
+import { EyeIcon, Loader } from "lucide-react";
 import VendorFormDialog from "./VendorFormDialog";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   vendors: VendorItem[];
@@ -30,22 +31,22 @@ type Props = {
 const VendorsTable: React.FC<Props> = ({ vendors, isLoading, error }) => {
   const currentUserInfo = useSelector(selectAuth);
   const columnHelper = createColumnHelper<VendorItem>();
+  const [openEdit, setOpenEdit] = React.useState(false);
+  const [selectedVendor, setSelectedVendor] = React.useState<VendorItem | null>(
+    null
+  );
 
   const columns: ColumnDef<VendorItem, any>[] = [
     columnHelper.accessor("vendor_name", {
       header: "Vendor Name",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("location", {
-      header: "Location",
+    columnHelper.accessor("vendor_owner", {
+      header: "Owner Name",
       cell: (info) => info.getValue(),
     }),
     columnHelper.accessor("mobile_number", {
-      header: "Mobile Number",
-      cell: (info) => info.getValue(),
-    }),
-    columnHelper.accessor("email", {
-      header: "E-Mail",
+      header: "Owner Mobile Number",
       cell: (info) => info.getValue(),
     }),
 
@@ -65,10 +66,15 @@ const VendorsTable: React.FC<Props> = ({ vendors, isLoading, error }) => {
         ) {
           return (
             <div className="flex items-center gap-2">
-              <VendorFormDialog
-                vendor={vendor}
-                viewOnly={currentUserInfo.role === "registration_officer"}
-              />
+              <Button
+                variant={"outline"}
+                onClick={() => {
+                  setOpenEdit(true);
+                  setSelectedVendor(vendor);
+                }}
+              >
+                <EyeIcon />
+              </Button>
             </div>
           );
         }
@@ -109,7 +115,15 @@ const VendorsTable: React.FC<Props> = ({ vendors, isLoading, error }) => {
         <div />
         <p>Total Vendors: {vendors.length}</p>
       </div>
-      <div className="rounded-md border">
+      {selectedVendor && (
+        <VendorFormDialog
+          vendor={selectedVendor}
+          defOpen={openEdit}
+          onOpenChange={() => setOpenEdit(false)}
+          viewOnly={currentUserInfo.role === "registration_officer"}
+        />
+      )}
+      <div className="rounded-md border max-h-[480px] overflow-y-auto relative">
         <Table className="min-w-full">
           <TableCaption>List of Vendors</TableCaption>
           <TableHeader>

@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useGetAllStoresQuery } from "../store/productStoresApiSlice";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
@@ -30,12 +30,23 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
   onChange,
   isDisabled = false,
 }) => {
-  const [searchBy, setSearchBy] = useState<string>("city");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchInput, setSearchInput] = useState<string>("");
   const [open, setOpen] = useState(false);
 
   const currentUserInfo = useSelector(selectAuth);
+
+  const storeQueryParams = useMemo(
+    () => ({
+      page: -1,
+      page_size: 0,
+      sort_by: "created_at",
+      sort_order: "desc",
+      search_by: "city",
+      search_term: searchTerm,
+    }),
+    [searchTerm]
+  );
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -47,15 +58,12 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
     };
   }, [searchInput]);
 
-  const { data } = useGetAllStoresQuery(
-    { searchBy, searchTerm },
-    {
-      skip:
-        currentUserInfo.role !== "admin" &&
-        currentUserInfo.role !== "super_admin" &&
-        currentUserInfo.role !== "registration_officer",
-    }
-  );
+  const { data } = useGetAllStoresQuery(storeQueryParams, {
+    skip:
+      currentUserInfo.role !== "admin" &&
+      currentUserInfo.role !== "super_admin" &&
+      currentUserInfo.role !== "registration_officer",
+  });
 
   const [selectedStore, setSelectedStore] = useState<StoreItemWithUser>();
   useEffect(() => {
@@ -83,10 +91,12 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
               <div className="flex flex-col text-left overflow-hidden">
                 <p className="text-md truncate">{selectedStore.name}</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {selectedStore.address}
+                  {selectedStore.city}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {selectedStore.city}
+                  Available Slots:{" "}
+                  {selectedStore.count -
+                    (selectedStore?.total_assigned_candidates ?? 0)}
                 </p>
               </div>
             ) : (
@@ -113,7 +123,10 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
                   data?.data?.stores.map((store: StoreItemWithUser) => {
                     return (
                       <CommandItem
-                        disabled={isDisabled}
+                        disabled={
+                          isDisabled ||
+                          store.count <= (store?.total_assigned_candidates ?? 0)
+                        }
                         key={store.id}
                         value={store.id}
                         onSelect={() => {
@@ -126,10 +139,12 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
                         <div className="felx flex-col gap-1">
                           <p className="text-md">{store.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {store.address}
+                            {store.city}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {store.city}
+                            Available Slots:{" "}
+                            {store.count -
+                              (store?.total_assigned_candidates ?? 0)}
                           </p>
                         </div>
                       </CommandItem>

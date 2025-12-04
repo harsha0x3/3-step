@@ -3,7 +3,6 @@ import { useLoginMutation } from "../store/authApiSlice";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -30,7 +29,7 @@ import Hint from "@/components/ui/hint";
 const LoginPage: React.FC = () => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [credentials, setCredentials] = useState<LoginPayload>({
-    email_or_username: "",
+    email_or_mobile_number: "",
     password: "",
     mfa_code: "",
   });
@@ -46,7 +45,7 @@ const LoginPage: React.FC = () => {
       // dispatch(
       //   loginSuccess({
       //     id: "asd",
-      //     username: "harsha",
+      //     mobiemail_or_mobile_number: "harsha",
       //     email: credentials.email,
       //     firstName: "First",
       //     lastName: "last",
@@ -59,7 +58,7 @@ const LoginPage: React.FC = () => {
       const res = await login(credentials).unwrap();
       if (res.must_change_password) {
         navigate("/password-reset/request", {
-          state: { email: credentials.email_or_username },
+          state: { email: credentials.email_or_mobile_number },
         });
         toast.info("You must change your password before continuing");
         return;
@@ -102,13 +101,16 @@ const LoginPage: React.FC = () => {
             <div className="flex flex-col gap-6">
               {/* Email */}
               <div className="flex items-center gap-4">
-                <Label htmlFor="email_or_username" className="w-32 text-right">
-                  User-ID
+                <Label
+                  htmlFor="email_or_mobile_number"
+                  className="w-64 text-left"
+                >
+                  User-ID or Mobile Number
                 </Label>
                 <Input
-                  id="email_or_username"
-                  type="email"
-                  value={credentials.email_or_username}
+                  id="email_or_mobile_number"
+                  type="text"
+                  value={credentials.email_or_mobile_number}
                   onChange={handleChange}
                   required
                 />
@@ -116,7 +118,7 @@ const LoginPage: React.FC = () => {
 
               {/* Password */}
               <div className="flex items-center gap-4">
-                <Label htmlFor="password" className="w-32 text-right">
+                <Label htmlFor="password" className="w-64 text-right">
                   Password
                 </Label>
                 <Input
@@ -143,7 +145,7 @@ const LoginPage: React.FC = () => {
                   variant={"destructive"}
                   onClick={() =>
                     setCredentials({
-                      email_or_username: "",
+                      email_or_mobile_number: "",
                       password: "",
                       mfa_code: "",
                     })

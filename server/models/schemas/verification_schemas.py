@@ -19,6 +19,13 @@ class IsuedStatusItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class LatestIssuer(BaseModel):
+    store_employee_name: str | None = None
+    store_employee_mobile: str | None = None
+    store_employee_photo: str | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+
 class VerificaionStatusItem(BaseModel):
     candidate_id: str
     is_otp_verified: bool = False
@@ -62,5 +69,4 @@ class ConsolidateVerificationResponse(BaseModel):
 
 
 class OverridingRequest(BaseModel):
-    overriding_user: str
     overriding_reason: str

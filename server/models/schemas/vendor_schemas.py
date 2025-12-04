@@ -4,14 +4,14 @@ from datetime import datetime
 
 class NewVendor(BaseModel):
     vendor_name: str
-    location: str
+    vendor_owner: str | None
     mobile_number: str | None = None
     email: str | None = None
 
 
 class UpdateVendor(BaseModel):
     vendor_name: str | None = None
-    location: str | None = None
+    vendor_owner: str | None = None
     mobile_number: str | None = None
     email: str | None = None
 
@@ -33,7 +33,7 @@ class UpdateVendorSpoc(BaseModel):
 class VendorItem(BaseModel):
     id: str
     vendor_name: str
-    location: str
+    vendor_owner: str | None = None
     mobile_number: str | None = None
     email: str | None = None
     created_at: datetime
@@ -47,5 +47,5 @@ class VendorSpocItem(BaseModel):
     full_name: str
     mobile_number: str | None = None
     email: str | None = None
-    photo: str
+    photo: str | None = None
     vendor: VendorItem

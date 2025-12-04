@@ -92,7 +92,7 @@ def set_jwt_cookies(response: Response, access_token: str, refresh_token: str):
         )
 
         response.set_cookie(
-            key="access_token",
+            key="lt_access_token",
             value=access_token,
             httponly=True,
             secure=True,
@@ -101,7 +101,7 @@ def set_jwt_cookies(response: Response, access_token: str, refresh_token: str):
             expires=int(access_exp.timestamp()),
         )
         response.set_cookie(
-            key="refresh_token",
+            key="lt_refresh_token",
             value=refresh_token,
             httponly=True,
             secure=True,

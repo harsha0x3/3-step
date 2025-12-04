@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   useGetCandidateIssuanceDetailsQuery,
+  useGetLatestLaptopIssuerQuery,
   useIssueLaptopMutation,
 } from "../store/verificationApiSlice";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ import {
 
 import EvidenceCaptures from "./EvidenceCaptures";
 import type { IssuanceDetailsItem } from "../types";
+import { useGetCandidateByIdQuery } from "@/features/candidates/store/candidatesApiSlice";
 // import SuccessDialog from "./SuccessDialog";
 
 interface LaptopIssuanceFormProps {
@@ -39,6 +41,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
   const [evidencePhoto, setEvidencePhoto] = useState<File | null>(null);
   const [billPhoto, setBillPhoto] = useState<File | null>(null);
   const [employeePhoto, setEmployeePhoto] = useState<File | null>(null);
+  const [employeePhotoUrl, setEmployeePhotoUrl] = useState<string>("");
   const [evidencePhotoPreview, setEvidencePhotoPreview] = useState<
     string | null
   >(null);
@@ -48,8 +51,35 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
   >(null);
   const [openConfirm, setOpenConfirm] = useState(false);
 
-  const { data: issuanceDetails, isLoading: isLoadingIssuanceDetails } =
-    useGetCandidateIssuanceDetailsQuery(candidateId, { skip: !candidateId });
+  const {
+    data: issuanceDetails,
+    isLoading: isLoadingIssuanceDetails,
+    isError: isIssuanceDetailsFetchError,
+  } = useGetCandidateIssuanceDetailsQuery(candidateId, { skip: !candidateId });
+
+  const { data: latestLaptopIssuer, isLoading: isLoadingLatestLaptopIssuer } =
+    useGetLatestLaptopIssuerQuery(undefined, { skip: !candidateId });
+
+  const { data: candidateDetails } = useGetCandidateByIdQuery(candidateId, {
+    skip: !candidateId,
+  });
+
+  useEffect(() => {
+    if (!isLoadingLatestLaptopIssuer && latestLaptopIssuer) {
+      setStoreEmployeeName(latestLaptopIssuer?.data?.store_employee_name ?? "");
+      setStoreEmployeeMobile(
+        latestLaptopIssuer?.data?.store_employee_mobile ?? ""
+      );
+      setEmployeePhotoUrl(latestLaptopIssuer?.data?.store_employee_photo ?? "");
+      setEmployeePhotoPreview(
+        latestLaptopIssuer?.data?.store_employee_photo
+          ? `${import.meta.env.VITE_API_BASE_API_URL}/hard_verify/api/v1.0/${
+              latestLaptopIssuer?.data.store_employee_photo
+            }`
+          : null
+      );
+    }
+  }, [isLoadingLatestLaptopIssuer, latestLaptopIssuer]);
 
   const handleEvidencePhotoSubmit = async (formData: FormData) => {
     const file = formData.get("photo") as File;
@@ -77,11 +107,10 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
   };
 
   const baseUrl = import.meta.env.VITE_API_BASE_API_URL;
-  const issuanceDetailsData: IssuanceDetailsItem = useMemo(() => {
-    if (!isLoadingIssuanceDetails && issuanceDetails) {
-      return issuanceDetails.data;
-    }
-  }, [isLoadingIssuanceDetails, issuanceDetails]);
+  const issuanceDetailsData = useMemo(() => {
+    if (isIssuanceDetailsFetchError) return null;
+    return issuanceDetails?.data ?? null;
+  }, [issuanceDetails, isIssuanceDetailsFetchError]);
 
   const submitIssuance = async () => {
     const formData = new FormData();
@@ -95,12 +124,12 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
     }
     if (evidencePhoto) formData.append("evidence_photo", evidencePhoto);
     else {
-      toast.error("Laptop Photo with beneficiary is not added");
+      toast.error("Beneficiary Photo with Laptop is not added");
       return;
     }
     if (billPhoto) formData.append("bill_photo", billPhoto);
     else {
-      toast.error("Laptop Photo with beneficiary is not added");
+      toast.error("Beneficiary Photo with Laptop is not added");
       return;
     }
 
@@ -132,7 +161,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
       toast.error("Bill / Reciept Photo of laptop is not added");
       return;
     }
-    if (!employeePhoto) {
+    if (!employeePhoto && !latestLaptopIssuer?.data.store_employee_photo) {
       toast.error("Store employee Photo is not added");
       return;
     }
@@ -144,7 +173,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
     <div>
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* SERIAL NUMBER */}
-        <div className="grid grid-cols-[180px_1fr]">
+        <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr]">
           <Label className="font-medium">
             Laptop Serial Number<span className="text-red-600"> *</span>
           </Label>
@@ -160,7 +189,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
         {/* EVIDENCE PHOTO */}
         <div className="border rounded-md p-4 space-y-3">
           <h3 className="font-semibold text-sm text-gray-600">
-            Beneficiary with Laptop Photo
+            Beneficiary Photo with Laptop
             <span className="text-red-600"> *</span>
           </h3>
 
@@ -202,7 +231,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
             <div className="flex justify-center">
               {issuanceDetailsData?.evidence_photo ? (
                 <img
-                  src={`${baseUrl}/hard_verify/api/v1.0/uploads/${issuanceDetailsData.evidence_photo}`}
+                  src={`${baseUrl}/hard_verify/api/v1.0/${issuanceDetailsData.evidence_photo}`}
                   className="w-36 h-36 rounded-lg border object-cover"
                 />
               ) : evidencePhotoPreview ? (
@@ -222,7 +251,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
         {/* RECEIPT PHOTO */}
         <div className="border rounded-md p-4 space-y-3">
           <h3 className="font-semibold text-sm text-gray-600">
-            Bill / Receipt Photo<span className="text-red-600"> *</span>
+            Photo of Bill / Receipt<span className="text-red-600"> *</span>
           </h3>
 
           <div className="grid grid-cols-2 gap-4 items-center">
@@ -261,7 +290,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
             <div className="flex justify-center">
               {issuanceDetailsData?.bill_reciept ? (
                 <img
-                  src={`${baseUrl}/hard_verify/api/v1.0/uploads/${issuanceDetailsData.bill_reciept}`}
+                  src={`${baseUrl}/hard_verify/api/v1.0/${issuanceDetailsData.bill_reciept}`}
                   className="w-36 h-36 rounded-lg border object-cover"
                 />
               ) : billPhotoPreview ? (
@@ -281,12 +310,14 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
         {/* Store Employee Details */}
         <div className="border rounded-md p-4 space-y-3">
           <h3 className="font-semibold text-sm text-gray-600">
-            Store Empoyee Details<span className="text-red-600"> *</span>
+            Store Empoyee Details (enter details only if this is the first
+            issuance or any changes required.)
+            <span className="text-red-600"> *</span>
           </h3>
 
-          <div className="grid grid-cols-[180px_1fr]">
+          <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr]">
             <Label>
-              Employee Name<span className="text-red-600"> *</span>
+              Issued By<span className="text-red-600"> *</span>
             </Label>
             <Input
               value={storeEmployeeName}
@@ -296,15 +327,17 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
               placeholder="Enter your full name"
             />
           </div>
-          <div className="grid grid-cols-[180px_1fr]">
+          <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr]">
             <Label className="font-medium">
-              Employee Mobile Number<span className="text-red-600"> *</span>
+              Mobile Number<span className="text-red-600"> *</span>
             </Label>
             <Input
               placeholder="Enter your mobile number"
               value={storeEmployeeMobile}
               onChange={(e) => setStoreEmployeeMobile(e.target.value)}
               className="w-74"
+              minLength={10}
+              maxLength={10}
               required
             />
           </div>
@@ -349,7 +382,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
             <div className="flex justify-center">
               {issuanceDetailsData?.bill_reciept ? (
                 <img
-                  src={`${baseUrl}/hard_verify/api/v1.0/uploads/${issuanceDetailsData.store_employee_photo}`}
+                  src={`${baseUrl}/hard_verify/api/v1.0/${issuanceDetailsData.store_employee_photo}`}
                   className="w-36 h-36 rounded-lg border object-cover"
                 />
               ) : employeePhotoPreview ? (
@@ -384,12 +417,49 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
             <AlertDialogTitle className="text-center">
               Confirmation
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-center">
-              Verify the details.
-            </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <div className="space-y-2">
+          <AlertDialogDescription asChild>
+            <div className="space-y-2 text-card-foreground! bg-card">
+              <p>
+                You are issuing a laptop with serial number{" "}
+                <strong className="text-[14px]">"{laptopSerial}"</strong> to the
+                following beneficiary:
+              </p>
+              <div className="grid grid-cols-[150px_1fr]">
+                <strong>Name</strong>{" "}
+                {candidateDetails?.data?.candidate.full_name}
+              </div>
+              <div className="grid grid-cols-[150px_1fr]">
+                <strong>Voucher Code</strong>{" "}
+                <strong>{candidateDetails?.data?.candidate.coupon_code}</strong>
+              </div>
+              <div className="grid grid-cols-[150px_1fr]">
+                <strong>Aadhar Number</strong>{" "}
+                {candidateDetails?.data?.candidate.aadhar_number}
+              </div>
+              <div className="flex flex-col items-center border px-1 py-2 rounded">
+                Photo{" "}
+                {candidateDetails?.data?.candidate &&
+                candidateDetails?.data?.candidate?.photo ? (
+                  <img
+                    src={`${
+                      import.meta.env.VITE_API_BASE_API_URL
+                    }/hard_verify/api/v1.0/${
+                      candidateDetails?.data?.candidate?.photo
+                    }`}
+                    className="w-36 h-36 rounded-lg border object-cover"
+                  />
+                ) : (
+                  <div className="w-36 h-36 flex items-center justify-center border rounded-lg text-sm text-gray-400">
+                    "Not Added"
+                  </div>
+                )}
+              </div>
+            </div>
+          </AlertDialogDescription>
+
+          {/* <div className="space-y-2">
             <div className="grid grid-cols-[150px_1fr]">
               <strong>Laptop Serial</strong> {laptopSerial}
             </div>
@@ -441,12 +511,15 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
                 )}
               </div>
             </div>
-          </div>
+          </div> */}
 
           <AlertDialogFooter>
+            <p className=" text-amber-700 font-medium">
+              Are you sure everything is correct and you want to proceed?
+            </p>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction disabled={isLoading} onClick={submitIssuance}>
-              {isLoading ? "Submitting..." : "Submit"}
+              {isLoading ? "Confirming..." : "Confirm"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

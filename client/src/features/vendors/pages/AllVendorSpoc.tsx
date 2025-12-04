@@ -5,7 +5,9 @@ import { useGetAllVendorSpocQuery } from "../store/vendorsApiSlice";
 import VendorSpocTable from "../components/VendorSpocTable";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowBigLeftDashIcon } from "lucide-react";
+import { ArrowBigLeftDashIcon, RefreshCcw } from "lucide-react";
+import Hint from "@/components/ui/hint";
+import { toast } from "sonner";
 // import VendorSpocFormDialog from "../components/VendorSpocFormDialog";
 
 const AllVendorSpoc: React.FC = () => {
@@ -20,6 +22,8 @@ const AllVendorSpoc: React.FC = () => {
     data: vendorSpocData,
     isLoading: isFetchingVendorSpocs,
     error: vendorSpocError,
+    refetch,
+    isFetching,
   } = useGetAllVendorSpocQuery(
     { searchTerm: "" },
     {
@@ -57,10 +61,35 @@ const AllVendorSpoc: React.FC = () => {
             className="flex items-center gap-2 w-fit text-blue-500 underline"
           >
             <ArrowBigLeftDashIcon />
-            Back to Dashboard
+            Back to Stats
           </Button>
         </div>
       )}
+      <div className="flex items-center justify-between w-full">
+        <div />
+        <Hint label="Refresh Vendor contact persons data.">
+          <Button
+            onClick={async () => {
+              try {
+                await refetch().unwrap();
+              } catch (err) {
+                const errMsg: string =
+                  err?.data?.detail?.msg ??
+                  err?.data?.detail ??
+                  "Error adding Beneficiary details";
+
+                const errDesc = err?.data?.detail?.msg
+                  ? err?.data?.detail?.err_stack
+                  : "";
+                toast.error(errMsg, { description: errDesc });
+              }
+            }}
+          >
+            <RefreshCcw className={`${isFetching ? "animate-spin" : ""}`} />{" "}
+            Refresh
+          </Button>
+        </Hint>
+      </div>
       <div className="flex-1">
         <VendorSpocTable
           vendorSpocs={vendorSpocList}

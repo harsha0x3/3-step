@@ -33,13 +33,13 @@ const ProtectedLayout: React.FC = () => {
         break;
 
       case "store_agent":
-        navigate("/store/beneficiary", {
+        navigate("/dashboard", {
           state: { from: location },
           replace: true,
         });
         break;
       case "registration_officer":
-        navigate("/registration_officer/beneficiary/verify", {
+        navigate("/dashboard", {
           state: { from: location },
           replace: true,
         });

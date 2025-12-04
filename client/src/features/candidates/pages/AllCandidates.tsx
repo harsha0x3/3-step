@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
-import { useGetAllCandidatesQuery } from "../store/candidatesApiSlice";
+import {
+  useDownloadCandidatesMutation,
+  useGetAllCandidatesQuery,
+} from "../store/candidatesApiSlice";
 import CandidatesTable from "../components/CandidatesTable";
 // import CandidateFormDialog from "../components/CandidateFormDialog";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -19,6 +22,8 @@ import {
   ChevronLastIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  DownloadIcon,
+  RefreshCcw,
   SlidersHorizontalIcon,
 } from "lucide-react";
 import {
@@ -44,6 +49,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import Hint from "@/components/ui/hint";
+import { toast } from "sonner";
 
 const AllCandidates: React.FC = () => {
   const currentUserInfo = useSelector(selectAuth);
@@ -88,6 +95,27 @@ const AllCandidates: React.FC = () => {
     ]
   );
 
+  const [downloadCandidates, { isLoading: isDownloading }] =
+    useDownloadCandidatesMutation();
+
+  const downloadCandidatesData = async () => {
+    try {
+      const blob = await downloadCandidates(undefined).unwrap();
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "candidates.xlsx";
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      const errDesc = err?.data?.detail?.msg
+        ? err?.data?.detail?.err_stack
+        : "";
+      toast.error(errMsg, { description: errDesc });
+    }
+  };
+
   const updateSearchParams = (updates: object) => {
     const newParams = new URLSearchParams(searchParams);
     Object.entries(updates).forEach(([key, value]) => {
@@ -107,6 +135,8 @@ const AllCandidates: React.FC = () => {
     data: candidatesData,
     isLoading: isFetchingCandidates,
     error: candidatesFetchError,
+    refetch,
+    isFetching,
   } = useGetAllCandidatesQuery(candSearchParams, {
     skip:
       currentUserInfo.role !== "admin" &&
@@ -142,7 +172,7 @@ const AllCandidates: React.FC = () => {
   const totalCandidates = candidatesData?.data?.total_count ?? 0;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-4 p-2 py-2 sm:px-1 sm:py-0">
       {fromDashboard && (
         <div className="w-full flex justify-start">
           <Button
@@ -151,30 +181,29 @@ const AllCandidates: React.FC = () => {
             className="flex items-center gap-2 w-fit text-blue-500 underline"
           >
             <ArrowBigLeftDashIcon />
-            Back to Dashboard
+            Back to Stats
           </Button>
         </div>
       )}
-      <div className="flex justify-between items-center">
-        <div className="flex justify-between items-center">
-          <div className="w-full space-y-2 flex flex-wrap items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-2 flex-wrap">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-wrap w-full sm:w-auto">
+          <div className="flex items-center gap-2 flex-1 min-w-[150px]">
             {/* Search Text Input */}
-            <div className="px-2 flex items-center gap-2">
-              <Label className="font-medium">Search: </Label>
-              <Input
-                value={searchInput}
-                placeholder={`Search Employee by ${
-                  candSearchBy === "id" ? "Employee ID" : "Full Name"
-                }`}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="mt-1 h-8"
-              />
-            </div>
+            <Label className="font-medium">Search: </Label>
+            <Input
+              value={searchInput}
+              placeholder={`Search Employee by ${
+                candSearchBy === "id" ? "Employee ID" : "Full Name"
+              }`}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="mt-1 h-8"
+            />
             {/* Filters Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="secondary" className="px-2">
-                  <SlidersHorizontalIcon className="h-4 w-4 mr-2" /> Filters
+                <Button variant="secondary" className="px-2 mt-2 sm:mt-0">
+                  <SlidersHorizontalIcon className="h-4 w-4 mr-1 sm:mr-2" />{" "}
+                  Filters
                 </Button>
               </DropdownMenuTrigger>
 
@@ -407,20 +436,50 @@ const AllCandidates: React.FC = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          <Hint label="Refresh Beneficiaries data.">
+            <Button
+              onClick={async () => {
+                try {
+                  await refetch().unwrap();
+                } catch (err) {
+                  const errMsg: string =
+                    err?.data?.detail?.msg ??
+                    err?.data?.detail ??
+                    "Error adding Beneficiary details";
+
+                  const errDesc = err?.data?.detail?.msg
+                    ? err?.data?.detail?.err_stack
+                    : "";
+                  toast.error(errMsg, { description: errDesc });
+                }
+              }}
+            >
+              <RefreshCcw className={`${isFetching ? "animate-spin" : ""}`} />{" "}
+              Refresh
+            </Button>
+          </Hint>
 
           {/* {(currentUserInfo.role === "admin" ||
             currentUserInfo.role === "super_admin") && <CandidateFormDialog />} */}
         </div>
-        <div className="flex gap-3 items-center">
-          <p className="">Total Beneticiaries: {totalCandidates}</p>
-          <p>|</p>
-          <p>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 sm:mt-0">
+          {["admin", "super_admin"].includes(currentUserInfo.role) && (
+            <Hint label="Download Beneficiary data as excel">
+              <Button onClick={downloadCandidatesData} disabled={isDownloading}>
+                <DownloadIcon className="h-4 w-4 mr-1" />
+                {isDownloading ? "Downloading.." : "Download"}
+              </Button>
+            </Hint>
+          )}
+          <p className="text-sm">Total Beneficiaries: {totalCandidates}</p>
+          <span>|</span>
+          <p className="text-sm">
             Page {candPage} of {Math.ceil(totalCandidates / candPageSize)}
           </p>
         </div>
       </div>
 
-      <div className="flex-1">
+      <div className="flex-1 overflow-x-auto">
         <CandidatesTable
           candidates={candidatesDataList}
           isLoading={isFetchingCandidates}
@@ -434,32 +493,36 @@ const AllCandidates: React.FC = () => {
       </div>
       <Pagination>
         <PaginationContent>
-          <PaginationItem>
-            <PaginationLink
-              aria-label="Go to first page"
-              size="icon"
-              className="rounded-full"
-              onClick={() => goToPage(1)}
-            >
-              <ChevronFirstIcon className="h-4 w-4" />
-            </PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationLink
-              aria-label="Go to previous page"
-              size="icon"
-              className="rounded-full"
-              onClick={() => {
-                if (candPage <= 1) {
-                  console.log("REturning from going to previous", candPage);
-                  return;
-                }
-                goToPage(candPage - 1);
-              }}
-            >
-              <ChevronLeftIcon className="h-4 w-4" />
-            </PaginationLink>
-          </PaginationItem>
+          <Hint label="First Page">
+            <PaginationItem>
+              <PaginationLink
+                aria-label="Go to first page"
+                size="icon"
+                className="rounded-full"
+                onClick={() => goToPage(1)}
+              >
+                <ChevronFirstIcon className="h-4 w-4" />
+              </PaginationLink>
+            </PaginationItem>
+          </Hint>
+          <Hint label="Previous Page">
+            <PaginationItem>
+              <PaginationLink
+                aria-label="Go to previous page"
+                size="icon"
+                className="rounded-full"
+                onClick={() => {
+                  if (candPage <= 1) {
+                    console.log("REturning from going to previous", candPage);
+                    return;
+                  }
+                  goToPage(candPage - 1);
+                }}
+              >
+                <ChevronLeftIcon className="h-4 w-4" />
+              </PaginationLink>
+            </PaginationItem>
+          </Hint>
           <PaginationItem>
             <Select
               value={String(candPage)}
@@ -468,7 +531,7 @@ const AllCandidates: React.FC = () => {
             >
               <SelectTrigger
                 id="select-page"
-                className="w-fit whitespace-nowrap"
+                className="w-fit whitespace-nowrap hover:cursor-pointer hover:bg-accent transition-colors"
                 aria-label="Select page"
               >
                 <SelectValue placeholder="Select page" />
@@ -485,33 +548,37 @@ const AllCandidates: React.FC = () => {
               </SelectContent>
             </Select>
           </PaginationItem>
-          <PaginationItem>
-            <PaginationLink
-              onClick={() => {
-                if (candPage === Math.ceil(totalCandidates / candPageSize))
-                  return;
-                console.log("Goint to next page");
-                goToPage(candPage + 1);
-              }}
-              aria-label="Go to next page"
-              size="icon"
-              className="rounded-full"
-            >
-              <ChevronRightIcon className="h-4 w-4" />
-            </PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationLink
-              onClick={() =>
-                goToPage(Math.ceil(totalCandidates / candPageSize))
-              }
-              aria-label="Go to last page"
-              size="icon"
-              className="rounded-full"
-            >
-              <ChevronLastIcon className="h-4 w-4" />
-            </PaginationLink>
-          </PaginationItem>
+          <Hint label="Next Page">
+            <PaginationItem>
+              <PaginationLink
+                onClick={() => {
+                  if (candPage === Math.ceil(totalCandidates / candPageSize))
+                    return;
+                  console.log("Goint to next page");
+                  goToPage(candPage + 1);
+                }}
+                aria-label="Go to next page"
+                size="icon"
+                className="rounded-full"
+              >
+                <ChevronRightIcon className="h-4 w-4" />
+              </PaginationLink>
+            </PaginationItem>
+          </Hint>
+          <Hint label="Last Page">
+            <PaginationItem>
+              <PaginationLink
+                onClick={() =>
+                  goToPage(Math.ceil(totalCandidates / candPageSize))
+                }
+                aria-label="Go to last page"
+                size="icon"
+                className="rounded-full"
+              >
+                <ChevronLastIcon className="h-4 w-4" />
+              </PaginationLink>
+            </PaginationItem>
+          </Hint>
         </PaginationContent>
       </Pagination>
     </div>

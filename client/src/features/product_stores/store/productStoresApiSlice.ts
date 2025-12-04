@@ -1,5 +1,10 @@
 import { rootApiSlice } from "@/store/rootApiSlice";
-import type { NewStorePayload, StoreItem, StoreItemWithUser } from "../types";
+import type {
+  NewStorePayload,
+  StoreItem,
+  StoreItemWithUser,
+  StoreSearchParams,
+} from "../types";
 import type { ApiResponse } from "@/store/rootTypes";
 import type { UserItem } from "@/features/auth/types";
 export const productStoresApiSlice = rootApiSlice.injectEndpoints({
@@ -34,20 +39,60 @@ export const productStoresApiSlice = rootApiSlice.injectEndpoints({
         count: number;
         cities: string[];
       }>,
-      { searchBy: string; searchTerm: string }
+      StoreSearchParams
     >({
-      query: ({ searchBy, searchTerm }) => {
-        const params = new URLSearchParams({
-          search_by: searchBy,
-          search_term: searchTerm,
-        });
-        return `/stores?${params.toString()}`;
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.search_by)
+          searchParams.append("search_by", params.search_by);
+        if (params?.search_term)
+          searchParams.append("search_term", params.search_term);
+        if (params?.page) searchParams.append("page", String(params.page));
+        if (params?.page_size)
+          searchParams.append("page_size", String(params.page_size));
+        if (params?.sort_by)
+          searchParams.append("sort_by", String(params.sort_by));
+        if (params?.sort_order)
+          searchParams.append("sort_order", String(params.sort_order));
+        return `/stores?${searchParams.toString()}`;
       },
       providesTags: ["Stores"],
     }),
 
     getUserStore: builder.query<ApiResponse<{ store: StoreItem }>, void>({
       query: () => `/stores/my-store`,
+      providesTags: ["Stores"],
+    }),
+
+    getOfflineUploadHistory: builder.query({
+      query: (storeId) => {
+        if (storeId) {
+          const params = new URLSearchParams({
+            store_id: storeId,
+          });
+          return `/stores/offline/history?${params.toString()}`;
+        }
+        return `/stores/offline/history`;
+      },
+    }),
+    getOfflineUploadDetails: builder.query({
+      query: ({ storeId, uploadId }) => {
+        if (storeId) {
+          const params = new URLSearchParams({
+            store_id: storeId,
+          });
+          return `/stores/offline/report-details/${uploadId}?${params.toString()}`;
+        }
+        return `/stores/offline/report-details/${uploadId}`;
+      },
+    }),
+
+    uploadOfflineReport: builder.mutation({
+      query: (formData: FormData) => ({
+        url: "/stores/upload/offline/issuance",
+        method: "POST",
+        body: formData,
+      }),
     }),
   }),
 });
@@ -57,4 +102,7 @@ export const {
   useGetAllStoresQuery,
   useUpdateStoreMutation,
   useGetUserStoreQuery,
+  useGetOfflineUploadDetailsQuery,
+  useGetOfflineUploadHistoryQuery,
+  useUploadOfflineReportMutation,
 } = productStoresApiSlice;

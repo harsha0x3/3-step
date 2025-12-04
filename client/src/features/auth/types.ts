@@ -1,12 +1,12 @@
 export interface LoginPayload {
-  email_or_username?: string;
+  email_or_mobile_number?: string;
   password: string;
   mfa_code: string;
 }
 
 export interface RegisterPayload {
-  username: string;
-  email: string;
+  mobile_number?: string;
+  email?: string;
   password: string;
   full_name: string;
   role: "super_admin" | "admin" | "store_agent" | "registration_officer" | "";
@@ -15,16 +15,16 @@ export interface RegisterPayload {
 
 export interface RegisterResponse {
   id: string;
-  username: string;
-  email: string;
+  mobile_number?: string;
+  email?: string;
   full_name: string;
   role: string;
 }
 
 export interface AuthState {
   id: string | null;
-  username: string | null;
-  email: string | null;
+  mobile_number?: string | null;
+  email?: string | null;
   full_name: string | null;
   role: string | null;
   isAuthenticated: boolean;
@@ -34,8 +34,8 @@ export interface AuthState {
 
 export interface LoginResponse {
   id: string;
-  username: string;
-  email: string;
+  mobile_number?: string;
+  email?: string;
   full_name: string;
   role: string;
   is_first_login?: boolean;
@@ -45,8 +45,8 @@ export interface LoginResponse {
 
 export interface UserItem {
   id: string;
-  username: string;
-  email: string;
+  mobile_number?: string;
+  email?: string;
   full_name: string;
   role: string;
   location?: string;
@@ -55,4 +55,7 @@ export interface UserItem {
   created_at: string;
   updated_at: string;
   must_change_password?: boolean;
+  is_active?: boolean;
 }
+
+export type User = Partial<UserItem>;

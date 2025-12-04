@@ -75,10 +75,10 @@ const VendorsCombobox: React.FC<VendorsComboboxProps> = ({
               <div className="flex flex-col text-left overflow-hidden">
                 <p className="text-md truncate">{selectedVendor.vendor_name}</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {selectedVendor.location}
+                  {selectedVendor.vendor_owner}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {selectedVendor.contact}
+                  {selectedVendor.mobile_number}
                 </p>
               </div>
             ) : (
@@ -113,10 +113,10 @@ const VendorsCombobox: React.FC<VendorsComboboxProps> = ({
                       <div className="flex flex-col">
                         <p className="font-medium">{vendor.vendor_name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {vendor.location}
+                          {vendor.vendor_owner}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {vendor.contact}
+                          {vendor.mobile_number}
                         </p>
                       </div>
                     </CommandItem>

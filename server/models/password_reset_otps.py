@@ -9,7 +9,7 @@ class PasswordResetOtp(Base, BaseMixin):
     __tablename__ = "password_reset_otps"
 
     user_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("users.id"), nullable=False
+        String(36), ForeignKey("users.id", onupdate="cascade"), nullable=False
     )
     otp: Mapped[str] = mapped_column(String(10), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(

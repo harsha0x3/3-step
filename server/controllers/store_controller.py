@@ -8,7 +8,7 @@ from models.schemas.store_schemas import (
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, asc, desc
 from models import IssuedStatus
 from models.stores import Store
 from models.users import User
@@ -25,6 +25,8 @@ def add_new_store(payload: AddNewStore, db: Session):
         db.commit()
         db.refresh(new_store)
 
+        return new_store
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -32,11 +34,14 @@ def add_new_store(payload: AddNewStore, db: Session):
         )
 
 
-async def get_all_stores(db: Session, params: StoreSearchParams | None = None):
+async def get_all_stores(db: Session, params: StoreSearchParams):
     try:
         query = select(Store)
 
+        # ✅ SEARCH (same logic as Candidates)
         if params and params.search_by and params.search_term:
+            setattr(params, "page", -1)
+
             if params.search_by.lower() == "city":
                 query = query.where(Store.city.ilike(f"%{params.search_term}%"))
             elif params.search_by.lower() == "name":
@@ -47,16 +52,41 @@ async def get_all_stores(db: Session, params: StoreSearchParams | None = None):
                     detail=f"Invalid search_by value: {params.search_by}. Must be 'city' or 'name'.",
                 )
 
+        # ✅ SORT
+        sort_col = getattr(Store, params.sort_by)
+
+        if params.sort_order == "asc":
+            sort_col = asc(sort_col)
+        else:
+            sort_col = desc(sort_col)
+
+        total_count = db.scalar(select(func.count()).select_from(query.subquery()))
+
+        # ✅ PAGINATION
+        if params.page >= 1:
+            query = (
+                query.order_by(sort_col)
+                .limit(params.page_size)
+                .offset(params.page * params.page_size - params.page_size)
+            )
+        else:
+            query = query.order_by(sort_col)
+
         stores = db.scalars(query).all()
+
+        # ✅ DISTINCT CITIES (unchanged)
         cities = db.scalars(
             select(Store.city)
             .distinct()
             .where(Store.city.is_not(None))
             .order_by(Store.city.asc())
         ).all()
+
         result = []
+
         for store in stores:
             store_agents = []
+
             total_assigned_candidates = db.scalar(
                 select(func.count(Candidate.id)).where(Candidate.store_id == store.id)
             )
@@ -76,13 +106,14 @@ async def get_all_stores(db: Session, params: StoreSearchParams | None = None):
             if store.store_agents:
                 for agent in store.store_agents:
                     store_agents.append(UserOut.model_validate(agent))
+
             result.append(
                 StoreItemWithUser(
                     id=store.id,
                     name=store.name,
                     city=store.city,
-                    address=store.address,
                     mobile_number=store.mobile_number,
+                    count=store.count,
                     email=store.email,
                     store_agents=store_agents,
                     total_assigned_candidates=total_assigned_candidates,
@@ -90,7 +121,11 @@ async def get_all_stores(db: Session, params: StoreSearchParams | None = None):
                 )
             )
 
-        return {"stores": result, "cities": cities}
+        return {
+            "stores": result,
+            "cities": cities,
+            "total_count": total_count,
+        }
 
     except Exception as e:
         raise HTTPException(
@@ -137,6 +172,13 @@ def update_store_details(store_id: str, payload: UpdateStorePayload, db: Session
             exclude_none=True, exclude_unset=True
         ).items():
             if hasattr(store, field):
+                if field == "id":
+                    store_agent = db.scalar(
+                        select(User).where(User.store_id == store_id)
+                    )
+                    if store_agent:
+                        store_agent.store_id = payload.id if payload.id else store.id
+                        db.add(store_agent)
                 setattr(store, field, value)
 
         db.add(store)
@@ -164,7 +206,7 @@ def add_store_agent(store_id: str, payload: RegisterRequest, db: Session):
                 detail="Store not found",
             )
         new_store_agent = User(
-            username=payload.username,
+            mobile_number=payload.mobile_number,
             email=payload.email,
             full_name=payload.full_name,
             role=payload.role,
@@ -185,10 +227,10 @@ def add_store_agent(store_id: str, payload: RegisterRequest, db: Session):
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Email address already exists",
                 )
-            if ".username" in error_message:
+            if ".mobile_number" in error_message:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="username already exists",
+                    detail="mobile number already exists",
                 )
 
     except HTTPException:

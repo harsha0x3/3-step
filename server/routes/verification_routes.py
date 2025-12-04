@@ -13,6 +13,7 @@ from controllers.verification_controller import (
     get_issuance_details,
     candidate_verification_consolidate,
     override_verification_process,
+    get_latest_issuer_details,
 )
 from controllers.store_controller import get_store_of_user
 from utils.helpers import save_image_file
@@ -190,19 +191,21 @@ async def get_candidate_verification_status(
     candidate_id: Annotated[str, Path(title="Candidate ID")],
 ):
     try:
-        if (
-            current_user.role != "store_agent"
-            and current_user.role != "super_admin"
-            and current_user.role != "admin"
-        ):
+        if current_user.role not in [
+            "admin",
+            "super_admin",
+            "store_agent",
+            "registration_officer",
+        ]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Unauthorised to view candidate verification status",
             )
-        store = get_store_of_user(db=db, user=current_user)
+
         candidate = get_candidate_by_id(candidate_id=candidate_id, db=db)
 
         if current_user.role == "store_agent":
+            store = get_store_of_user(db=db, user=current_user)
             if candidate.store_id != store.id:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -265,10 +268,22 @@ async def add_laptop_issuace_evidence(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Beneficiary Employee has not been verified yet",
             )
-        if not verification_status.is_facial_verified:
+        if (
+            not verification_status.is_facial_verified
+            and not verification_status.overriding_user
+        ):
+            print(f"over - {verification_status.overriding_user}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Beneficiary Employee has not been facially verified yet",
+            )
+        if (
+            not verification_status.is_aadhar_verified
+            and not verification_status.overriding_user
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary Employee's aadhar is not verified yet",
             )
         if not verification_status.is_otp_verified:
             raise HTTPException(
@@ -358,8 +373,8 @@ async def issue_candidate_laptop(
     evidence_photo: Annotated[UploadFile, File(...)],
     bill_photo: Annotated[UploadFile, File(title="Laptop Bill / Reciept Photo")],
     store_employee_photo: Annotated[
-        UploadFile, File(title="store employee who is issuing the laptop")
-    ],
+        UploadFile | None, File(title="store employee who is issuing the laptop")
+    ] = None,
 ):
     import asyncio
 
@@ -387,10 +402,21 @@ async def issue_candidate_laptop(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Beneficiary Employee has not been verified yet",
             )
-        if not verification_status.is_facial_verified:
+        if (
+            not verification_status.is_facial_verified
+            and not verification_status.overriding_user
+        ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Beneficiary Employee has not been facially verified yet",
+            )
+        if (
+            not verification_status.is_aadhar_verified
+            and not verification_status.overriding_user
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary Employee's aadhar is not verified yet",
             )
         if not verification_status.is_otp_verified:
             raise HTTPException(
@@ -398,10 +424,28 @@ async def issue_candidate_laptop(
                 detail="Beneficiary Employee has not been OTP verified yet",
             )
 
+        latest_issuer = get_latest_issuer_details(db=db, store_user_id=current_user.id)
+        store_employee_photo_url = None
+        if store_employee_photo:
+            store_employee_photo_url = await save_image_file(
+                store_id=store.id,
+                photo=store_employee_photo,
+                candidate_id=candidate_id,
+                isLaptopIssuance=True,
+                prefix="employee",
+            )
+        elif latest_issuer:
+            store_employee_photo_url = latest_issuer.store_employee_photo
+
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Store employee photo required for first issuance",
+            )
+
         (
             bill_photo_url,
             evidence_photo_url,
-            store_employee_photo_url,
         ) = await asyncio.gather(
             save_image_file(
                 store_id=store.id,
@@ -416,13 +460,6 @@ async def issue_candidate_laptop(
                 candidate_id=candidate_id,
                 isLaptopIssuance=True,
                 prefix="laptop",
-            ),
-            save_image_file(
-                store_id=store.id,
-                photo=store_employee_photo,
-                candidate_id=candidate_id,
-                isLaptopIssuance=True,
-                prefix="employee",
             ),
         )
 
@@ -517,11 +554,34 @@ async def overriding_verification_process(
             )
 
         return override_verification_process(
-            candidate_id=candidate_id, payload=payload, db=db
+            candidate_id=candidate_id, payload=payload, db=db, user=current_user
         )
 
     except HTTPException:
         raise
+
+
+@router.get("/latest-issuer")
+async def get_latest_issuer(
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+):
+    try:
+        if current_user.role not in ["super_admin", "store_agent"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Unauthorized to verify beneficiary",
+            )
+        store = get_store_of_user(db=db, user=current_user)
+        result = get_latest_issuer_details(db=db, store_user_id=current_user.id)
+        return {"msg": "Latest issuer fetched successfully", "data": result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected error while fetching latest issuer",
+        )
 
 
 ### ---------------- NOT USING ------------- ###

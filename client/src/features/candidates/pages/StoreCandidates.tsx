@@ -148,7 +148,7 @@ const AllCandidates: React.FC = () => {
             className="flex items-center gap-2 w-fit text-blue-500 underline"
           >
             <ArrowBigLeftDashIcon />
-            Back to Dashboard
+            Back to Stats
           </Button>
         </div>
       )}

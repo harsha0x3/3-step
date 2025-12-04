@@ -17,6 +17,8 @@ from models import (
     coupons,
     vendors,
     PasswordResetOtp,
+    BulkUploadResult,
+    BulkUploadError,
 )
 
 load_dotenv()

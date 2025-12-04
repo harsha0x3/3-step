@@ -66,6 +66,9 @@ function App() {
   const StoreCandidates = lazy(
     () => import("./features/candidates/pages/StoreCandidates")
   );
+  const OfflineReportsPage = lazy(
+    () => import("./features/product_stores/pages/OfflineReportsPage")
+  );
 
   const RootLayout = lazy(() => import("@/layouts/RootLayout"));
   const currentAuthState: AuthState = useSelector(selectAuth);
@@ -90,6 +93,7 @@ function App() {
         toastOptions={{
           closeButton: true,
         }}
+        className="z-9999 pointer-events-auto"
       />
 
       <Routes>
@@ -124,21 +128,6 @@ function App() {
               element={
                 <Suspense fallback={<div>Loading users...</div>}>
                   <UserManagement />
-                </Suspense>
-              }
-            />
-            <Route
-              path="stores"
-              element={
-                <Suspense
-                  fallback={
-                    <div className="flex flex-col justify-center items-center">
-                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
-                      <p>Loading stores page...</p>
-                    </div>
-                  }
-                >
-                  <AllStores />
                 </Suspense>
               }
             />
@@ -247,7 +236,6 @@ function App() {
                 </Suspense>
               }
             />
-
             <Route
               path="store/beneficiary"
               element={
@@ -323,6 +311,22 @@ function App() {
                 </Suspense>
               }
             />
+            <Route
+              path="/store/offline-reports"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col justify-center items-center">
+                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
+                      <p>Loading offline reports page...</p>
+                    </div>
+                  }
+                >
+                  <OfflineReportsPage />
+                </Suspense>
+              }
+            />
+
             <Route
               path="vendors"
               element={

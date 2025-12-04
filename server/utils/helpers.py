@@ -6,6 +6,8 @@ from pathlib import Path
 from fastapi import HTTPException, status, UploadFile
 from dotenv import load_dotenv
 import random
+import shutil
+from time import time
 
 load_dotenv()
 
@@ -38,6 +40,12 @@ def normalize_path(path: str) -> str:
     normalized = re.sub(r"[\\/]+", "/", str(abs_path))
 
     return normalized
+
+
+def norm_to_uploads_dir(path: str) -> str:
+    if "uploads" not in path:
+        dir_path = os.path.join("uploads", path)
+        return normalize_path(dir_path)
 
 
 async def save_image_file(
@@ -85,8 +93,10 @@ async def save_image_file(
 
         ext = photo.filename.split(".")[-1].lower()
 
-        filename = f"{candidate_id}.{ext}" if candidate_id else photo.filename
-        filename = f"{prefix}_{filename}" if prefix else filename
+        filename = (
+            f"{candidate_id}_{int(time())}.{ext}" if candidate_id else photo.filename
+        )
+        filename = f"{prefix}_{int(time())}_{filename}" if prefix else filename
         uploaded_img_path = os.path.join(upload_img_dir, filename)
         norm_uploaded_img_path = normalize_path(uploaded_img_path)
 
@@ -182,7 +192,7 @@ async def save_aadhar_photo(photo: UploadFile, candidate_id: str):
 
         ext = photo.filename.split(".")[-1].lower()
 
-        filename = f"{candidate_id}_aadhar.{ext}"
+        filename = f"{candidate_id}_aadhar_{int(time())}.{ext}"
 
         uploaded_img_path = os.path.join(upload_img_dir, filename)
         norm_uploaded_img_path = normalize_path(uploaded_img_path)
@@ -201,6 +211,34 @@ async def save_aadhar_photo(photo: UploadFile, candidate_id: str):
         )
 
 
+async def save_offline_uploaded_file(file: UploadFile, store_name: str) -> str:
+    """
+    Save uploaded CSV/Excel file to disk and return the saved file path.
+    """
+
+    if not file:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Uploaded file not found."
+        )
+    # Ensure folder exists
+    upload_path = os.path.join(BASE_UPLOAD_DIR, "offline_records")
+    os.makedirs(upload_path, exist_ok=True)
+
+    # Generate safe unique filename
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+    suffix = file.filename.split(".")[-1].lower()
+
+    filename = f"{store_name}_{timestamp}{suffix}"
+    uploaded_img_path = os.path.join(upload_path, filename)
+    norm_uploaded_img_path = normalize_path(uploaded_img_path)
+
+    # Save file to disk
+    with open(norm_uploaded_img_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    return get_relative_upload_path(norm_uploaded_img_path)
+
+
 def ensure_utc(dt: datetime) -> datetime:
     """Ensure a datetime is timezone-aware (UTC)."""
     if dt is None:
@@ -212,9 +250,9 @@ def ensure_utc(dt: datetime) -> datetime:
 
 def get_relative_upload_path(full_path: str) -> str:
     full_path = full_path.replace("\\", "/")  # normalize slashes
-    if "/uploads/" in full_path:
+    if "/server/uploads/" in full_path:
         # get substring starting from "/uploads/"
-        return full_path.split("/uploads/", 1)[1]  # just after uploads/
+        return full_path.split("/server/", 1)[1]  # just after uploads/
     # fallback - remove base dir if it matches
     if full_path.startswith(BASE_UPLOAD_DIR.replace("\\", "/")):
         rel_path = full_path[len(BASE_UPLOAD_DIR) :].lstrip("/")

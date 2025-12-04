@@ -16,14 +16,17 @@ def register_user(
 ) -> dict[str, Any]:
     existing_user = db.scalar(
         select(User).where(
-            or_(User.username == reg_user.username, User.email == reg_user.email)
+            or_(
+                User.mobile_number == reg_user.mobile_number,
+                User.email == reg_user.email,
+            )
         )
     )
     if existing_user:
-        if existing_user.username == reg_user.username:
+        if existing_user.mobile_number == reg_user.mobile_number:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username already registered",
+                detail="Mobile number already registered",
             )
         else:
             raise HTTPException(
@@ -33,7 +36,7 @@ def register_user(
 
     try:
         new_user = User(
-            username=reg_user.username,
+            mobile_number=reg_user.mobile_number,
             email=reg_user.email,
             full_name=reg_user.full_name,
             role=reg_user.role,
@@ -74,8 +77,8 @@ def login_user(
     user = db.scalar(
         select(User).where(
             or_(
-                User.username == log_user.email_or_username,
-                User.email == log_user.email_or_username,
+                User.mobile_number == log_user.email_or_mobile_number,
+                User.id == log_user.email_or_mobile_number,
             )
         )
     )

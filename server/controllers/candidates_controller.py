@@ -24,6 +24,7 @@ from utils.helpers import (
     save_image_file,
     generate_coupon,
     save_aadhar_photo,
+    normalize_path,
 )
 
 MAX_RETRIES = 3
@@ -125,11 +126,6 @@ def get_candidate_by_id(candidate_id: str, db: Session):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found"
             )
-        if not candidate.is_candidate_verified:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Employee is not verified yet",
-            )
 
         store = candidate.store
 
@@ -157,7 +153,7 @@ def get_candidate_by_id(candidate_id: str, db: Session):
                 city=store.city,
                 email=store.email,
                 mobile_number=store.mobile_number,
-                address=store.address,
+                count=store.count,
             )
             if store
             else None,
@@ -204,7 +200,7 @@ def get_candidate_details_by_id(candidate_id: str, db: Session):
                 city=store.city,
                 email=store.email,
                 mobile_number=store.mobile_number,
-                address=store.address,
+                count=store.count,
             )
             if store
             else None,
@@ -259,7 +255,7 @@ def get_candidate_details_by_coupon_code(coupon_code: str, db: Session):
                 name=store.name,
                 id=store.id,
                 city=store.city,
-                address=store.address,
+                count=store.count,
                 email=store.email,
                 mobile_number=store.mobile_number,
             )
@@ -311,7 +307,7 @@ def get_candidate_by_photo_url(photo_url, db: Session):
                 name=store.name,
                 id=store.id,
                 city=store.city,
-                address=store.address,
+                count=store.count,
                 email=store.email,
                 mobile_number=store.mobile_number,
             )
@@ -331,17 +327,17 @@ def get_candidate_by_photo_url(photo_url, db: Session):
 def get_all_candidates(db: Session, params: CandidatesSearchParams):
     try:
         stmt = select(Candidate)
-        count_stats = db.execute(
-            select(
-                func.count(Candidate.id).label("total_candidates"),
-                func.sum(case((Candidate.is_candidate_verified, 1), else_=0)).label(
-                    "total_vouchers_issued"
-                ),
-                func.sum(
-                    case((IssuedStatus.issued_status == "issued", 1), else_=0)
-                ).label("total_laptops_issued"),
-            )
-        ).one()
+        stmt_count = select(
+            func.count(Candidate.id).label("total_candidates"),
+            func.sum(case((Candidate.is_candidate_verified, 1), else_=0)).label(
+                "total_vouchers_issued"
+            ),
+            func.sum(case((IssuedStatus.issued_status == "issued", 1), else_=0)).label(
+                "total_laptops_issued"
+            ),
+        ).outerjoin(IssuedStatus, IssuedStatus.candidate_id == Candidate.id)
+
+        count_stats = db.execute(stmt_count).one()
 
         # Filter by verification
         if params.is_verified is not None:
@@ -418,7 +414,7 @@ def get_all_candidates(db: Session, params: CandidatesSearchParams):
                     name=store.name,
                     id=store.id,
                     city=store.city,
-                    address=store.address,
+                    count=store.count,
                     email=store.email,
                     mobile_number=store.mobile_number,
                 )
@@ -505,7 +501,7 @@ def get_candidates_of_store(db: Session, store_id: str, params: CandidatesSearch
                     name=store.name,
                     id=store.id,
                     city=store.city,
-                    address=store.address,
+                    count=store.count,
                     email=store.email,
                     mobile_number=store.mobile_number,
                 )
@@ -567,6 +563,7 @@ def update_candidate_details(
 
         if payload.is_candidate_verified:
             cand_out = CandidateOut.model_validate(candidate)
+            print(f"CAND OUT - {cand_out.model_dump()}")
             is_cand_ready = is_candidate_ready_to_verify(cand_out.model_dump())
             if not is_cand_ready.get("status"):
                 db.rollback()
@@ -601,7 +598,7 @@ def update_candidate_details(
                 name=store.name,
                 id=store.id,
                 city=store.city,
-                address=store.address,
+                count=store.count,
                 email=store.email,
                 mobile_number=store.mobile_number,
             )
@@ -669,7 +666,7 @@ def update_candidate_details(
 def is_candidate_ready_to_verify(payload):
     null_vals = []
     for key, val in payload.items():
-        if not val and key not in ["issued_status", "aadhar_number"]:
+        if not val and key not in ["issued_status", "dob"]:
             null_vals.append(key)
     if len(null_vals) > 0:
         return {
@@ -689,8 +686,11 @@ async def upload_candidate_img(photo: UploadFile, candidate_id: str, db: Session
             )
 
         if candidate.photo is not None:
-            if os.path.exists(candidate.photo):
-                os.remove(candidate.photo)
+            print(f"CANDIDATE PHOTO - {candidate.photo}")
+            print(f" NOT+RMALIZED CANDIDATE PHOTO - {normalize_path(candidate.photo)}")
+            if os.path.exists(normalize_path(candidate.photo)):
+                print("PATH EXISTS")
+                os.remove(normalize_path(candidate.photo))
 
         candidate_img_path = await save_image_file(
             candidate_id=candidate.id, store_id=candidate.store_id, photo=photo
@@ -797,6 +797,11 @@ async def add_aadhar_photo(photo: UploadFile, candidate_id: str, db: Session):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found"
             )
+        print(f"CANDIDATE PHOTO - {candidate.aadhar_photo}")
+        if candidate.aadhar_photo is not None:
+            if os.path.exists(normalize_path(candidate.aadhar_photo)):
+                print("PATH EXISTS")
+                os.remove(normalize_path(candidate.aadhar_photo))
 
         aadhar_photo = await save_aadhar_photo(photo=photo, candidate_id=candidate_id)
         candidate.aadhar_photo = aadhar_photo

@@ -21,6 +21,7 @@ import { Loader } from "lucide-react";
 import StoreFormDialog from "./StoreFormDialog";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   stores: StoreItemWithUser[];
@@ -31,26 +32,56 @@ type Props = {
 
 const StoreTable: React.FC<Props> = ({ stores, isLoading, error }) => {
   const currentUserInfo = useSelector(selectAuth);
+  const [editOpen, setEditOpen] = React.useState(false);
+  const [selectedStore, setSelectedStore] =
+    React.useState<StoreItemWithUser | null>(null);
 
   const columnHelper = createColumnHelper<StoreItemWithUser>();
 
   const columns: ColumnDef<StoreItemWithUser, any>[] = [
+    columnHelper.accessor("id", {
+      size: 100,
+      maxSize: 150,
+      minSize: 100,
+      header: "Store Code",
+      cell: (info) => info.getValue(),
+    }),
     columnHelper.accessor("name", {
       header: "Store Name",
-      cell: (info) => info.getValue(),
+      size: 180,
+      maxSize: 200,
+      minSize: 180,
+      cell: (info) => (
+        <span className="wrap-break-word">{info.getValue()}</span>
+      ),
     }),
     columnHelper.accessor("city", {
       header: "City",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("address", {
-      header: "Address",
-      cell: (info) => {
-        const address = info.getValue();
+    columnHelper.accessor("count", {
+      header: "Total Stock",
+      size: 80,
+      maxSize: 150,
+      minSize: 80,
+      cell: (info) => (
+        <span className="whitespace-normal wrap-break w-full text-center">
+          {info.getValue()}
+        </span>
+      ),
+    }),
+    columnHelper.display({
+      id: "available_slots",
+      header: "Slots Available",
+      size: 80,
+      maxSize: 150,
+      minSize: 80,
+      cell: ({ row }) => {
         return (
-          <p className="whitespace-normal wrap-break max-w-[16rem]">
-            {address}
-          </p>
+          <span className="text-center whitespace-normal wrap-break w-full">
+            {row.original.count -
+              (row.original?.total_assigned_candidates ?? 0)}
+          </span>
         );
       },
     }),
@@ -102,7 +133,21 @@ const StoreTable: React.FC<Props> = ({ stores, isLoading, error }) => {
       columnHelper.display({
         id: "edit_store",
         header: "Actions",
-        cell: ({ row }) => <StoreFormDialog store={row.original} />,
+        cell: ({ row }) => {
+          return (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSelectedStore(row.original);
+                  setEditOpen(true);
+                }}
+              >
+                Edit
+              </Button>
+            </>
+          );
+        },
       })
     );
   }
@@ -123,15 +168,15 @@ const StoreTable: React.FC<Props> = ({ stores, isLoading, error }) => {
   }
 
   return (
-    <div className="w-full">
-      {/* Outer wrapper keeps header visible; the scrollable area is the inner div */}
-      <div className="flex items-center justify-end">
-        <div />
-        <p>Total Stores: {stores.length}</p>
-      </div>
-      <div
-        className="rounded-md border" /* no manual color, uses shadcn's border via tailwind tokens */
-      >
+    <div className="min-w-[700px] sm:min-w-full overflow-hidden rounded-lg border bg-card shadow-sm">
+      <div className="sm:max-h-[475px] overflow-auto">
+        {selectedStore && (
+          <StoreFormDialog
+            store={selectedStore}
+            defOpen={editOpen}
+            onOpenChange={() => setEditOpen(false)}
+          />
+        )}
         {/* Use a table element provided by shadcn components */}
         <Table className="w-full table-fixed">
           <TableCaption>List of Stores</TableCaption>
@@ -143,7 +188,7 @@ const StoreTable: React.FC<Props> = ({ stores, isLoading, error }) => {
                   <TableHead
                     key={header.id}
                     // make header sticky so it stays visible while body scrolls
-                    className="sticky top-0 z-20 bg-background whitespace-normal break-words text-center leading-snug"
+                    className="sticky top-0 z-20 bg-background whitespace-normal wrap-break-word leading-snug"
                     style={{ width: header.getSize() }}
                   >
                     {header.isPlaceholder
@@ -174,6 +219,7 @@ const StoreTable: React.FC<Props> = ({ stores, isLoading, error }) => {
                     <TableCell
                       key={cell.id}
                       style={{ width: cell.column.getSize() }}
+                      className="whitespace-normal wrap-break"
                     >
                       {flexRender(
                         cell.column.columnDef.cell,

@@ -74,7 +74,7 @@ const VendorSpocCombobox: React.FC<VendorSpocComboboxProps> = ({
                   <img
                     src={`${import.meta.env.VITE_API_BASE_API_URL}${
                       import.meta.env.VITE_RELATIVE_API_URL
-                    }/uploads/${selectedSpoc.photo}`}
+                    }/${selectedSpoc.photo}`}
                     alt={selectedSpoc.full_name}
                     className="w-10 h-10 rounded-full object-cover border shrink-0"
                   />
@@ -92,7 +92,7 @@ const VendorSpocCombobox: React.FC<VendorSpocComboboxProps> = ({
                     {selectedSpoc.vendor?.vendor_name ?? "No Vendor Linked"}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {selectedSpoc.contact}
+                    {selectedSpoc.mobile_number}
                   </p>
                 </div>
               </div>
@@ -133,7 +133,7 @@ const VendorSpocCombobox: React.FC<VendorSpocComboboxProps> = ({
                           <img
                             src={`${import.meta.env.VITE_API_BASE_API_URL}${
                               import.meta.env.VITE_RELATIVE_API_URL
-                            }/uploads/${spoc.photo}`}
+                            }/${spoc.photo}`}
                             alt={spoc.full_name}
                             className="w-10 h-10 rounded-full object-cover border"
                           />
@@ -148,7 +148,7 @@ const VendorSpocCombobox: React.FC<VendorSpocComboboxProps> = ({
                             {spoc.vendor?.vendor_name ?? "No Vendor Linked"}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {spoc.contact}
+                            {spoc.mobile_number}
                           </p>
                         </div>
                       </div>

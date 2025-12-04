@@ -18,7 +18,7 @@ class Candidate(Base, BaseMixin):
     dob: Mapped[date] = mapped_column(Date, nullable=True)
     state: Mapped[str] = mapped_column(String(64), nullable=True)
     city: Mapped[str] = mapped_column(String(100), nullable=True)
-    division: Mapped[str] = mapped_column(String(100), nullable=True)
+    division: Mapped[str] = mapped_column(String(555), nullable=True)
 
     aadhar_number = mapped_column(String(32), nullable=True)
     aadhar_photo = mapped_column(Text, nullable=True)
@@ -26,13 +26,17 @@ class Candidate(Base, BaseMixin):
     photo: Mapped[str] = mapped_column(Text, nullable=True)
 
     store_id: Mapped[str] = mapped_column(
-        String(40), ForeignKey("stores.id"), nullable=True
+        String(40), ForeignKey("stores.id", onupdate="cascade"), nullable=True
     )
     vendor_spoc_id: Mapped[str] = mapped_column(
-        String(40), ForeignKey("vendor_spoc.id", ondelete="set null"), nullable=True
+        String(40),
+        ForeignKey("vendor_spoc.id", ondelete="set null", onupdate="cascade"),
+        nullable=True,
     )
     verified_by: Mapped[str] = mapped_column(
-        String(40), ForeignKey("users.id", ondelete="set null"), nullable=True
+        String(40),
+        ForeignKey("users.id", ondelete="set null", onupdate="cascade"),
+        nullable=True,
     )
     is_candidate_verified: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=True

@@ -41,18 +41,19 @@ from models.schemas.auth_schemas import UserOut
 
 def get_current_user(
     response: Response,
-    access_token: str | None = Cookie(default=None),
-    refresh_token: str | None = Cookie(default=None),
+    lt_access_token: str | None = Cookie(default=None),
+    lt_refresh_token: str | None = Cookie(default=None),
     db: Session = Depends(get_db_conn),
 ):
     payload = None
 
     # Try decoding access token first
-    if access_token:
+    if lt_access_token:
         try:
-            payload = decode_access_token(access_token)
+            payload = decode_access_token(lt_access_token)
         except Exception as e:
-            print(f"Invalid access token: {e}")
+            pass
+            # print(f"Invalid access token: {e}")
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -60,9 +61,9 @@ def get_current_user(
         )
 
     # If no valid access token, try refresh
-    if not payload and refresh_token:
+    if not payload and lt_refresh_token:
         try:
-            payload = verify_refresh_token(refresh_token)
+            payload = verify_refresh_token(lt_refresh_token)
             user = db.get(User, payload.get("sub"))
 
             if not user or not user.is_active:
@@ -77,10 +78,10 @@ def get_current_user(
             )
             set_jwt_cookies(response, access, refresh)
 
-            print("Access token refreshed successfully")
+            # print("Access token refreshed successfully")
 
         except Exception as e:
-            print(f"Refresh token invalid: {e}")
+            # print(f"Refresh token invalid: {e}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid access and refresh token. Login again.",

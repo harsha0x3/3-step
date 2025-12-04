@@ -19,12 +19,10 @@ from services.auth.utils import (
 class User(Base, BaseMixin):
     __tablename__ = "users"
 
-    username: Mapped[str] = mapped_column(
-        String(50), unique=True, nullable=False, index=True
-    )
     email: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, index=True
+        String(255), unique=True, nullable=True, index=True
     )
+    mobile_number: Mapped[str] = mapped_column(String(15), unique=True, nullable=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(150), nullable=True)
     role: Mapped[str] = mapped_column(String(25), nullable=False)
@@ -45,7 +43,9 @@ class User(Base, BaseMixin):
     location: Mapped[str] = mapped_column(String(122), nullable=True)
 
     store_id: Mapped[str] = mapped_column(
-        String(40), ForeignKey("stores.id", ondelete="set null"), nullable=True
+        String(40),
+        ForeignKey("stores.id", ondelete="set null", onupdate="cascade"),
+        nullable=True,
     )
 
     store = relationship("Store", back_populates="store_agents")
@@ -89,6 +89,9 @@ class User(Base, BaseMixin):
 
     @validates("email")
     def validate_email(self, key, email):
+        if email is None:
+            return None
+
         email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         if not re.match(email_pattern, email):
             raise ValueError("Invalid Email Format")
@@ -98,7 +101,7 @@ class User(Base, BaseMixin):
         # Return user data without sensitive information
         return {
             "id": self.id,
-            "username": self.username,
+            "mobile_number": self.mobile_number,
             "email": self.email,
             "role": self.role,
             "full_name": self.full_name,
@@ -119,4 +122,4 @@ class User(Base, BaseMixin):
         return base
 
     def __repr__(self):
-        return f"<User(id={self.id}, username='{self.username}', email='{self.email}')>"
+        return f"<User(id={self.id}, mobile_number='{self.mobile_number}', email='{self.email}')>"

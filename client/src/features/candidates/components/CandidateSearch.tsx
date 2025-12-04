@@ -6,8 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import type { CandidateItemWithStore } from "../types";
-import Hint from "@/components/ui/hint";
-import { Loader, SearchIcon, SearchSlash } from "lucide-react";
+import { Loader, TicketCheckIcon } from "lucide-react";
 
 const CandidateSearch: React.FC = () => {
   const [fetchCandidates, { data: candidatesData, isFetching }] =
@@ -102,11 +101,11 @@ const CandidateSearch: React.FC = () => {
 
           {/* OR Divider */}
           <div className="flex items-center gap-2">
-            <div className="h-[1px] flex-1 bg-muted" />
+            <div className="h-px flex-1 bg-muted" />
             <span className="text-muted-foreground text-xs font-medium">
               OR
             </span>
-            <div className="h-[1px] flex-1 bg-muted" />
+            <div className="h-px flex-1 bg-muted" />
           </div>
 
           {/* NAME INPUT */}
@@ -151,7 +150,14 @@ const CandidateSearch: React.FC = () => {
               >
                 <p className="font-medium">{c.full_name}</p>
                 <p className="text-xs text-muted-foreground">
-                  Employee ID: {c.id} • Mobile: {c.mobile_number}
+                  Employee ID: {c.id} • Mobile: {c.mobile_number}{" "}
+                  <span>
+                    {c?.is_candidate_verified && (
+                      <span className="text-green-400 bg-green-100 rounded flex gap-2 items-center px-2 py-1 text-sm">
+                        <TicketCheckIcon className="w-4 h-4" /> Voucher Issued
+                      </span>
+                    )}
+                  </span>
                 </p>
                 <DropdownMenuSeparator />
               </div>

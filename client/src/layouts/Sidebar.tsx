@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   CopyPlusIcon,
+  WifiOff,
 } from "lucide-react";
 import {
   Collapsible,
@@ -164,6 +165,12 @@ const Sidebar: React.FC = () => {
           path: "/vendor_spoc",
           roles: ["admin", "super_admin", "registration_officer"],
         },
+        // {
+        //   label: "Offline Reports",
+        //   icon: WifiOff,
+        //   path: "/store/offline-reports",
+        //   roles: ["admin", "super_admin"],
+        // },
       ],
     },
     {
@@ -215,6 +222,12 @@ const Sidebar: React.FC = () => {
       path: "/dashboard",
       roles: ["store_agent"],
     },
+    // {
+    //   label: "Offline Reports",
+    //   icon: WifiOff,
+    //   path: "/store/offline-reports",
+    //   roles: ["store_agent"],
+    // },
     {
       label: "Laptop Distribution",
       icon: LaptopIcon,
@@ -360,7 +373,7 @@ const Sidebar: React.FC = () => {
             {currentUserRole === "admin" || currentUserRole === "super_admin"
               ? "Admin User"
               : currentUserRole === "registration_officer"
-              ? "Beneficiary Registration"
+              ? ""
               : "Store User"}
           </h1>
         </div>

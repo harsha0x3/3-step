@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import {
   type ColumnDef,
   createColumnHelper,
@@ -16,13 +16,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader } from "lucide-react";
+import { EyeIcon, Loader } from "lucide-react";
 import CandidateFormDialog from "./CandidateFormDialog";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import IssuanceDetailsDialog from "./IssuanceDetailsDialog";
 import {
   HoverCard,
   HoverCardContent,
@@ -38,6 +37,11 @@ type Props = {
 const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
   const currentUserInfo = useSelector(selectAuth);
   const navigate = useNavigate();
+  const [openDialog, setOpenDialog] = React.useState(false);
+  const [openIssuanceDialog, setOpenIssuanceDialog] = React.useState(false);
+  const IssuanceDetailsDialog = lazy(() => import("./IssuanceDetailsDialog"));
+  const [selectedCandidate, setSelectedCandidate] =
+    React.useState<CandidateItemWithStore | null>(null);
 
   const columnHelper = createColumnHelper<CandidateItemWithStore>();
 
@@ -75,10 +79,7 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
       header: "State",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("dob", {
-      header: "Date of Birth",
-      cell: (info) => info.getValue() || "-",
-    }),
+
     columnHelper.accessor("aadhar_number", {
       header: "Aadhar Number",
       cell: (info) => info.getValue(),
@@ -152,7 +153,15 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
               {status === "issued" ? "Issued" : "Not Issued"}
             </span>
             {status === "issued" && (
-              <IssuanceDetailsDialog candidate={row.original} />
+              <Button
+                variant={"link"}
+                onClick={() => {
+                  setOpenIssuanceDialog(true);
+                  setSelectedCandidate(row.original);
+                }}
+              >
+                View
+              </Button>
             )}
           </div>
         );
@@ -198,11 +207,15 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
         ) {
           return (
             <div className="flex items-center gap-2">
-              <CandidateFormDialog
-                candidate={candidate}
-                store_id={candidate.store_id}
-                toVerify={false}
-              />
+              <Button
+                variant={"outline"}
+                onClick={() => {
+                  setOpenDialog(true);
+                  setSelectedCandidate(candidate);
+                }}
+              >
+                <EyeIcon />
+              </Button>
             </div>
           );
         } else {
@@ -236,54 +249,80 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
 
   return (
     <div className="w-full">
-      <div className="rounded-md border">
-        <Table className="min-w-full">
-          <TableCaption>List of Beneficiary Employees</TableCaption>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="sticky top-0 z-20 bg-background"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="text-center py-6"
-                >
-                  No data found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
+      {openDialog && selectedCandidate && (
+        <CandidateFormDialog
+          candidate={selectedCandidate}
+          store_id={selectedCandidate.store_id}
+          toVerify={false}
+          defOpen={openDialog}
+          onOpenChange={() => {
+            setOpenDialog(false);
+            setSelectedCandidate(null);
+          }}
+        />
+      )}
+      {openIssuanceDialog && selectedCandidate && (
+        <Suspense fallback={<Loader className="animate-spin h-5 w-5 ml-2" />}>
+          <IssuanceDetailsDialog
+            candidate={selectedCandidate}
+            defOpen={openIssuanceDialog}
+            onOpenChange={() => {
+              setSelectedCandidate(null);
+              setOpenIssuanceDialog(false);
+            }}
+          />
+        </Suspense>
+      )}
+      <div className="min-w-[700px] sm:min-w-full overflow-hidden rounded-lg border bg-card shadow-sm">
+        <div className="sm:max-h-[475px] overflow-auto">
+          <Table className="">
+            <TableCaption>List of Beneficiary Employees</TableCaption>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      className="sticky top-0 z-20 bg-card shadow-sm"
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="text-center py-6"
+                  >
+                    No data found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );

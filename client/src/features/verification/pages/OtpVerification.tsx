@@ -102,27 +102,48 @@ const OtpVerification = () => {
   }, [candidateDetails, isFetchingCandidateDetails]);
 
   useEffect(() => {
+    const v = verificationStatus?.data;
     if (!isFetchingVerificationStatus && verificationStatus) {
-      if (!verificationStatus?.data?.is_coupon_verified) {
+      if (!v?.is_coupon_verified) {
         toast.error("Beneficiary details are not yet verified.");
         navigate("/store/beneficiary");
+        return;
       }
       if (
-        (!verificationStatus?.data?.is_facial_verified ||
-          !verificationStatus?.data?.is_aadhar_verified) &&
-        !verificationStatus?.data?.overriding_user
+        (!v?.is_facial_verified || !v?.is_aadhar_verified) &&
+        !v?.overriding_user
       ) {
         toast.error("Beneficiary details are not yet verified.");
         navigate("/store/beneficiary");
+        return;
       }
       if (
-        (!verificationStatus?.data?.is_facial_verified ||
-          !verificationStatus?.data?.is_aadhar_verified) &&
-        verificationStatus?.data?.overriding_user &&
-        verificationStatus?.data?.is_otp_verified
+        (!v?.is_facial_verified || !v?.is_aadhar_verified) &&
+        v?.overriding_user &&
+        v?.is_otp_verified
       ) {
-        toast.info("OTP verification of the beneficiary completed recently.");
+        toast.info("OTP verification of the beneficiary completed.");
         navigate(`/store/beneficiary/${candidateId}/issuance`);
+        return;
+      }
+
+      if (
+        v.is_coupon_verified &&
+        v.is_facial_verified &&
+        v.is_aadhar_verified
+      ) {
+        navigate(`/store/beneficiary/${candidateId}/issuance`);
+        return;
+      }
+
+      if (!v.is_otp_verified && !hasSentOtp.current) {
+        hasSentOtp.current = true;
+
+        toast.promise(handleSendOtp(), {
+          loading: "Sending OTP...",
+          success: "OTP sent successfully!",
+          error: (err) => err.message || "Failed to send OTP",
+        });
       }
     }
   }, [verificationStatus, isFetchingVerificationStatus]);
@@ -169,16 +190,16 @@ const OtpVerification = () => {
 
   const hasSentOtp = React.useRef(false);
 
-  useEffect(() => {
-    if (hasSentOtp.current) return;
-    hasSentOtp.current = true;
+  // useEffect(() => {
+  //   if (hasSentOtp.current) return;
+  //   hasSentOtp.current = true;
 
-    toast.promise(handleSendOtp(), {
-      loading: "Sending OTP...",
-      success: "OTP sent successfully!",
-      error: (err) => err.message || "Failed to send OTP",
-    });
-  }, []);
+  //   toast.promise(handleSendOtp(), {
+  //     loading: "Sending OTP...",
+  //     success: "OTP sent successfully!",
+  //     error: (err) => err.message || "Failed to send OTP",
+  //   });
+  // }, []);
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,7 +215,7 @@ const OtpVerification = () => {
       setError("");
       navigate(`/store/beneficiary/${candidateId}/issuance`);
     } catch (err: any) {
-      const msg = err?.data?.detail?.msg ?? "Invalid OTP";
+      const msg = err?.data?.detail?.msg ?? err?.data?.detail ?? "Invalid OTP";
       setError(msg);
     }
   };

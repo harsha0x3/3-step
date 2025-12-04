@@ -9,7 +9,7 @@ class Otp(Base, BaseMixin):
     __tablename__ = "otps"
 
     candidate_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("candidates.id"), nullable=False
+        String(36), ForeignKey("candidates.id", onupdate="cascade"), nullable=False
     )
     otp: Mapped[str] = mapped_column(String(10), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(

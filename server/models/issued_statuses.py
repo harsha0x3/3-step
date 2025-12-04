@@ -1,5 +1,5 @@
 from db.base import Base
-from sqlalchemy import ForeignKey, String, DateTime, Text
+from sqlalchemy import ForeignKey, String, DateTime, Text, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
@@ -9,7 +9,7 @@ class IssuedStatus(Base):
 
     candidate_id: Mapped[str] = mapped_column(
         String(36),
-        ForeignKey("candidates.id"),
+        ForeignKey("candidates.id", onupdate="cascade"),
         primary_key=True,
         nullable=False,
     )
@@ -22,8 +22,9 @@ class IssuedStatus(Base):
         String(128), nullable=True, unique=True
     )
     issued_by: Mapped[str] = mapped_column(
-        String(40), ForeignKey("users.id"), nullable=True
+        String(40), ForeignKey("users.id", onupdate="cascade"), nullable=True
     )
+    is_offline: Mapped[bool] = mapped_column(Boolean, default=False)
     store_employee_name: Mapped[str] = mapped_column(String(150), nullable=True)
     store_employee_mobile: Mapped[str] = mapped_column(String(15), nullable=True)
     store_employee_photo: Mapped[str] = mapped_column(Text, nullable=True)

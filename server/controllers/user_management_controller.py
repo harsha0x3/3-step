@@ -21,20 +21,20 @@ DEFAULT_PASSWORD = "password@123"
 
 
 def admin_create_user(
-    payload: AdminCreateUserRequest, db: Session, admin_user_id: str
+    payload: AdminCreateUserRequest, db: Session, admin_user_id: str | None = None
 ) -> dict[str, Any]:
     """Admin creates a new user with default password"""
 
     # Check if user already exists
+    print(f"DEBUG PAYLOAD - {payload.model_dump()}")
+
     existing_user = db.scalar(
-        select(User).where(
-            or_(User.username == payload.username, User.email == payload.email)
-        )
+        select(User).where(or_(User.mobile_number == payload.mobile_number))
     )
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username or email already exists",
+            detail="mobile number or email already exists",
         )
 
     # Validate store assignment for store agents
@@ -46,7 +46,7 @@ def admin_create_user(
 
     try:
         new_user = User(
-            username=payload.username,
+            mobile_number=payload.mobile_number,
             email=payload.email,
             full_name=payload.full_name,
             role=payload.role,
@@ -95,19 +95,19 @@ def admin_update_user(
 
     try:
         # Update fields that are provided
-        if payload.username:
-            # Check if username is taken by another user
+        if payload.mobile_number:
+            # Check if mobile_number is taken by another user
             existing = db.scalar(
                 select(User).where(
-                    User.username == payload.username, User.id != user_id
+                    User.mobile_number == payload.mobile_number, User.id != user_id
                 )
             )
             if existing:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Username already taken",
+                    detail="Mobile_number already taken",
                 )
-            user.username = payload.username
+            user.mobile_number = payload.mobile_number
 
         if payload.email:
             # Check if email is taken by another user
@@ -214,10 +214,14 @@ def admin_get_user_by_id(user_id: str, db: Session) -> UserDetailOut:
 async def request_password_reset(payload: PasswordResetRequestSchema, db: Session):
     """User requests password reset - sends OTP to email"""
 
-    user = db.scalar(select(User).where(User.email == payload.email))
+    user = (
+        db.scalar(select(User).where(User.email == payload.email))
+        if payload.email
+        else db.scalar(select(User).where(User.mobile_number == payload.mobile_number))
+    )
     if not user:
         # Don't reveal if email exists or not
-        return {"msg": "If the email exists, a reset code has been sent"}
+        return {"msg": "If the email or exists, a reset code has been sent"}
 
     try:
         # Delete any existing OTP for this user
@@ -253,7 +257,11 @@ async def request_password_reset(payload: PasswordResetRequestSchema, db: Sessio
 async def verify_password_reset(payload: PasswordResetVerifySchema, db: Session):
     """User verifies OTP and sets new password"""
 
-    user = db.scalar(select(User).where(User.email == payload.email))
+    user = (
+        db.scalar(select(User).where(User.email == payload.email))
+        if payload.email
+        else db.scalar(select(User).where(User.mobile_number == payload.mobile_number))
+    )
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

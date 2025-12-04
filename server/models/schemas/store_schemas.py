@@ -4,18 +4,23 @@ from typing import Literal
 
 
 class AddNewStore(BaseModel):
+    id: str
     name: str
     city: str
-    address: str
+    count: int
+    # address: str
 
     email: str | None = None
     mobile_number: str | None = None
 
 
 class UpdateStorePayload(BaseModel):
+    id: str | None = None
     name: str | None = None
     city: str | None = None
-    address: str | None = None
+    count: int
+
+    # address: str | None = None
 
     email: str | None = None
     mobile_number: str | None = None
@@ -24,13 +29,18 @@ class UpdateStorePayload(BaseModel):
 class StoreSearchParams(BaseModel):
     search_by: Literal["city", "name"] | None = None
     search_term: str | None = None
+    page: int = 1
+    page_size: int = 15
+    sort_by: Literal["created_at", "updated_at", "name", "city"] = "created_at"
+    sort_order: Literal["asc", "desc"] = "desc"
 
 
 class StoreItemOut(BaseModel):
     id: str
     name: str
     city: str
-    address: str
+    count: int
+    # address: str
 
     email: str | None = None
     mobile_number: str | None = None

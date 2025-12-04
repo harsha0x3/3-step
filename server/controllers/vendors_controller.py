@@ -43,7 +43,7 @@ def get_all_vendors(db: Session, search_term: str | None = None):
 
 
 async def add_new_vendor_spoc(
-    payload: vendor_schemas.NewVendorSpoc, photo: UploadFile, db: Session
+    payload: vendor_schemas.NewVendorSpoc, photo: UploadFile | None, db: Session
 ):
     try:
         vendor = db.get(Vendor, payload.vendor_id)
@@ -51,7 +51,7 @@ async def add_new_vendor_spoc(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Vendor not found"
             )
-        photo_url = await save_vendor_spoc_img(photo=photo)
+        photo_url = await save_vendor_spoc_img(photo=photo) if photo else None
         new_vendor_spoc = VendorSpoc(
             vendor_id=vendor.id,
             full_name=payload.full_name,
@@ -90,7 +90,9 @@ def get_all_vendor_spoc(db: Session, search_term: str | None = None):
                 full_name=vendor_spoc.full_name,
                 mobile_number=vendor_spoc.mobile_number,
                 email=vendor_spoc.email,
-                photo=get_relative_upload_path(vendor_spoc.photo),
+                photo=get_relative_upload_path(vendor_spoc.photo)
+                if vendor_spoc.photo
+                else None,
                 vendor=vendor_spoc.vendor,
             )
             result.append(data)

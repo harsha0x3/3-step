@@ -33,7 +33,6 @@ type Props = {
 type VendorSpocForm = {
   vendor_id: string;
   full_name: string;
-  email?: string;
   mobile_number?: string;
   photo?: File | null;
 };
@@ -64,7 +63,6 @@ const VendorSpocFormDialog: React.FC<Props> = ({
       ? {
           vendor_id: vendorSpoc.vendor_id,
           full_name: vendorSpoc.full_name,
-          email: vendorSpoc.email,
           mobile_number: vendorSpoc.mobile_number,
         }
       : {},
@@ -85,15 +83,10 @@ const VendorSpocFormDialog: React.FC<Props> = ({
       toast.error("Vendor is required");
       return;
     }
-    if (!photo && !vendorSpoc) {
-      toast.error("Please select a photo");
-      return;
-    }
 
     try {
       const formData = new FormData();
       if (data?.full_name) formData.append("full_name", data.full_name);
-      if (data?.email) formData.append("email", data.email);
       if (data?.mobile_number)
         formData.append("mobile_number", data.mobile_number);
       if (photo) formData.append("photo", photo);
@@ -202,7 +195,6 @@ const VendorSpocFormDialog: React.FC<Props> = ({
           </div>
 
           {renderTextInput("full_name", "Full Name (of contact)")}
-          {renderTextInput("email", "E-mail")}
           {renderTextInput("mobile_number", "Phone")}
 
           <div className="grid gap-cols-1 sm:grid-cols-[200px_1fr] gap-0 items-start">
@@ -217,7 +209,7 @@ const VendorSpocFormDialog: React.FC<Props> = ({
                         ? photoPreview
                         : `${
                             import.meta.env.VITE_API_BASE_API_URL
-                          }/hard_verify/api/v1.0/uploads/${vendorSpoc?.photo}`
+                          }/hard_verify/api/v1.0/${vendorSpoc?.photo}`
                     }
                     alt="Selected Contact Photo"
                     className="w-32 h-32 object-cover rounded-md border-2"

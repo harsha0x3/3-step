@@ -31,7 +31,7 @@ const LaptopIssuancePage: React.FC = () => {
             />
           ) : (
             <p className="text-center text-red-500">
-              Invalid candidate ID, please Back to Dashboard.
+              Invalid candidate ID, please Back to Stats.
             </p>
           )}
           <SuccessDialog open={openSuccess} setOpen={setOpenSuccess} />

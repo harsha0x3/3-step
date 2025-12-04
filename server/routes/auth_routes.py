@@ -65,7 +65,7 @@ def get_me(
 def logout_user(response: Response):
     # Clear access token
     response.delete_cookie(
-        key="access_token",
+        key="lt_access_token",
         httponly=True,
         secure=True,
         samesite="strict",
@@ -74,7 +74,7 @@ def logout_user(response: Response):
 
     # Clear refresh token
     response.delete_cookie(
-        key="refresh_token",
+        key="lt_refresh_token",
         httponly=True,
         secure=True,
         samesite="strict",

@@ -10,9 +10,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AlertDescription } from "@/components/ui/alert";
 import { CheckCircleIcon, XCircleIcon } from "lucide-react";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useOverrideVerificationMutation } from "../store/verificationApiSlice";
 import { toast } from "sonner";
@@ -36,7 +34,6 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
   const [showOverrideForm, setShowOverrideForm] = useState(false);
 
   const [overridePayload, setOverridePayload] = useState<OverrideRequest>({
-    overriding_user: "",
     overriding_reason: "",
   });
 
@@ -46,10 +43,7 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
   const handleOverrideSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      !overridePayload.overriding_user ||
-      !overridePayload.overriding_reason
-    ) {
+    if (!overridePayload.overriding_reason) {
       toast.warning("Please fill in both Name and Reason");
       return;
     }
@@ -160,7 +154,7 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
               <img
                 src={`${
                   import.meta.env.VITE_API_BASE_API_URL
-                }/hard_verify/api/v1.0/uploads/${data.candidate.photo}`}
+                }/hard_verify/api/v1.0/${data.candidate.photo}`}
                 className="w-32 h-32 border rounded-md object-cover"
               />
             </div>
@@ -187,35 +181,20 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
             className="border-t pt-4 mt-4 space-y-3"
           >
             <AlertDescription className="text-center">
-              Enter your name and justification for override:
+              Enter reason for overridding verification:
             </AlertDescription>
 
-            <div className="grid grid-cols-[100px_1fr]">
-              <Label>Your Name</Label>
-              <Input
-                value={overridePayload.overriding_user}
-                onChange={(e) =>
-                  setOverridePayload((p) => ({
-                    ...p,
-                    overriding_user: e.target.value,
-                  }))
-                }
-              />
-            </div>
-
-            <div className="grid grid-cols-[100px_1fr] items-start">
-              <Label>Reason</Label>
-              <Textarea
-                rows={3}
-                value={overridePayload.overriding_reason}
-                onChange={(e) =>
-                  setOverridePayload((p) => ({
-                    ...p,
-                    overriding_reason: e.target.value,
-                  }))
-                }
-              />
-            </div>
+            <Textarea
+              rows={3}
+              value={overridePayload.overriding_reason}
+              onChange={(e) =>
+                setOverridePayload((p) => ({
+                  ...p,
+                  overriding_reason: e.target.value,
+                }))
+              }
+              className="w-5/6"
+            />
 
             <div className="flex justify-end gap-2">
               <Button type="submit" disabled={isLoading}>

@@ -11,22 +11,22 @@ class RoleEnum(str, Enum):
 
 
 class RegisterRequest(BaseModel):
-    username: str
-    email: EmailStr
+    email: EmailStr | None = None
+    mobile_number: str | None = None
     password: str
     full_name: str
     role: RoleEnum
 
 
 class LoginRequest(BaseModel):
-    email_or_username: EmailStr | str
+    email_or_mobile_number: EmailStr | str
     password: str
     mfa_code: str | None = None
 
 
 class Tokens(BaseModel):
-    access_token: str
-    refresh_token: str
+    lt_access_token: str
+    lt_refresh_token: str
     token_type: str
 
 
@@ -52,8 +52,8 @@ class MFASetupVerifyResponse(BaseModel):
 
 class UserOut(BaseModel):
     id: str
-    username: str
-    email: str
+    mobile_number: str | None = None
+    email: str | None = None
     full_name: str | None = None
     role: str
     store_id: str | None = None
@@ -68,30 +68,32 @@ class UserOut(BaseModel):
 
 
 class AdminCreateUserRequest(BaseModel):
-    username: str
-    email: EmailStr
+    email: EmailStr | None = None
     full_name: str
+    mobile_number: str | None = None
     role: RoleEnum
     location: str | None = None
     store_id: str | None = None  # Required for store_agent role
 
 
 class AdminUpdateUserRequest(BaseModel):
-    username: str | None = None
     email: EmailStr | None = None
     full_name: str | None = None
     role: RoleEnum | None = None
     store_id: str | None = None
     is_active: bool | None = None
     location: str | None = None
+    mobile_number: str | None = None
 
 
 class PasswordResetRequestSchema(BaseModel):
-    email: EmailStr
+    email: EmailStr | None = None
+    mobile_number: str | None = None
 
 
 class PasswordResetVerifySchema(BaseModel):
-    email: EmailStr
+    email: EmailStr | None = None
+    mobile_number: str | None = None
     otp: str
     new_password: str
 
@@ -103,8 +105,8 @@ class PasswordChangeSchema(BaseModel):
 
 class UserDetailOut(BaseModel):
     id: str
-    username: str
-    email: str
+    email: str | None = None
+    mobile_number: str | None = None
     full_name: str | None = None
     role: str
     store_id: str | None = None

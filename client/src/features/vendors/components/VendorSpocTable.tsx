@@ -16,10 +16,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader } from "lucide-react";
+import { EyeIcon, Loader } from "lucide-react";
 import VendorSpocFormDialog from "./VendorSpocFormDialog";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   vendorSpocs: VendorSpocItem[];
@@ -34,6 +35,9 @@ const VendorSpocTable: React.FC<Props> = ({
 }) => {
   const currentUserInfo = useSelector(selectAuth);
   const columnHelper = createColumnHelper<VendorSpocItem>();
+  const [openEdit, setOpenEdit] = React.useState(false);
+  const [selectedVendorSpoc, setSelectedVendorSpoc] =
+    React.useState<VendorSpocItem | null>(null);
 
   const columns: ColumnDef<VendorSpocItem, any>[] = [
     columnHelper.accessor("vendor.vendor_name", {
@@ -48,10 +52,7 @@ const VendorSpocTable: React.FC<Props> = ({
       header: "Contact Person Mobile Number",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("email", {
-      header: "Contact Person E-Mail",
-      cell: (info) => info.getValue(),
-    }),
+
     columnHelper.accessor("photo", {
       header: "Contact Person Photo",
       cell: (info) => {
@@ -62,7 +63,7 @@ const VendorSpocTable: React.FC<Props> = ({
           <img
             src={`${import.meta.env.VITE_API_BASE_API_URL}${
               import.meta.env.VITE_RELATIVE_API_URL
-            }/uploads/${photo}`}
+            }/${photo}`}
             alt="Vendor Spoc"
             className="w-16 h-16 object-cover rounded border"
           />
@@ -89,10 +90,15 @@ const VendorSpocTable: React.FC<Props> = ({
           ) {
             return (
               <div className="flex items-center gap-2">
-                <VendorSpocFormDialog
-                  vendorSpoc={vendorSpoc}
-                  viewOnly={currentUserInfo.role === "registration_officer"}
-                />
+                <Button
+                  variant={"outline"}
+                  onClick={() => {
+                    setOpenEdit(true);
+                    setSelectedVendorSpoc(vendorSpoc);
+                  }}
+                >
+                  <EyeIcon />
+                </Button>
               </div>
             );
           }
@@ -134,6 +140,14 @@ const VendorSpocTable: React.FC<Props> = ({
         <div />
         <p>Total Vendor Contact Persons: {vendorSpocs?.length}</p>
       </div>
+      {selectedVendorSpoc && (
+        <VendorSpocFormDialog
+          vendorSpoc={selectedVendorSpoc}
+          defOpen={openEdit}
+          onOpenChange={() => setOpenEdit(false)}
+          viewOnly={currentUserInfo.role === "registration_officer"}
+        />
+      )}
       <div className="rounded-md border">
         <Table className="min-w-full">
           <TableCaption>List of Vendors and Contact Persons</TableCaption>

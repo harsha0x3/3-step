@@ -4,7 +4,7 @@ import type { AuthState, LoginResponse } from "../types";
 import type { RootState } from "@/store/rootStore";
 const initialState: AuthState = {
   id: null,
-  username: null,
+  mobile_number: null,
   email: null,
   full_name: null,
   role: null,
@@ -24,7 +24,7 @@ const authSlice = createSlice({
       const payload = action.payload;
       const user = payload as LoginResponse;
 
-      state.username = user.username ?? state.username;
+      state.mobile_number = user.mobile_number ?? state.mobile_number;
       state.id = user.id ?? state.id;
       state.role = user.role ?? state.role;
       state.full_name = user.full_name ?? state.full_name;
@@ -34,9 +34,9 @@ const authSlice = createSlice({
       state.error = null;
     },
     registerSuccess: (state, action) => {
-      const { username, role, full_name, email, id } = action.payload;
+      const { mobile_number, role, full_name, email, id } = action.payload;
 
-      state.username = username ?? state.username;
+      state.mobile_number = mobile_number ?? state.mobile_number;
       state.role = role ?? state.role;
       state.id = id ?? state.id;
       state.full_name = full_name ?? state.full_name;
@@ -47,8 +47,8 @@ const authSlice = createSlice({
     },
 
     updateUser: (state, action: PayloadAction<Partial<AuthState>>) => {
-      const { username, role, full_name, email } = action.payload;
-      state.username = username ?? state.username;
+      const { mobile_number, role, full_name, email } = action.payload;
+      state.mobile_number = mobile_number ?? state.mobile_number;
       state.role = role ?? state.role;
       state.full_name = full_name ?? state.full_name;
       state.email = email ?? state.email;

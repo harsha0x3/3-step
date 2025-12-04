@@ -36,7 +36,6 @@ import { selectAuth } from "@/features/auth/store/authSlice";
 import StoresCombobox from "@/features/product_stores/components/StoresCombobox";
 import VendorSpocCombobox from "@/features/vendors/components/VendorSpocCombobox";
 import CandidatePhotoCapture from "./CandidatePhotoCapture";
-import VendorSpocFormDialog from "@/features/vendors/components/VendorSpocFormDialog";
 import AadharPhotoCapture from "./AadharPhotoCapture";
 import Hint from "@/components/ui/hint";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -75,6 +74,7 @@ const CandidateFormDialog: React.FC<Props> = ({
 
   const [addNewCandidate, { isLoading: isAdding }] =
     useAddNewCandidateMutation();
+
   const [updateCandidate, { isLoading: isUpdating }] =
     useUpdateCandidateMutation();
   const [uploadPhoto, { isLoading: isUploadingPhoto }] =
@@ -84,8 +84,6 @@ const CandidateFormDialog: React.FC<Props> = ({
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [openConfirm, setOpenConfirm] = useState<boolean>(false);
   const navigate = useNavigate();
-
-  useState<CandidateItemWithStore | null>(null);
 
   const currentUserInfo = useSelector(selectAuth);
   const canEdit =
@@ -107,7 +105,6 @@ const CandidateFormDialog: React.FC<Props> = ({
           id: candidate.id,
           full_name: candidate.full_name,
           mobile_number: candidate.mobile_number,
-          dob: candidate.dob,
           city: candidate.city,
           state: candidate.state,
           division: candidate.division,
@@ -131,7 +128,7 @@ const CandidateFormDialog: React.FC<Props> = ({
       onOpenChange?.(false);
     });
 
-    navigate(-1);
+    navigate("/registration_officer/beneficiary/verify");
   };
 
   // ---------- FORM SUBMIT HANDLERS ----------
@@ -157,6 +154,7 @@ const CandidateFormDialog: React.FC<Props> = ({
           payload,
         }).unwrap();
         if (!isEditMode) {
+          toast.success("Voucher issued successfully!");
           closeAndGoBack();
           return;
         }
@@ -164,8 +162,9 @@ const CandidateFormDialog: React.FC<Props> = ({
       } else {
         console.log("Adding candidate");
         const res = await addNewCandidate(data).unwrap();
-        toast.success("Beneficiary added successfully!");
         closeAndGoBack();
+
+        toast.success("Beneficiary added successfully!");
       }
 
       reset();
@@ -198,7 +197,6 @@ const CandidateFormDialog: React.FC<Props> = ({
         id: candidate.id,
         full_name: candidate.full_name,
         mobile_number: candidate.mobile_number,
-        dob: candidate.dob,
         city: candidate.city,
         state: candidate.state,
         division: candidate.division,
@@ -287,9 +285,11 @@ const CandidateFormDialog: React.FC<Props> = ({
     >
       <DialogTrigger asChild>
         {!!candidate && !toVerify ? (
-          <Button variant="ghost" size="sm">
-            <EyeIcon className="w-4 h-4" />
-          </Button>
+          <Hint label="View Beneficiary details">
+            <Button variant="ghost" size="sm">
+              <EyeIcon className="w-4 h-4" />
+            </Button>
+          </Hint>
         ) : !!candidate && toVerify ? (
           <Button disabled={!isVerifiedChecked}>Issue Voucher</Button>
         ) : (
@@ -387,20 +387,67 @@ const CandidateFormDialog: React.FC<Props> = ({
             <section className="flex flex-col gap-4">
               {renderTextInput("id", "Employee ID", "text", true)}
               {renderTextInput("full_name", "Full Name")}
-              {renderTextInput("mobile_number", "Mobile Number")}
-              {renderTextInput("dob", "Date of Birth")}
-              {renderTextInput("city", "City")}
-              {renderTextInput("state", "State")}
+              <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
+                <Label
+                  className="font-semibold text-md flex gap-2"
+                  htmlFor={"mobile_number"}
+                >
+                  Mobile Number<span className="text-red-600">*</span>
+                </Label>
+                <Input
+                  id={"mobile_number"}
+                  type="number"
+                  minLength={10}
+                  maxLength={10}
+                  readOnly={
+                    viewOnly ||
+                    (!isEditMode && !!candidate) ||
+                    (isEditMode || !candidate
+                      ? false
+                      : toVerify && !!candidate?.mobile_number)
+                  }
+                  {...register("mobile_number", {
+                    required: `Mobile number is required`,
+                  })}
+                />
+                {errors.mobile_number && (
+                  <span className="text-sm text-amber-700">
+                    {errors.mobile_number?.message as string}
+                  </span>
+                )}
+              </div>
+              {renderTextInput("city", "City", "text", false)}
+              {renderTextInput("state", "State", "text", false)}
               {renderTextInput("division", "Division", "text", false)}
-              {renderTextInput(
-                "aadhar_number",
-                "Aadhar Number",
-                "text",
-                false,
-                isEditMode || !candidate
-                  ? false
-                  : toVerify && !!candidate?.aadhar_number
-              )}
+              <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
+                <Label
+                  className="font-semibold text-md flex gap-2"
+                  htmlFor={"aadhar_number"}
+                >
+                  Aadhar Number<span className="text-red-600">*</span>
+                </Label>
+                <Input
+                  id={"aadhar_number"}
+                  type="number"
+                  minLength={12}
+                  maxLength={12}
+                  readOnly={
+                    viewOnly ||
+                    (!isEditMode && !!candidate) ||
+                    (isEditMode || !candidate
+                      ? false
+                      : toVerify && !!candidate?.aadhar_number)
+                  }
+                  {...register("aadhar_number", {
+                    required: `Aadhar number is required`,
+                  })}
+                />
+                {errors.aadhar_number && (
+                  <span className="text-sm text-amber-700">
+                    {errors.aadhar_number?.message as string}
+                  </span>
+                )}
+              </div>
             </section>
 
             <section className="flex flex-col gap-4">
@@ -412,7 +459,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                     setValue("store_id", store.id, { shouldDirty: true });
                     setSelectedStore(store);
                   }}
-                  isDisabled={!isEditMode}
+                  isDisabled={!isEditMode && !!candidate}
                 />
               </div>
 
@@ -428,7 +475,13 @@ const CandidateFormDialog: React.FC<Props> = ({
                           <Hint label="Add a new Vendor Contact if it doesn’t exist in the list.">
                             <CircleQuestionMarkIcon className="w-3 h-5 text-amber-600" />
                           </Hint>
-                          <VendorSpocFormDialog />
+                          <Button
+                            type="button"
+                            onClick={() => navigate("/vendor_spoc/new")}
+                            size="sm"
+                          >
+                            Add new
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -449,160 +502,163 @@ const CandidateFormDialog: React.FC<Props> = ({
             </section>
 
             {!!candidate && (
-              <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
-                <Label className="font-semibold text-md">Voucher Code</Label>
-                <Input
-                  type="text"
-                  readOnly
-                  value={candidate?.coupon_code ?? "Error getting"}
-                />
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
+                  <Label className="font-semibold text-md">Voucher Code</Label>
+                  <Input
+                    type="text"
+                    readOnly
+                    value={candidate?.coupon_code ?? "Error getting"}
+                  />
+                </div>
+                <div
+                  className={`border-t mt-4 pt-4 space-y-4 flex w-full ${
+                    !!candidate && toVerify
+                      ? "flex-col"
+                      : "flex-row justify-between gap-3"
+                  }`}
+                >
+                  {/* Candidate Photo */}
+                  <div
+                    className={`border relative p-2 ${
+                      !!candidate && toVerify ? "" : "w-1/2"
+                    }`}
+                  >
+                    <p className="absolute -translate-y-5 bg-background rounded px-2">
+                      Beneficiary Photo with voucher
+                    </p>
+                    {!!candidate && toVerify && (
+                      <p className="flex gap-3 items-center text-amber-700">
+                        <span>
+                          <CircleQuestionMarkIcon className="w-3 h-3 text-blue-600" />
+                        </span>
+                        Capture / upload the photo of beneficiary with the
+                        recieved voucher
+                      </p>
+                    )}
+
+                    <div className="flex items-center gap-3">
+                      {candidate?.photo ? (
+                        <img
+                          src={`${
+                            import.meta.env.VITE_API_BASE_API_URL
+                          }/hard_verify/api/v1.0/${candidate?.photo}`}
+                          alt="Candidate"
+                          className="w-30 h-30 object-cover rounded-md border"
+                        />
+                      ) : (
+                        <div className="w-30 h-30 border rounded-md flex items-center justify-center text-gray-400">
+                          No Photo
+                        </div>
+                      )}
+                      {!!candidate &&
+                        toVerify &&
+                        (currentUserInfo.role === "admin" ||
+                          currentUserInfo.role === "super_admin" ||
+                          currentUserInfo.role === "registration_officer") && (
+                          <div className="flex gap-3 items-center">
+                            <div className="flex gap-1 items-center">
+                              <Label
+                                htmlFor="candidateFileInput"
+                                className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer"
+                              >
+                                Choose File
+                              </Label>
+                              <Input
+                                id="candidateFileInput"
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) =>
+                                  handleImageUpload("candidate", e)
+                                }
+                                className="hidden"
+                              />
+                              {isUploadingPhoto && (
+                                <Loader className="w-3 h-3 animate-spin" />
+                              )}
+                            </div>
+                            <p>(OR)</p>
+                            <CandidatePhotoCapture
+                              candidateId={candidate?.id}
+                            />
+                          </div>
+                        )}
+                    </div>
+                  </div>
+
+                  {/* Aadhar photo */}
+                  <div
+                    className={`border relative p-2 ${
+                      !!candidate && toVerify ? "" : "w-1/2"
+                    }`}
+                  >
+                    <p className="absolute -translate-y-5 bg-background rounded px-2">
+                      Beneficiary's Aadhar card photo.
+                    </p>
+                    {!!candidate && toVerify && (
+                      <p className="flex gap-3 items-center text-amber-700">
+                        <Hint
+                          label={
+                            "Take a photo of beneficiary's aadhar for future proof with number clearly visible."
+                          }
+                        >
+                          <span>
+                            <CircleQuestionMarkIcon className="w-3 h-3 text-blue-600" />
+                          </span>
+                        </Hint>
+                        Capture /upload the photo of beneficiary's aadhar card
+                      </p>
+                    )}
+                    <div className="flex items-center gap-3">
+                      {candidate?.aadhar_photo ? (
+                        <img
+                          src={`${
+                            import.meta.env.VITE_API_BASE_API_URL
+                          }/hard_verify/api/v1.0/${candidate?.aadhar_photo}`}
+                          alt="Candidate"
+                          className="w-30 h-30 object-cover rounded-md border"
+                        />
+                      ) : (
+                        <div className="w-30 h-30 border rounded-md flex items-center justify-center text-gray-400">
+                          No Aadhar
+                        </div>
+                      )}
+                      {!!candidate &&
+                        toVerify &&
+                        (currentUserInfo.role === "admin" ||
+                          currentUserInfo.role === "super_admin" ||
+                          currentUserInfo.role === "registration_officer") && (
+                          <div className="flex gap-3 items-center">
+                            <div className="flex gap-1 items-center">
+                              <Label
+                                htmlFor="aadharFileInput"
+                                className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer"
+                              >
+                                Choose File
+                              </Label>
+                              <Input
+                                id="aadharFileInput"
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleImageUpload("aadhar", e)}
+                                className="hidden"
+                              />
+                              {isUploadingPhoto && (
+                                <Loader className="w-3 h-3 animate-spin" />
+                              )}
+                              {isUploadingAadhar && (
+                                <Loader className="w-3 h-3 animate-spin" />
+                              )}
+                            </div>
+                            <p>(OR)</p>
+                            <AadharPhotoCapture candidateId={candidate?.id} />
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
-
-            <div
-              className={`border-t mt-4 pt-4 space-y-4 flex w-full ${
-                !!candidate && toVerify
-                  ? "flex-col"
-                  : "flex-row justify-between gap-3"
-              }`}
-            >
-              {/* Candidate Photo */}
-              <div
-                className={`border relative p-2 ${
-                  !!candidate && toVerify ? "" : "w-1/2"
-                }`}
-              >
-                <p className="absolute -translate-y-5 bg-background rounded px-2">
-                  Beneficiary Photo with voucher
-                </p>
-                {!!candidate && toVerify && (
-                  <p className="flex gap-3 items-center text-amber-700">
-                    <span>
-                      <CircleQuestionMarkIcon className="w-3 h-3 text-blue-600" />
-                    </span>
-                    Capture / upload the photo of beneficiary with the recieved
-                    voucher
-                  </p>
-                )}
-
-                <div className="flex items-center gap-3">
-                  {candidate?.photo ? (
-                    <img
-                      src={`${
-                        import.meta.env.VITE_API_BASE_API_URL
-                      }/hard_verify/api/v1.0/uploads/${candidate?.photo}`}
-                      alt="Candidate"
-                      className="w-30 h-30 object-cover rounded-md border"
-                    />
-                  ) : (
-                    <div className="w-30 h-30 border rounded-md flex items-center justify-center text-gray-400">
-                      No Photo
-                    </div>
-                  )}
-                  {!!candidate &&
-                    toVerify &&
-                    (currentUserInfo.role === "admin" ||
-                      currentUserInfo.role === "super_admin" ||
-                      currentUserInfo.role === "registration_officer") && (
-                      <div className="flex gap-3 items-center">
-                        <div className="flex gap-1 items-center">
-                          <Label
-                            htmlFor="candidateFileInput"
-                            className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer"
-                          >
-                            Choose File
-                          </Label>
-                          <Input
-                            id="candidateFileInput"
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleImageUpload("candidate", e)}
-                            className="hidden"
-                          />
-                          {isUploadingPhoto && (
-                            <Loader className="w-3 h-3 animate-spin" />
-                          )}
-                        </div>
-                        <p>(OR)</p>
-                        <CandidatePhotoCapture candidateId={candidate?.id} />
-                      </div>
-                    )}
-                </div>
-              </div>
-
-              {/* Aadhar photo */}
-              <div
-                className={`border relative p-2 ${
-                  !!candidate && toVerify ? "" : "w-1/2"
-                }`}
-              >
-                <p className="absolute -translate-y-5 bg-background rounded px-2">
-                  Beneficiary's Aadhar card photo.
-                </p>
-                {!!candidate && toVerify && (
-                  <p className="flex gap-3 items-center text-amber-700">
-                    <Hint
-                      label={
-                        "Take a photo of beneficiary's aadhar for future proof with number clearly visible."
-                      }
-                    >
-                      <span>
-                        <CircleQuestionMarkIcon className="w-3 h-3 text-blue-600" />
-                      </span>
-                    </Hint>
-                    Capture /upload the photo of beneficiary's aadhar card
-                  </p>
-                )}
-                <div className="flex items-center gap-3">
-                  {candidate?.aadhar_photo ? (
-                    <img
-                      src={`${
-                        import.meta.env.VITE_API_BASE_API_URL
-                      }/hard_verify/api/v1.0/uploads/${
-                        candidate?.aadhar_photo
-                      }`}
-                      alt="Candidate"
-                      className="w-30 h-30 object-cover rounded-md border"
-                    />
-                  ) : (
-                    <div className="w-30 h-30 border rounded-md flex items-center justify-center text-gray-400">
-                      No Aadhar
-                    </div>
-                  )}
-                  {!!candidate &&
-                    toVerify &&
-                    (currentUserInfo.role === "admin" ||
-                      currentUserInfo.role === "super_admin" ||
-                      currentUserInfo.role === "registration_officer") && (
-                      <div className="flex gap-3 items-center">
-                        <div className="flex gap-1 items-center">
-                          <Label
-                            htmlFor="aadharFileInput"
-                            className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer"
-                          >
-                            Choose File
-                          </Label>
-                          <Input
-                            id="aadharFileInput"
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleImageUpload("aadhar", e)}
-                            className="hidden"
-                          />
-                          {isUploadingPhoto && (
-                            <Loader className="w-3 h-3 animate-spin" />
-                          )}
-                          {isUploadingAadhar && (
-                            <Loader className="w-3 h-3 animate-spin" />
-                          )}
-                        </div>
-                        <p>(OR)</p>
-                        <AadharPhotoCapture candidateId={candidate?.id} />
-                      </div>
-                    )}
-                </div>
-              </div>
-            </div>
 
             {toVerify && (
               <div className="flex items-center gap-3 mt-2">
@@ -640,7 +696,11 @@ const CandidateFormDialog: React.FC<Props> = ({
         </ScrollArea>
         {/* Verification Confirmation Dialog */}
         <Dialog open={showVerifyConfirm} onOpenChange={setShowVerifyConfirm}>
-          <DialogContent>
+          <DialogContent
+            onInteractOutside={(e) => {
+              e.preventDefault();
+            }}
+          >
             <DialogHeader>
               <DialogTitle className="text-center">Confirmation</DialogTitle>
               <DialogDescription>
@@ -671,9 +731,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                   {selectedStore ? (
                     <>
                       <span className="font-medium">{selectedStore.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {selectedStore.address}
-                      </span>
+
                       <span className="text-xs text-muted-foreground">
                         {selectedStore.city}
                       </span>

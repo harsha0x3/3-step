@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status, Cookie, Response
+from fastapi import Depends, HTTPException, status, Cookie, Response, Header, Request
 from sqlalchemy.orm import Session
 from db.connection import get_db_conn
 from models.users import User
@@ -40,10 +40,13 @@ from models.schemas.auth_schemas import UserOut
 
 
 def get_current_user(
+    request: Request,
     response: Response,
     lt_access_token: str | None = Cookie(default=None),
     lt_refresh_token: str | None = Cookie(default=None),
     db: Session = Depends(get_db_conn),
+    csrf_token: str | None = Cookie(default=None, alias="csrf_token"),
+    csrf_header: str | None = Header(default=None, alias="X-CSRF-Token"),
 ):
     payload = None
 
@@ -100,5 +103,25 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Inactive or non-existent user",
         )
+    # 🔒 CSRF check (for unsafe methods only)
+    if request.method not in ("GET", "HEAD", "OPTIONS", "TRACE"):
+        if not csrf_token:
+            csrf_token = request.cookies.get("csrf_token")
+            print("INSIDE NOT FOUND CSRF")
+        if not csrf_token:
+            print(" NOPE NOT FOUND INSIDE NOT FOUND CSRF")
+
+        if not csrf_header:
+            print("INSIDE NOT FOUND CSRF HEADER")
+            csrf_header = request.headers.get("X-CSRF-Token")
+
+        if not csrf_header:
+            print(" NOPE NOT FOUND INSIDE NOT FOUND CSRF HEADER")
+
+        if not csrf_token or not csrf_header or csrf_token != csrf_header:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="CSRF token missing or invalid",
+            )
 
     return UserOut.model_validate(user)

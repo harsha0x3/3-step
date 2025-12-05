@@ -2,6 +2,7 @@ from typing import Annotated, Any
 from fastapi import HTTPException, status, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import select, or_
+from services.auth.csrf_handler import set_csrf_cookie
 from services.auth.jwt_handler import (
     create_tokens,
     set_jwt_cookies,
@@ -109,6 +110,7 @@ def login_user(
     access, refresh = create_tokens(
         user_id=user.id, role=user.role, mfa_verified=mfa_verified
     )
+    set_csrf_cookie(response)
     set_jwt_cookies(response=response, access_token=access, refresh_token=refresh)
 
     return UserDetailOut.model_validate(user)
@@ -136,6 +138,7 @@ def refresh_access_token(
     )
 
     set_jwt_cookies(response=response, access_token=access, refresh_token=refresh)
+    set_csrf_cookie(response)
 
     return {
         "msg": "Token Refreshed successfully",

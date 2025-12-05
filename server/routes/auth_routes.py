@@ -10,6 +10,7 @@ from models.schemas.auth_schemas import (
 from models.schemas.auth_schemas import UserOut
 from services.auth.deps import get_current_user
 from sqlalchemy.orm import Session
+from services.auth.csrf_handler import clear_csrf_cookie
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -80,5 +81,6 @@ def logout_user(response: Response):
         samesite="strict",
         path="/",
     )
+    clear_csrf_cookie(response)
 
     return {"detail": "Logged out successfully"}

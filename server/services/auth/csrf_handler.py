@@ -8,6 +8,9 @@ load_dotenv()
 is_prod = os.getenv("PROD_ENV", "false").lower() == "true"
 
 
+is_insecure = os.getenv("INSECURE_COOKIES", "false").lower() == "true"
+
+
 def generate_csrf_token() -> str:
     """Generate a secure CSRF token."""
     return secrets.token_urlsafe(32)
@@ -20,7 +23,7 @@ def set_csrf_cookie(response: Response):
         key="csrf_token",
         value=csrf_token,
         httponly=False,  # Allow JavaScript access
-        secure=True,  # Changed: secure in prod, not secure in dev
+        secure=not is_insecure,  # Changed: secure in prod, not secure in dev
         samesite="lax" if is_prod else "none",
         path="/",
     )
@@ -32,7 +35,7 @@ def clear_csrf_cookie(response: Response):
     response.delete_cookie(
         key="csrf_token",
         httponly=False,
-        secure=not is_prod,  # Changed: must match set_cookie
+        secure=not is_insecure,  # Changed: must match set_cookie
         samesite="lax" if is_prod else "none",
         path="/",
     )

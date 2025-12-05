@@ -3,6 +3,11 @@ from datetime import datetime, timezone, timedelta
 from typing import Any
 import os
 from fastapi import Response, HTTPException, status
+from dotenv import load_dotenv
+
+load_dotenv()
+
+is_insecure = os.getenv("INSECURE_COOKIES", "false").lower() == "true"
 
 
 class JWTConfig:
@@ -95,7 +100,7 @@ def set_jwt_cookies(response: Response, access_token: str, refresh_token: str):
             key="lt_access_token",
             value=access_token,
             httponly=True,
-            secure=True,
+            secure=not is_insecure,
             samesite="strict",
             path="/",
             expires=int(access_exp.timestamp()),
@@ -104,7 +109,7 @@ def set_jwt_cookies(response: Response, access_token: str, refresh_token: str):
             key="lt_refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=True,
+            secure=not is_insecure,
             samesite="strict",
             path="/",
             expires=int(refresh_exp.timestamp()),

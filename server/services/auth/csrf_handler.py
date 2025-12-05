@@ -24,7 +24,7 @@ def set_csrf_cookie(response: Response):
         value=csrf_token,
         httponly=False,  # Allow JavaScript access
         secure=not is_insecure,  # Changed: secure in prod, not secure in dev
-        samesite="lax" if is_prod else "none",
+        samesite="lax" if is_insecure else "none",
         path="/",
     )
     return csrf_token
@@ -36,6 +36,6 @@ def clear_csrf_cookie(response: Response):
         key="csrf_token",
         httponly=False,
         secure=not is_insecure,  # Changed: must match set_cookie
-        samesite="lax" if is_prod else "none",
+        samesite="lax" if is_insecure else "none",
         path="/",
     )

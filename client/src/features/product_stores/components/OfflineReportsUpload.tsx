@@ -20,6 +20,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getCSRFToken } from "@/utils/csrf";
 
 const OfflineReportsUpload: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -70,6 +71,11 @@ const OfflineReportsUpload: React.FC = () => {
     }
   };
 
+  const csrfToken = getCSRFToken();
+  if (!csrfToken) {
+    console.error("CSRF token not found");
+  }
+
   const downloadTemplate = async () => {
     // In production, this would call the API endpoint
     try {
@@ -80,6 +86,7 @@ const OfflineReportsUpload: React.FC = () => {
         {
           method: "GET",
           credentials: "include",
+          headers: csrfToken ? { "X-CSRF-Token": csrfToken } : {},
         }
       );
 

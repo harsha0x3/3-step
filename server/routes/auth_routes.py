@@ -11,8 +11,15 @@ from models.schemas.auth_schemas import UserOut
 from services.auth.deps import get_current_user
 from sqlalchemy.orm import Session
 from services.auth.csrf_handler import clear_csrf_cookie
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+is_insecure = os.getenv("INSECURE_COOKIES", "false").lower() == "true"
 
 
 @router.post("/register")
@@ -68,7 +75,7 @@ def logout_user(response: Response):
     response.delete_cookie(
         key="lt_access_token",
         httponly=True,
-        secure=True,
+        secure=not is_insecure,
         samesite="strict",
         path="/",
     )
@@ -77,7 +84,7 @@ def logout_user(response: Response):
     response.delete_cookie(
         key="lt_refresh_token",
         httponly=True,
-        secure=True,
+        secure=not is_insecure,
         samesite="strict",
         path="/",
     )

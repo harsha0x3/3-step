@@ -390,12 +390,22 @@ async def candidate_verification_consolidate(
             print(is_spoof)
             msg.append("Spoof detectected with beneficiary photo.")
 
-        is_candidate_face_verified = await facial_recognition(
-            img_path=norm_input_img_path, original_img=norm_org_cand_path
-        )
+    except HTTPException:
+        raise
 
     except Exception as e:
         raise
+
+    try:
+        is_candidate_face_verified = await facial_recognition(
+            img_path=norm_input_img_path, original_img=norm_org_cand_path
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Face verification failed: {str(e)}"
+        )
 
     print(f"Candidate face in db: - {candidate.photo}")
     if is_candidate_face_verified and not is_spoof:

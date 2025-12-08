@@ -2,6 +2,10 @@ from services.verification_service.email_service import (
     send_otp_email,
     send_otp_to_admin,
 )
+from services.verification_service.mobile_notification_service import (
+    send_beneficiary_sms_otp,
+)
+
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -9,7 +13,7 @@ from models.candidates import Candidate
 from models.verification_statuses import VerificationStatus
 from models.otps import Otp
 from datetime import datetime, timezone
-from models.schemas.otp_schemas import CandidateInOtp, AdminOTPPayload
+from models.schemas.otp_schemas import CandidateInOtp, AdminOTPPayload, SmsOtpPayload
 from models.schemas import verification_schemas as v_schemas
 from models.schemas.auth_schemas import UserOut
 from models.issued_statuses import IssuedStatus
@@ -129,8 +133,12 @@ async def otp_resend(candidate_id: str, db: Session, to_admin: bool = False):
                 support_email="support_temp@gmail.com",
                 support_phone="1234567890",
             )
-            email_res = await send_otp_email(email_payload=email_payload)
-            if email_res and email_res.get("success"):
+            # email_res = await send_otp_email(email_payload=email_payload)
+            sms_payload = SmsOtpPayload(
+                otp=otp.otp, mobile_number=candidate.mobile_number
+            )
+            sms_res = await send_beneficiary_sms_otp(payload=sms_payload)
+            if sms_res and sms_res.get("status") in [200, 202]:
                 return {
                     "msg": "OTP has been sent to candidates registered Mobile Number",
                     "data": {
@@ -181,54 +189,73 @@ async def otp_resend(candidate_id: str, db: Session, to_admin: bool = False):
         )
 
 
-async def facial_recognition(img_path: str, store_id: str):
+def check_spoof(image_path):
+    try:
+        face_objs = DeepFace.extract_faces(img_path=image_path, anti_spoofing=True)
+        print("FACEOBJS", face_objs)
+        # for f in face_objs:
+        #     if not f["is_real"]:
+        #         print(f"Possible spoof detected with score {f['antispoof_score']}")
+        #         # You can return False or raise HTTPException if you want strict checking
+        return not (all(f["is_real"] for f in face_objs))
+    except Exception as e:
+        return False
+
+
+async def facial_recognition(img_path: str, original_img: str):
     try:
         norm_input_img_path = normalize_path(img_path)
+        norm_org_cand_path = normalize_path(original_img)
+
         print(f"RECIEVED IMG PATH - {img_path}")
         print(f"NORM IMG PATH - {norm_input_img_path}")
-        cand_imgs_path = os.path.join(BASE_CANDIDATE_IMG_PATH, store_id)
-        fallback_cand_imgs_path = os.path.join(BASE_CANDIDATE_IMG_PATH, "no_store")
-        norm_cand_imgs_path = normalize_path(cand_imgs_path)
-        fallback_norm_cand_imgs_path = normalize_path(fallback_cand_imgs_path)
-        print(f"DB-PATH - {norm_cand_imgs_path}")
-        found_candidate = DeepFace.find(
-            img_path=norm_input_img_path, db_path=norm_cand_imgs_path
+        print(f"RECIEVED IMG PATH - {original_img}")
+        print(f"NORM IMG PATH - {norm_org_cand_path}")
+        # cand_imgs_path = os.path.join(BASE_CANDIDATE_IMG_PATH, store_id)
+        # fallback_cand_imgs_path = os.path.join(BASE_CANDIDATE_IMG_PATH, "no_store")
+        # norm_cand_imgs_path = normalize_path(cand_imgs_path)
+        # fallback_norm_cand_imgs_path = normalize_path(fallback_cand_imgs_path)
+        # print(f"DB-PATH - {norm_cand_imgs_path}")
+        result = DeepFace.verify(
+            img1_path=norm_input_img_path,
+            img2_path=norm_org_cand_path,
         )
-        print(f"complete -found - {found_candidate[0]}")
-        print(f"fount []0 - {found_candidate[0]}")
+        print("THE RES")
+        print(result)
+        return result["verified"]
 
-        if found_candidate[0].empty:
-            found_candidate = DeepFace.find(
-                img_path=norm_input_img_path, db_path=fallback_norm_cand_imgs_path
-            )
-        if found_candidate[0].empty:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Candidate image not found",
-            )
+        # print(f"complete -found - {found_candidate[0]}")
+        # print(f"fount []0 - {found_candidate[0]}")
 
-        norm_found_cand_img_path = normalize_path(found_candidate[0]["identity"][0])
-        print(f"found cand PATH - {normalize_path(found_candidate[0]['identity'][0])}")
-        print(
-            f"Found Relative Path - {get_relative_upload_path(norm_found_cand_img_path)}"
-        )
-        return get_relative_upload_path(norm_found_cand_img_path)
+        # if found_candidate[0].empty:
+        #     found_candidate = DeepFace.find(
+        #         img_path=norm_input_img_path, db_path=fallback_norm_cand_imgs_path
+        #     )
+        # if found_candidate[0].empty:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_404_NOT_FOUND,
+        #         detail="Candidate image not found",
+        #     )
 
-    except HTTPException:
-        raise
+        # norm_found_cand_img_path = normalize_path(found_candidate[0]["identity"][0])
+        # print(f"found cand PATH - {normalize_path(found_candidate[0]['identity'][0])}")
+        # print(
+        #     f"Found Relative Path - {get_relative_upload_path(norm_found_cand_img_path)}"
+        # )
+        # return get_relative_upload_path(norm_found_cand_img_path)
+
     except ValueError as e:
+        print("Value error in facial verificaion", e)
         err = str(e).lower()
-        if "face could not be detected" in err or "no face" in err:
+        if "no face" in err:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="No face detected in the uploaded image",
+                status_code=422, detail="No face detected in the uploaded image"
             )
-        else:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise
     except Exception as e:
+        print("Facial verification err", e)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"msg": "Error Verifying candidate", "err_stack": str(e)},
+            status_code=500, detail=f"Face verification failed: {str(e)}"
         )
 
 
@@ -350,17 +377,31 @@ async def candidate_verification_consolidate(
         verification_issues.append("aadhar")
         msg.append("Aadhaar number does not match.")
 
+    if not candidate.photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Beneficiary photo not registered.",
+        )
+
     # Facial verification
     try:
-        verified_candidate_face = await facial_recognition(
-            img_path=payload.candidate_photo, store_id=store_id
+        norm_input_img_path = normalize_path(payload.candidate_photo)
+        norm_org_cand_path = normalize_path(candidate.photo)
+        is_spoof = check_spoof(norm_input_img_path)
+        if is_spoof:
+            print(is_spoof)
+            msg.append("Spoof detectected with beneficiary photo.")
+
+        is_candidate_face_verified = await facial_recognition(
+            img_path=norm_input_img_path, original_img=norm_org_cand_path
         )
+
     except Exception as e:
         raise
 
-    print(f"Candidte face in db: - {candidate.photo}")
-    print(f"Candidte face in verify: - {verified_candidate_face}")
-    if verified_candidate_face == candidate.photo:
+    print(f"Candidate face in db: - {candidate.photo}")
+    if is_candidate_face_verified and not is_spoof:
+        print("is_spoof", is_spoof)
         verification_status_in.is_facial_verified = True
     else:
         verification_issues.append("facial")
@@ -386,6 +427,12 @@ async def candidate_verification_consolidate(
         new_verification_status.facial_verified_at = datetime.now(timezone.utc)
         new_verification_status.aadhar_verified_at = datetime.now(timezone.utc)
         new_verification_status.coupon_verified_at = datetime.now(timezone.utc)
+        if new_verification_status.uploaded_candidate_photo:
+            norm_existing_path = normalize_path(
+                new_verification_status.uploaded_candidate_photo
+            )
+            if os.path.exists(norm_existing_path):
+                os.remove(norm_existing_path)
         new_verification_status.uploaded_candidate_photo = payload.candidate_photo
         new_verification_status.entered_aadhar_number = payload.aadhar_number
 
@@ -532,7 +579,6 @@ async def upload_laptop_issuance_details(
 
 def get_latest_issuer_details(db: Session, store_user_id: str):
     try:
-        print("store_user_id", store_user_id)
         latest_issued_status = db.scalar(
             select(IssuedStatus)
             .where(IssuedStatus.issued_by == store_user_id)

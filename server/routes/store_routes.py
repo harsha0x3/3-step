@@ -31,7 +31,7 @@ router = APIRouter(prefix="/stores", tags=["Stores"])
 
 
 # ✅ Create a new store
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_store(
     payload: AddNewStore,
     db: Annotated[Session, Depends(get_db_conn)],
@@ -49,7 +49,7 @@ async def create_store(
     return {"message": "Store created successfully", "data": new_store}
 
 
-@router.get("/", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK)
 async def list_stores(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],

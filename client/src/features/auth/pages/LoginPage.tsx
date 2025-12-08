@@ -26,18 +26,45 @@ import Hint from "@/components/ui/hint";
 
 // import { REGEXP_ONLY_DIGITS } from "input-otp";
 
+declare global {
+  interface Window {
+    turnstile: any;
+  }
+}
+
 const LoginPage: React.FC = () => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const widgetRenderedRef = React.useRef(false);
   const [credentials, setCredentials] = useState<LoginPayload>({
     email_or_mobile_number: "",
     password: "",
     mfa_code: "",
+    captcha_token: "",
   });
   const navigate = useNavigate();
   const location = useLocation();
   const fromLocation = location.state?.from;
 
   const [login, { isLoading: isLoggingIn }] = useLoginMutation();
+
+  useEffect(() => {
+    let widgetId: string | null = null;
+
+    if (window.turnstile) {
+      widgetId = window.turnstile.render("#turnstile-widget", {
+        sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
+        callback: (token: string) => {
+          setCredentials((prev) => ({ ...prev, captcha_token: token }));
+        },
+      });
+    }
+
+    return () => {
+      if (widgetId) {
+        window.turnstile.remove(widgetId);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -130,6 +157,7 @@ const LoginPage: React.FC = () => {
                 />
               </div>
             </div>
+            <div id="turnstile-widget" className="cf-turnstile"></div>
           </form>
         </CardContent>
 

@@ -2,6 +2,8 @@ import pandas as pd
 from db.connection import get_db_conn
 from controllers.candidates_controller import add_new_candidate
 from models.schemas import candidate_schemas
+from models import Candidate, VendorSpoc
+from sqlalchemy import select
 
 excel_path = r"C:\Users\harshavardhancg\Downloads\List of off-roll associates for LT project_More than 8 years.xlsx"
 
@@ -58,33 +60,77 @@ def dump_candidate_data():
 
 # dump_candidate_data()
 
-payload = (
-    candidate_schemas.NewCandidatePayload(
-        id="147700011",
-        full_name="ABDUL AWUAL MOLLICK",
-        mobile_number="987654321",
-        city="HYDERABAD",
-        state="Telangana",
-        division="Eyecare Division",
-    ),
-)
+# payload = (
+#     candidate_schemas.NewCandidatePayload(
+#         id="147700011",
+#         full_name="ABDUL AWUAL MOLLICK",
+#         mobile_number="987654321",
+#         city="HYDERABAD",
+#         state="Telangana",
+#         division="Eyecare Division",
+#     ),
+# )
 
+
+# for db in get_db_conn():
+#     try:
+#         print("started")
+#         new_c = add_new_candidate(
+#             payload=candidate_schemas.NewCandidatePayload(
+#                 id="145800368",
+#                 full_name="MUNIRAJU ",
+#                 mobile_number=None,
+#                 city="CHIKKABALLAPURA",
+#                 state="Karnataka",
+#                 division="Eyecare Division",
+#             ),
+#             db=db,
+#         )
+#         print("done", new_c)
+#     except Exception as e:
+#         print(e)
+#         continue
+
+
+def remove_os(number: str):
+    if number.endswith(".0"):
+        number = number[:-2]
+    return number
+
+
+def sanitize_phone(number):
+    if number.startswith("91") and len(number) > 10:
+        number = number[2:]
+
+    return number if len(number) == 10 else None
+
+
+# for db in get_db_conn():
+#     try:
+#         print("started")
+#         candidates = db.scalars(select(Candidate)).all()
+#         for candidate in candidates:
+#             if candidate.mobile_number and len(candidate.mobile_number) > 10:
+#                 print("processing..")
+#                 candidate.mobile_number = remove_os(candidate.mobile_number)
+#                 candidate.mobile_number = sanitize_phone(candidate.mobile_number)
+#                 db.commit()
+#         print("done")
+#     except Exception as e:
+#         print(e)
+#         continue
 
 for db in get_db_conn():
     try:
         print("started")
-        new_c = add_new_candidate(
-            payload=candidate_schemas.NewCandidatePayload(
-                id="145800368",
-                full_name="MUNIRAJU ",
-                mobile_number=None,
-                city="CHIKKABALLAPURA",
-                state="Karnataka",
-                division="Eyecare Division",
-            ),
-            db=db,
-        )
-        print("done", new_c)
+        v_spocs = db.scalars(select(VendorSpoc)).all()
+        for v_spoc in v_spocs:
+            if v_spoc.mobile_number and len(v_spoc.mobile_number) > 10:
+                print("processing..")
+                v_spoc.mobile_number = remove_os(v_spoc.mobile_number)
+                v_spoc.mobile_number = sanitize_phone(v_spoc.mobile_number)
+                db.commit()
+        print("done")
     except Exception as e:
         print(e)
         continue

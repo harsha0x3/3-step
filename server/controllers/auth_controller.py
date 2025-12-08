@@ -1,5 +1,5 @@
 from typing import Annotated, Any
-from fastapi import HTTPException, status, Response
+from fastapi import HTTPException, status, Response, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import select, or_
 from services.auth.csrf_handler import set_csrf_cookie
@@ -10,6 +10,8 @@ from services.auth.jwt_handler import (
 )
 from models.schemas.auth_schemas import LoginRequest, RegisterRequest, UserDetailOut
 from models.users import User
+import asyncio
+from services.auth.captcha import verify_turnstile_token
 
 
 def register_user(
@@ -72,9 +74,17 @@ def register_user(
         )
 
 
-def login_user(
-    log_user: LoginRequest, db: Session, response: Response
+async def login_user(
+    log_user: LoginRequest, db: Session, response: Response, request: Request
 ) -> UserDetailOut:
+    is_valid_captcha = await verify_turnstile_token(
+        log_user.captcha_token, request.client.host
+    )
+    if not is_valid_captcha:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Captcha verification failed",
+        )
     user = db.scalar(
         select(User).where(
             or_(

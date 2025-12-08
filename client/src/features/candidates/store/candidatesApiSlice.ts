@@ -52,7 +52,7 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
         count: number;
         total_count: number;
       }>,
-      CandidatesSearchParams | void
+      CandidatesSearchParams
     >({
       query: (params) => {
         const searchParams = new URLSearchParams();

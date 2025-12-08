@@ -41,7 +41,7 @@ const CandidateSearch: React.FC = () => {
 
       const errDesc = err?.data?.detail?.msg
         ? err?.data?.detail?.err_stack
-        : "";
+        : "Failed to fetch beneficiary";
       toast.error(errMsg, { description: errDesc });
     }
   };

@@ -1,6 +1,7 @@
 from enum import Enum
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, ConfigDict
+from typing import Literal
 
 
 class RoleEnum(str, Enum):
@@ -22,6 +23,7 @@ class LoginRequest(BaseModel):
     email_or_mobile_number: EmailStr | str
     password: str
     mfa_code: str | None = None
+    captcha_token: str
 
 
 class Tokens(BaseModel):
@@ -119,3 +121,16 @@ class UserDetailOut(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UsersSearchParams(BaseModel):
+    search_by: Literal["id", "email", "mobile_number", "full_name", "role"] | None = (
+        None
+    )
+    search_term: str | None = None
+    page: int = 1
+    page_size: int = 15
+    sort_by: Literal["created_at", "updated_at", "full_name", "email"] = "created_at"
+    sort_order: Literal["asc", "desc"] = "desc"
+    role: str | None = None
+    disabled: bool | None = None

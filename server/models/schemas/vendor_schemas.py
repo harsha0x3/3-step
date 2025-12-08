@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
+from typing import Literal
 
 
 class NewVendor(BaseModel):
@@ -49,3 +50,24 @@ class VendorSpocItem(BaseModel):
     email: str | None = None
     photo: str | None = None
     vendor: VendorItem
+
+
+class VendorSearchParams(BaseModel):
+    search_by: Literal["id", "vendor_name"] | None = None
+    search_term: str | None = None
+    page: int = 1
+    page_size: int = 15
+    sort_by: Literal["created_at", "updated_at", "vendor_name"] = "created_at"
+    sort_order: Literal["asc", "desc"] = "desc"
+
+
+class VendorSpocSearchParams(BaseModel):
+    search_by: (
+        Literal["id", "full_name", "email", "mobile_number", "vendor_name"] | None
+    ) = None
+    search_term: str | None = None
+    page: int = 1
+    page_size: int = 15
+    sort_by: Literal["created_at", "updated_at", "full_name"] = "created_at"
+    sort_order: Literal["asc", "desc"] = "desc"
+    vendor_id: str | None = None

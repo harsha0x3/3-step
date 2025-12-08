@@ -19,7 +19,9 @@ const FacialRecognition: React.FC<props> = ({ candidateId, onSuccess }) => {
       onSuccess?.();
     } catch (err) {
       const errMsg: string =
-        err?.data?.detail?.msg ?? err?.data?.detail ?? "Error adding candidate";
+        err?.data?.detail?.msg ??
+        err?.data?.detail ??
+        "Error in facial recognition";
 
       const errDesc = err?.data?.detail?.msg
         ? err?.data?.detail?.err_stack

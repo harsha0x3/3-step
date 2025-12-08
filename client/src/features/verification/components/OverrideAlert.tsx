@@ -32,7 +32,10 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
   const navigate = useNavigate();
   const [open, setOpen] = useState(defOpen);
   const [showOverrideForm, setShowOverrideForm] = useState(false);
-
+  const [aadharReason, setAadharReason] = useState("");
+  const [facialReason, setFacialReason] = useState("");
+  const [aadharOther, setAadharOther] = useState("");
+  const [facialOther, setFacialOther] = useState("");
   const [overridePayload, setOverridePayload] = useState<OverrideRequest>({
     overriding_reason: "",
   });
@@ -40,18 +43,54 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
   const [overrideVerification, { isLoading }] =
     useOverrideVerificationMutation();
 
+  const OVERRIDE_REASONS = {
+    aadhar: [
+      "Aadhaar card damaged/unreadable",
+      "Beneficiary forgot bringing aadhaar",
+      "Manual document verified",
+    ],
+    facial: [
+      "Camera quality too poor",
+      "Lighting conditions not suitable",
+      "Face partially covered",
+      "Temporary facial change (injury, swelling)",
+    ],
+  };
+  const aadharFailed = !data.verification_status.is_aadhar_verified;
+  const facialFailed = !data.verification_status.is_facial_verified;
+
   const handleOverrideSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!overridePayload.overriding_reason) {
-      toast.warning("Please fill in both Name and Reason");
-      return;
+    let finalReason = "";
+
+    if (aadharFailed) {
+      const v = aadharReason === "other" ? aadharOther.trim() : aadharReason;
+
+      if (!v) {
+        toast.warning("Please select Aadhaar reason");
+        return;
+      }
+
+      finalReason += `Aadhaar: ${v}`;
+    }
+
+    if (facialFailed) {
+      const v = facialReason === "other" ? facialOther.trim() : facialReason;
+
+      if (!v) {
+        toast.warning("Please select Facial reason");
+        return;
+      }
+
+      if (finalReason) finalReason += " | ";
+      finalReason += `Facial: ${v}`;
     }
 
     try {
       const res = await overrideVerification({
         candidateId: data.candidate.candidate_id,
-        payload: overridePayload,
+        payload: { overriding_reason: finalReason },
       }).unwrap();
 
       toast.success(res.msg);
@@ -178,31 +217,105 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
         {showOverrideForm && (
           <form
             onSubmit={handleOverrideSubmit}
-            className="border-t pt-4 mt-4 space-y-3"
+            className="border-t pt-4 mt-4 space-y-6"
           >
             <AlertDescription className="text-center">
-              Enter reason for overridding verification:
+              Select reason(s) for override
             </AlertDescription>
 
-            <Textarea
-              rows={3}
-              value={overridePayload.overriding_reason}
-              onChange={(e) =>
-                setOverridePayload((p) => ({
-                  ...p,
-                  overriding_reason: e.target.value,
-                }))
-              }
-              className="w-5/6"
-            />
+            {aadharFailed && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold">
+                  Aadhaar Verification Failed
+                </h4>
+
+                {OVERRIDE_REASONS.aadhar.map((r, i) => (
+                  <label
+                    key={i}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="aadhar_reason"
+                      value={r}
+                      checked={aadharReason === r}
+                      onChange={(e) => setAadharReason(e.target.value)}
+                    />
+                    <span>{r}</span>
+                  </label>
+                ))}
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="aadhar_reason"
+                    value="other"
+                    checked={aadharReason === "other"}
+                    onChange={(e) => setAadharReason(e.target.value)}
+                  />
+                  <span>Other</span>
+                </label>
+
+                {aadharReason === "other" && (
+                  <Textarea
+                    value={aadharOther}
+                    onChange={(e) => setAadharOther(e.target.value)}
+                    placeholder="Enter Aadhaar reason..."
+                  />
+                )}
+              </div>
+            )}
+
+            {facialFailed && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold">
+                  Facial Verification Failed
+                </h4>
+
+                {OVERRIDE_REASONS.facial.map((r, i) => (
+                  <label
+                    key={i}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="facial_reason"
+                      value={r}
+                      checked={facialReason === r}
+                      onChange={(e) => setFacialReason(e.target.value)}
+                    />
+                    <span>{r}</span>
+                  </label>
+                ))}
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="facial_reason"
+                    value="other"
+                    checked={facialReason === "other"}
+                    onChange={(e) => setFacialReason(e.target.value)}
+                  />
+                  <span>Other</span>
+                </label>
+
+                {facialReason === "other" && (
+                  <Textarea
+                    value={facialOther}
+                    onChange={(e) => setFacialOther(e.target.value)}
+                    placeholder="Enter Facial reason..."
+                  />
+                )}
+              </div>
+            )}
 
             <div className="flex justify-end gap-2">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? "Submitting..." : "Submit"}
               </Button>
               <Button
-                variant="outline"
                 type="button"
+                variant="outline"
                 onClick={() => setShowOverrideForm(false)}
               >
                 Cancel

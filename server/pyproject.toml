@@ -22,6 +22,7 @@ dependencies = [
     "qrcode>=8.2",
     "sqlalchemy>=2.0.44",
     "tf-keras>=2.20.1",
+    "torch>=2.9.1",
     "uuid>=1.30",
     "werkzeug>=3.1.3",
 ]

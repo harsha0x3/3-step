@@ -1,7 +1,7 @@
 from typing import Any
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, func, asc, desc
 from models.users import User
 from models.password_reset_otps import PasswordResetOtp
 from models.schemas.auth_schemas import (
@@ -11,6 +11,7 @@ from models.schemas.auth_schemas import (
     PasswordResetVerifySchema,
     PasswordChangeSchema,
     UserDetailOut,
+    UsersSearchParams,
 )
 from services.verification_service.email_service import send_password_reset_email
 from datetime import datetime, timezone
@@ -191,11 +192,57 @@ def admin_delete_user(user_id: str, db: Session) -> dict[str, Any]:
         )
 
 
-def admin_get_all_users(db: Session) -> list[UserDetailOut]:
-    """Admin gets all users"""
+def admin_get_all_users(db: Session, params: UsersSearchParams):
+    try:
+        stmt = select(User)
 
-    users = db.scalars(select(User)).all()
-    return [UserDetailOut.model_validate(user) for user in users]
+        # ---- Count Query ----
+        count_stmt = select(func.count(User.id))
+        total_count = db.scalar(count_stmt)
+
+        # ---- Filters ----
+        if params.role and params.role != "null":
+            stmt = stmt.where(User.role == params.role)
+
+        if params.disabled is not None:
+            stmt = stmt.where(User.disabled == params.disabled)
+
+        # ---- Search ----
+        if params.search_by and params.search_term and params.search_term != "null":
+            setattr(params, "page", -1)
+            column_attr = getattr(User, params.search_by)
+            stmt = stmt.where(column_attr.ilike(f"%{params.search_term}%"))
+
+        # ---- Sorting ----
+        sort_col = getattr(User, params.sort_by)
+        sort_col = asc(sort_col) if params.sort_order == "asc" else desc(sort_col)
+
+        # ---- Pagination ----
+        if params.page >= 1:
+            users = db.scalars(
+                stmt.order_by(sort_col)
+                .limit(params.page_size)
+                .offset((params.page - 1) * params.page_size)
+            ).all()
+        else:
+            users = db.scalars(stmt.order_by(sort_col)).all()
+
+        result = [UserDetailOut.model_validate(u) for u in users]
+
+        return {
+            "msg": "Users retrieved successfully",
+            "data": {
+                "users": result,
+                "total_count": total_count,
+                "count": len(result),
+            },
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"msg": "Failed to fetch users", "err_stack": str(e)},
+        )
 
 
 def admin_get_user_by_id(user_id: str, db: Session) -> UserDetailOut:

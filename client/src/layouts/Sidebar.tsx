@@ -373,7 +373,7 @@ const Sidebar: React.FC = () => {
             {currentUserRole === "admin" || currentUserRole === "super_admin"
               ? "Admin User"
               : currentUserRole === "registration_officer"
-              ? ""
+              ? "Voucher Distrubuter"
               : "Store User"}
           </h1>
         </div>

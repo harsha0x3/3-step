@@ -22,7 +22,7 @@ const AadharPhotoCapture = ({ candidateId }: { candidateId: string }) => {
         candidateId: candidateId,
         formData,
       }).unwrap();
-      toast.success(`${"candidate"} photo uploaded successfully`);
+      toast.success(`photo uploaded successfully`);
     } catch (err: any) {
       toast.error("Photo upload failed", {
         description: err?.data?.detail?.err_stack ?? "",

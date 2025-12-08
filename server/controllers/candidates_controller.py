@@ -671,7 +671,7 @@ def is_candidate_ready_to_verify(payload):
     if len(null_vals) > 0:
         return {
             "status": False,
-            "msg": f"These fileds are empty please add them. {', '.join(null_vals)}",
+            "msg": f"Inorder to issue voucher please add these missing fields. {', '.join(null_vals)}",
         }
     return {"status": True, "msg": ""}
 

@@ -276,7 +276,7 @@ const AllStores: React.FC = () => {
                   const errMsg: string =
                     err?.data?.detail?.msg ??
                     err?.data?.detail ??
-                    "Error adding Beneficiary details";
+                    "Error refreshing stores data";
 
                   const errDesc = err?.data?.detail?.msg
                     ? err?.data?.detail?.err_stack

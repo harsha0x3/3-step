@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useGetAllVendorSpocQuery } from "../store/vendorsApiSlice";
 import type { VendorSpocItem } from "../types";
-import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -19,10 +18,12 @@ import {
 } from "@/components/ui/command";
 
 type VendorSpocComboboxProps = {
-  value?: string; // vendor_spoc_id
+  value?: string;
   onChange?: (spoc: VendorSpocItem) => void;
   isDisabled?: boolean;
 };
+
+const PAGE_SIZE = 15;
 
 const VendorSpocCombobox: React.FC<VendorSpocComboboxProps> = ({
   value,
@@ -31,129 +32,140 @@ const VendorSpocCombobox: React.FC<VendorSpocComboboxProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [selectedSpoc, setSelectedSpoc] = useState<VendorSpocItem>();
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [searchInput, setSearchInput] = useState<string>("");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [items, setItems] = useState<VendorSpocItem[]>([]);
 
-  // debounce search input
+  const listRef = useRef<HTMLDivElement | null>(null);
+
+  // ✅ debounce search
+  const isFirstLoad = useRef(true);
+
   useEffect(() => {
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+      return; // skip clearing + debounce on first mount
+    }
+
     const handler = setTimeout(() => {
-      setSearchTerm(searchInput);
+      if (searchInput) {
+        setSearchTerm(searchInput);
+        setPage(1);
+        setItems([]);
+      }
     }, 500);
+
     return () => clearTimeout(handler);
   }, [searchInput]);
 
-  // query API
-  const { data } = useGetAllVendorSpocQuery(
-    { searchTerm },
+  // ✅ API call (paginated)
+  const { data, isFetching } = useGetAllVendorSpocQuery(
+    {
+      page,
+      page_size: PAGE_SIZE,
+      sort_by: "created_at",
+      sort_order: "asc",
+      search_by: "vendor_name",
+      search_term: searchTerm,
+    },
     { refetchOnMountOrArgChange: true }
   );
 
-  // set selected item if value changes
+  // ✅ Merge pages
   useEffect(() => {
-    if (value && data?.data) {
-      const found = data.data.find((sp: VendorSpocItem) => sp.id === value);
+    if (data?.data?.vendor_spocs) {
+      setItems((prev) =>
+        page === 1
+          ? data.data.vendor_spocs
+          : [...prev, ...data.data.vendor_spocs]
+      );
+    }
+  }, [data, page]);
+
+  // ✅ preload selected value
+  useEffect(() => {
+    if (value && items.length) {
+      const found = items.find((sp) => sp.id === value);
       if (found) setSelectedSpoc(found);
     }
-  }, [value, data]);
+  }, [value, items]);
+
+  // ✅ infinite scroll
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
+      if (!isFetching && data?.data?.count === PAGE_SIZE) {
+        setPage((prev) => prev + 1);
+      }
+    }
+  };
 
   return (
-    <div className="w-full max-w-sm space-y-2">
+    <div className="w-full max-w-sm">
       <Popover open={isDisabled ? false : open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
-            id="vendor-spoc"
             variant="outline"
             role="combobox"
-            aria-expanded={open}
-            className="w-[95vw] sm:w-[340px] max-w-[340px] h-16 justify-between"
+            className="w-full h-16 justify-between"
             disabled={isDisabled}
           >
             {selectedSpoc ? (
-              <div className="flex items-center gap-3 text-left w-full overflow-hidden">
-                {selectedSpoc.photo ? (
-                  <img
-                    src={`${import.meta.env.VITE_API_BASE_API_URL}${
-                      import.meta.env.VITE_RELATIVE_API_URL
-                    }/${selectedSpoc.photo}`}
-                    alt={selectedSpoc.full_name}
-                    className="w-10 h-10 rounded-full object-cover border shrink-0"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500 shrink-0">
-                    N/A
-                  </div>
-                )}
-
-                <div className="flex flex-col overflow-hidden">
-                  <p className="font-medium text-md truncate">
-                    {selectedSpoc.full_name}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {selectedSpoc.vendor?.vendor_name ?? "No Vendor Linked"}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {selectedSpoc.mobile_number}
-                  </p>
-                </div>
+              <div className="flex flex-col text-left overflow-hidden">
+                <p className="font-medium truncate">{selectedSpoc.full_name}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {selectedSpoc.vendor?.vendor_name}
+                </p>
               </div>
             ) : (
-              <span>Select a Vendor SPOC</span>
+              <span>Select Vendor SPOC</span>
             )}
-
             <ChevronsUpDownIcon className="h-4 w-4 ml-auto" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[95vw] sm:w-[340px] max-w-[340px] p-0">
+
+        <PopoverContent className="w-full p-0">
           <Command shouldFilter={false}>
             <CommandInput
-              placeholder="Search Vendor SPOC"
-              className="h-9"
+              placeholder="Search by vendor name"
               value={searchInput}
-              onValueChange={(val) => setSearchInput(val)}
+              onValueChange={setSearchInput}
               disabled={isDisabled}
             />
-            <CommandList>
+
+            <CommandList
+              ref={listRef}
+              className="max-h-[300px] overflow-y-auto"
+              onScroll={handleScroll}
+            >
               <CommandEmpty>No Vendor SPOCs found</CommandEmpty>
               <CommandGroup>
-                {data?.data &&
-                  Array.isArray(data.data) &&
-                  data.data.map((spoc: VendorSpocItem) => (
-                    <CommandItem
-                      key={spoc.id}
-                      value={spoc.id}
-                      onSelect={() => {
-                        setSelectedSpoc(spoc);
-                        setOpen(false);
-                        onChange?.(spoc);
-                      }}
-                      disabled={isDisabled}
-                    >
-                      <div className="flex items-center gap-3 w-full">
-                        {spoc.photo ? (
-                          <img
-                            src={`${import.meta.env.VITE_API_BASE_API_URL}${
-                              import.meta.env.VITE_RELATIVE_API_URL
-                            }/${spoc.photo}`}
-                            alt={spoc.full_name}
-                            className="w-10 h-10 rounded-full object-cover border"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">
-                            N/A
-                          </div>
-                        )}
-                        <div className="flex flex-col">
-                          <p className="font-semibold">{spoc.full_name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {spoc.vendor?.vendor_name ?? "No Vendor Linked"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {spoc.mobile_number}
-                          </p>
-                        </div>
-                      </div>
-                    </CommandItem>
-                  ))}
+                {items.map((spoc) => (
+                  <CommandItem
+                    key={spoc.id}
+                    value={spoc.id}
+                    onSelect={() => {
+                      setSelectedSpoc(spoc);
+                      setOpen(false);
+                      onChange?.(spoc);
+                    }}
+                    disabled={isDisabled}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{spoc.full_name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {spoc.vendor?.vendor_name} | {spoc.mobile_number}
+                      </span>
+                    </div>
+                  </CommandItem>
+                ))}
+
+                {isFetching && (
+                  <div className="text-xs text-center py-2 text-muted-foreground">
+                    Loading more…
+                  </div>
+                )}
               </CommandGroup>
             </CommandList>
           </Command>

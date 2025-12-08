@@ -13,6 +13,11 @@ class CandidateInOtp(BaseModel):
     support_phone: str
 
 
+class SmsOtpPayload(BaseModel):
+    otp: str
+    mobile_number: str
+
+
 class OtpVerifyRequest(BaseModel):
     otp: str
 

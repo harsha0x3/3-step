@@ -23,6 +23,7 @@ import {
 } from "../store/usersApiSlice";
 import { useGetAllStoresQuery } from "@/features/product_stores/store/productStoresApiSlice";
 import { toast } from "sonner";
+import StoresCombobox from "@/features/product_stores/components/StoresCombobox";
 
 type UserFormData = {
   mobile_number: string;
@@ -42,10 +43,6 @@ type Props = {
 const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
   const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
-  const { data: storesData } = useGetAllStoresQuery({
-    searchBy: "name",
-    searchTerm: "",
-  });
 
   const {
     register,
@@ -59,7 +56,6 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
   });
 
   const selectedRole = watch("role");
-  const stores = storesData?.data?.stores || [];
 
   useEffect(() => {
     if (user) {
@@ -175,21 +171,12 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
           {selectedRole === "store_agent" && (
             <div className="space-y-2">
               <Label htmlFor="store_id">Assign Store</Label>
-              <Select
+              <StoresCombobox
                 value={watch("store_id")}
-                onValueChange={(value) => setValue("store_id", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select store" />
-                </SelectTrigger>
-                <SelectContent>
-                  {stores.map((store: any) => (
-                    <SelectItem key={store.id} value={store.id}>
-                      {store.name} - {store.city}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(store) => {
+                  setValue("store_id", store.id, { shouldDirty: true });
+                }}
+              />
             </div>
           )}
 

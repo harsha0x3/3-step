@@ -111,7 +111,7 @@ const AllCandidates: React.FC = () => {
     } catch (err) {
       const errDesc = err?.data?.detail?.msg
         ? err?.data?.detail?.err_stack
-        : "";
+        : "Failed to download beneficiary data";
       toast.error(errMsg, { description: errDesc });
     }
   };

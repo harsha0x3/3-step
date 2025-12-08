@@ -1,6 +1,12 @@
 import { rootApiSlice } from "@/store/rootApiSlice";
 import type { ApiResponse } from "@/store/rootTypes";
-import type { NewVendor, VendorItem, VendorSpocItem } from "../types";
+import type {
+  NewVendor,
+  VendorItem,
+  VendorSpocItem,
+  VendorSpocSearchParams,
+  VendorsSearchParams,
+} from "../types";
 
 export const vendorsApiSlice = rootApiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -24,13 +30,32 @@ export const vendorsApiSlice = rootApiSlice.injectEndpoints({
       invalidatesTags: ["VendorsSpoc"],
     }),
 
+    // 📋 Get all vendors (with pagination, search, sort)
     getAllVendors: builder.query<
-      ApiResponse<VendorItem[]>,
-      { searchTerm: string }
+      ApiResponse<{
+        vendors: VendorItem[];
+        count: number;
+        total_count: number;
+      }>,
+      VendorsSearchParams
     >({
-      query: ({ searchTerm }) => {
-        const params = new URLSearchParams({ search_term: searchTerm });
-        return `/vendors?${params.toString()}`;
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+
+        if (params?.search_by)
+          searchParams.append("search_by", params.search_by);
+        if (params?.search_term)
+          searchParams.append("search_term", params.search_term);
+        if (params?.page) searchParams.append("page", String(params.page));
+        if (params?.page_size)
+          searchParams.append("page_size", String(params.page_size));
+        if (params?.sort_by)
+          searchParams.append("sort_by", String(params.sort_by));
+        if (params?.sort_order)
+          searchParams.append("sort_order", String(params.sort_order));
+
+        const queryString = searchParams.toString();
+        return `/vendors?${queryString}`;
       },
       providesTags: ["Vendors"],
     }),
@@ -60,12 +85,32 @@ export const vendorsApiSlice = rootApiSlice.injectEndpoints({
     }),
 
     getAllVendorSpoc: builder.query<
-      ApiResponse<VendorSpocItem[]>,
-      { searchTerm: string }
+      ApiResponse<{
+        vendor_spocs: VendorSpocItem[];
+        count: number;
+        total_count: number;
+      }>,
+      VendorSpocSearchParams
     >({
-      query: ({ searchTerm }) => {
-        const params = new URLSearchParams({ search_term: searchTerm });
-        return `/vendors/spoc?${params.toString()}`;
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+
+        if (params?.search_by)
+          searchParams.append("search_by", params.search_by);
+        if (params?.search_term)
+          searchParams.append("search_term", params.search_term);
+        if (params?.vendor_id)
+          searchParams.append("vendor_id", params.vendor_id);
+        if (params?.page) searchParams.append("page", String(params.page));
+        if (params?.page_size)
+          searchParams.append("page_size", String(params.page_size));
+        if (params?.sort_by)
+          searchParams.append("sort_by", String(params.sort_by));
+        if (params?.sort_order)
+          searchParams.append("sort_order", String(params.sort_order));
+
+        const queryString = searchParams.toString();
+        return `/vendors/spoc?${queryString}`;
       },
       providesTags: ["VendorsSpoc"],
     }),

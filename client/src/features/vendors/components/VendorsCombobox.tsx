@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useGetAllVendorsQuery } from "../store/vendorsApiSlice";
 import type { VendorItem } from "../types";
-import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -46,7 +45,14 @@ const VendorsCombobox: React.FC<VendorsComboboxProps> = ({
   }, [searchInput]);
 
   const { data } = useGetAllVendorsQuery(
-    { searchTerm },
+    {
+      page: -1,
+      page_size: 15,
+      sort_by: "created_at",
+      sort_order: "asc",
+      search_by: "vendor_name",
+      search_term: "",
+    },
     {
       skip: disabled,
     }
@@ -54,7 +60,7 @@ const VendorsCombobox: React.FC<VendorsComboboxProps> = ({
 
   useEffect(() => {
     if (value && data?.data) {
-      const found = data.data.find((v: VendorItem) => v.id === value);
+      const found = data.data.vendors.find((v: VendorItem) => v.id === value);
       if (found) setSelectedVendor(found);
     }
   }, [value, data]);
@@ -99,8 +105,8 @@ const VendorsCombobox: React.FC<VendorsComboboxProps> = ({
               <CommandEmpty>No Vendors found</CommandEmpty>
               <CommandGroup>
                 {data?.data &&
-                  Array.isArray(data.data) &&
-                  data.data.map((vendor: VendorItem) => (
+                  Array.isArray(data.data.vendors) &&
+                  data.data.vendors.map((vendor: VendorItem) => (
                     <CommandItem
                       key={vendor.id}
                       value={vendor.id}

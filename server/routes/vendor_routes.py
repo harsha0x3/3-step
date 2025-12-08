@@ -10,17 +10,18 @@ from fastapi import (
     Query,
 )
 from sqlalchemy.orm import Session
-from typing import Annotated
+from typing import Annotated, Literal
 from db.connection import get_db_conn
 from models.schemas import vendor_schemas
 from models.schemas.auth_schemas import UserOut
+from models.schemas.vendor_schemas import VendorSearchParams, VendorSpocSearchParams
 from services.auth.deps import get_current_user
 from controllers import vendors_controller
 
 router = APIRouter(prefix="/vendors", tags=["Vendors"])
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_vendor(
     payload: Annotated[vendor_schemas.NewVendor, ""],
     db: Annotated[Session, Depends(get_db_conn)],
@@ -40,23 +41,42 @@ async def create_vendor(
     return {"msg": "Vendor created", "data": result}
 
 
-@router.get("/", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK)
 async def get_all_vendors(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
-    search_term: Annotated[str, Query(...)],
+    # ---- Search ----
+    search_by: Annotated[
+        Literal["id", "vendor_name"] | None,
+        Query(title="Search vendors by: id, vendor_name"),
+    ] = None,
+    search_term: Annotated[str | None, Query(title="Search term")] = None,
+    # ---- Sorting ----
+    sort_by: Annotated[
+        Literal["created_at", "updated_at", "vendor_name"],
+        Query(title="Sort vendors by"),
+    ] = "created_at",
+    sort_order: Annotated[Literal["asc", "desc"], Query(title="Sort order")] = "desc",
+    # ---- Pagination ----
+    page: Annotated[int, Query(title="Page number")] = 1,
+    page_size: Annotated[int, Query(title="Items per page")] = 15,
 ):
-    if (
-        current_user.role != "admin"
-        and current_user.role != "super_admin"
-        and current_user.role != "registration_officer"
-    ):
+    if current_user.role not in ["admin", "super_admin", "registration_officer"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorised to view all candidates",
+            detail="Not authorised to view vendors",
         )
-    result = vendors_controller.get_all_vendors(db=db, search_term=search_term)
-    return {"msg": "Vendors fetched", "data": result}
+
+    params = VendorSearchParams(
+        search_by=search_by,
+        search_term=search_term,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        page=page,
+        page_size=page_size,
+    )
+
+    return vendors_controller.get_all_vendors(db=db, params=params)
 
 
 @router.patch("/{vendor_id}")
@@ -139,16 +159,38 @@ async def update_vendor_spoc(
 async def get_all_vendors_spoc(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
-    search_term: Annotated[str, Query(...)],
+    # ---- Search ----
+    search_by: Annotated[
+        Literal["id", "full_name", "email", "mobile_number", "vendor_name"] | None,
+        Query(title="Search vendor spoc by"),
+    ] = None,
+    search_term: Annotated[str | None, Query(title="Search term")] = None,
+    # ---- Sorting ----
+    sort_by: Annotated[
+        Literal["created_at", "updated_at", "full_name"],
+        Query(title="Sort vendor spoc by"),
+    ] = "created_at",
+    sort_order: Annotated[Literal["asc", "desc"], Query(title="Sort order")] = "desc",
+    # ---- Filters ----
+    vendor_id: Annotated[str | None, Query(title="Filter by vendor id")] = None,
+    # ---- Pagination ----
+    page: Annotated[int, Query(title="Page number")] = 1,
+    page_size: Annotated[int, Query(title="Items per page")] = 15,
 ):
-    if (
-        current_user.role != "admin"
-        and current_user.role != "super_admin"
-        and current_user.role != "registration_officer"
-    ):
+    if current_user.role not in ["admin", "super_admin", "registration_officer"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorised to view all candidates",
+            detail="Not authorised to view vendor spocs",
         )
-    result = vendors_controller.get_all_vendor_spoc(db=db, search_term=search_term)
-    return {"msg": "Vendors spoc fetched", "data": result}
+
+    params = VendorSpocSearchParams(
+        search_by=search_by,
+        search_term=search_term,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        vendor_id=vendor_id,
+        page=page,
+        page_size=page_size,
+    )
+
+    return vendors_controller.get_all_vendor_spoc(db=db, params=params)

@@ -2,7 +2,7 @@ from typing import Annotated, Any
 
 from controllers.auth_controller import login_user, refresh_access_token, register_user
 from db.connection import get_db_conn
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status, Request
 from models.schemas.auth_schemas import (
     LoginRequest,
     RegisterRequest,
@@ -38,8 +38,11 @@ async def login(
     db: Annotated[Session, Depends(get_db_conn)],
     response: Annotated[Response, "response to pass down to set cookies"],
     login_data: Annotated[LoginRequest, "Login form fields"],
+    request: Annotated[Request, "Request to extract client info"],
 ):
-    user_data = login_user(log_user=login_data, db=db, response=response)
+    user_data = await login_user(
+        log_user=login_data, db=db, response=response, request=request
+    )
 
     return user_data
 

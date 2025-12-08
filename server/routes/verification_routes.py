@@ -572,7 +572,6 @@ async def get_latest_issuer(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Unauthorized to verify beneficiary",
             )
-        store = get_store_of_user(db=db, user=current_user)
         result = get_latest_issuer_details(db=db, store_user_id=current_user.id)
         return {"msg": "Latest issuer fetched successfully", "data": result}
     except HTTPException:

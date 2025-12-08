@@ -134,53 +134,77 @@ const CandidateFormDialog: React.FC<Props> = ({
   // ---------- FORM SUBMIT HANDLERS ----------
   const onSubmit = async (data: NewCandidatePayload) => {
     if (viewOnly) return;
+
     try {
-      if (isEditMode || !!candidate) {
+      // ===== EDIT MODE =====
+      if (isEditMode) {
+        // Never allow verified flag to change in edit mode
+        delete data.is_candidate_verified;
+
         const dirty = Object.keys(dirtyFields);
         const payload: UpdateCandidatePayload = {};
+
         for (const key of dirty) {
+          if (key === "is_candidate_verified") continue; // safety guard
           // @ts-ignore
           payload[key] = data[key];
         }
 
-        if (isEditMode && Object.keys(payload).length === 0) {
+        if (Object.keys(payload).length === 0) {
           toast.info("No changes detected to save.");
           setIsEditMode(false);
           return;
         }
 
-        const res = await updateCandidate({
+        await updateCandidate({
           candidateId: candidate.id,
           payload,
         }).unwrap();
-        if (!isEditMode) {
-          toast.success("Voucher issued successfully!");
-          closeAndGoBack();
+
+        toast.success("Beneficiary details updated successfully!");
+        setIsEditMode(false);
+        return;
+      }
+
+      // ===== VERIFY / ISSUE VOUCHER MODE =====
+      if (toVerify && candidate) {
+        if (!isVerifiedChecked) {
+          toast.error("Please verify details before issuing voucher");
           return;
         }
-        toast.success("Beneficiary details updated successfully!");
-      } else {
-        console.log("Adding candidate");
-        const res = await addNewCandidate(data).unwrap();
-        closeAndGoBack();
 
+        await updateCandidate({
+          candidateId: candidate.id,
+          payload: {
+            is_candidate_verified: true,
+          },
+        }).unwrap();
+
+        toast.success("Voucher issued successfully!");
+        closeAndGoBack();
+        return;
+      }
+
+      // ===== ADD MODE =====
+      if (!candidate) {
+        await addNewCandidate(data).unwrap();
         toast.success("Beneficiary added successfully!");
+        closeAndGoBack();
       }
 
       reset();
-      setIsEditMode(false);
     } catch (err: any) {
-      const errMsg: string =
-        err?.data?.detail?.msg ??
-        err?.data?.detail ??
-        "Error adding Beneficiary details";
+      const errMsg =
+        err?.data?.detail?.msg ?? err?.data?.detail ?? "Something went wrong";
 
       const errDesc = err?.data?.detail?.msg
         ? err?.data?.detail?.err_stack
         : "";
+
       toast.error(errMsg, { description: errDesc });
     }
   };
+
   const mode = isEditMode
     ? "edit"
     : viewOnly
@@ -660,14 +684,14 @@ const CandidateFormDialog: React.FC<Props> = ({
               </>
             )}
 
-            {toVerify && (
+            {toVerify && !isEditMode && !isAdding && (
               <div className="flex items-center gap-3 mt-2">
                 <Hint label="Check the box if all the details have been filled and verified.">
                   <Input
                     type="checkbox"
                     id="is_candidate_verified"
                     {...register("is_candidate_verified")}
-                    disabled={viewOnly}
+                    disabled={viewOnly || candidate.is_candidate_verified}
                     className="w-7 h-7 hover:cursor-pointer"
                   />
                 </Hint>
@@ -813,24 +837,30 @@ const CandidateFormDialog: React.FC<Props> = ({
                 )}
 
                 {mode === "verify" && (
-                  <div className="relative group w-full flex justify-center">
-                    <Button
-                      type="submit"
-                      className={`${
-                        !isVerifiedChecked ? "cursor-not-allowed" : ""
-                      }`}
-                      disabled={!isVerifiedChecked}
-                      onClick={() => setShowVerifyConfirm(true)}
-                    >
-                      Issue Voucher
-                    </Button>
-                    {!isVerifiedChecked && (
-                      <div className="absolute -top-25 text-xs bg-black text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition w-full">
-                        Check the <strong>Beneficiary details verified</strong>{" "}
-                        checkbox to proceed.
-                      </div>
-                    )}
-                  </div>
+                  <Hint
+                    label={
+                      !isVerifiedChecked
+                        ? "Check the Beneficiary details verified checkbox to proceed"
+                        : candidate.is_candidate_verified
+                        ? "Voucher for the beneficiary is already issued."
+                        : "Issue Voucher to the beneficiary"
+                    }
+                  >
+                    <div className="relative w-full flex justify-center">
+                      <Button
+                        type="submit"
+                        className={`${
+                          !isVerifiedChecked ? "cursor-not-allowed" : ""
+                        }`}
+                        disabled={
+                          !isVerifiedChecked || candidate.is_candidate_verified
+                        }
+                        onClick={() => setShowVerifyConfirm(true)}
+                      >
+                        Issue Voucher
+                      </Button>
+                    </div>
+                  </Hint>
                 )}
               </div>
             </div>

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func, asc, desc
 from models.schemas import vendor_schemas
 from models.vendors import Vendor, VendorSpoc
 from fastapi import HTTPException, status, UploadFile
@@ -21,24 +21,49 @@ def add_vendor(payload: vendor_schemas.NewVendor, db: Session):
         )
 
 
-def get_all_vendors(db: Session, search_term: str | None = None):
+def get_all_vendors(db: Session, params: vendor_schemas.VendorSearchParams):
     try:
-        query = select(Vendor)
+        stmt = select(Vendor)
 
-        if search_term and search_term.strip != "":
-            query = query.where(Vendor.vendor_name.ilike(f"%{search_term}%"))
-        vendors = db.scalars(query).all()
-        result = []
-        for vendor in vendors:
-            data = vendor_schemas.VendorItem.model_validate(vendor)
-            result.append(data)
-        return result
+        # Count query
+        count_stmt = select(func.count(Vendor.id))
+        total_count = db.scalar(count_stmt)
+
+        # Search
+        if params.search_by and params.search_term and params.search_term != "null":
+            setattr(params, "page", -1)  # disable pagination for search
+            column_attr = getattr(Vendor, params.search_by)
+            stmt = stmt.where(column_attr.ilike(f"%{params.search_term}%"))
+
+        # Sorting
+        sort_col = getattr(Vendor, params.sort_by)
+        sort_col = asc(sort_col) if params.sort_order == "asc" else desc(sort_col)
+
+        # Pagination
+        if params.page >= 1:
+            vendors = db.scalars(
+                stmt.order_by(sort_col)
+                .limit(params.page_size)
+                .offset((params.page - 1) * params.page_size)
+            ).all()
+        else:
+            vendors = db.scalars(stmt.order_by(sort_col)).all()
+
+        result = [vendor_schemas.VendorItem.model_validate(v) for v in vendors]
+
+        return {
+            "msg": "Vendors fetched successfully",
+            "data": {
+                "vendors": result,
+                "total_count": total_count,
+                "count": len(result),
+            },
+        }
+
     except Exception as e:
-        print("Error getting vendors", e)
-
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get vendors",
+            detail={"msg": "Failed to get vendors", "err_stack": str(e)},
         )
 
 
@@ -75,33 +100,70 @@ async def add_new_vendor_spoc(
         )
 
 
-def get_all_vendor_spoc(db: Session, search_term: str | None = None):
+def get_all_vendor_spoc(db: Session, params: vendor_schemas.VendorSpocSearchParams):
     try:
-        query = select(VendorSpoc)
+        stmt = select(VendorSpoc).join(Vendor)
 
-        if search_term and search_term.strip() != "":
-            query = query.where(VendorSpoc.full_name.ilike(f"%{search_term}%"))
-        vendor_spocs = db.scalars(query).all()
+        # ---- Count query ----
+        count_stmt = select(func.count(VendorSpoc.id)).join(Vendor)
+        total_count = db.scalar(count_stmt)
+
+        # ---- Vendor filter ----
+        if params.vendor_id and params.vendor_id != "null":
+            stmt = stmt.where(VendorSpoc.vendor_id == params.vendor_id)
+
+        # ---- Search logic ----
+        if params.search_by and params.search_term and params.search_term != "null":
+            setattr(params, "page", -1)
+
+            if params.search_by == "vendor_name" and params.search_term:
+                stmt = stmt.where(Vendor.vendor_name.ilike(f"%{params.search_term}%"))
+            else:
+                column_attr = getattr(VendorSpoc, params.search_by)
+                stmt = stmt.where(column_attr.ilike(f"%{params.search_term}%"))
+
+        # ---- Sorting ----
+        sort_col = getattr(VendorSpoc, params.sort_by)
+        sort_col = asc(sort_col) if params.sort_order == "asc" else desc(sort_col)
+
+        # ---- Pagination ----
+        if params.page >= 1:
+            vendor_spocs = db.scalars(
+                stmt.order_by(sort_col)
+                .limit(params.page_size)
+                .offset((params.page - 1) * params.page_size)
+            ).all()
+        else:
+            vendor_spocs = db.scalars(stmt.order_by(sort_col)).all()
+
+        # ---- Response mapping ----
         result = []
-        for vendor_spoc in vendor_spocs:
-            data = vendor_schemas.VendorSpocItem(
-                id=vendor_spoc.id,
-                vendor_id=vendor_spoc.vendor_id,
-                full_name=vendor_spoc.full_name,
-                mobile_number=vendor_spoc.mobile_number,
-                email=vendor_spoc.email,
-                photo=get_relative_upload_path(vendor_spoc.photo)
-                if vendor_spoc.photo
-                else None,
-                vendor=vendor_spoc.vendor,
+        for v in vendor_spocs:
+            result.append(
+                vendor_schemas.VendorSpocItem(
+                    id=v.id,
+                    vendor_id=v.vendor_id,
+                    full_name=v.full_name,
+                    mobile_number=v.mobile_number,
+                    email=v.email,
+                    photo=get_relative_upload_path(v.photo) if v.photo else None,
+                    vendor=v.vendor,
+                )
             )
-            result.append(data)
-        return result
+
+        return {
+            "msg": "Vendor SPOCs fetched successfully",
+            "data": {
+                "vendor_spocs": result,
+                "total_count": total_count,
+                "count": len(result),
+            },
+        }
+
     except Exception as e:
-        print("Error getting vendors spoc", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get vendors",
+            detail={"msg": "Failed to get vendor spocs", "err_stack": str(e)},
         )
 
 

@@ -67,7 +67,7 @@ const CandidateVerification: React.FC = () => {
         const cand = result?.data?.candidate;
 
         if (!cand) {
-          toast.error("Candidate not found");
+          toast.error("Beneficairy not found");
           return;
         }
 

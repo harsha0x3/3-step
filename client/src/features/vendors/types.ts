@@ -21,3 +21,22 @@ export interface VendorSpocItem {
   photo: string;
   vendor: VendorItem;
 }
+
+export interface VendorsSearchParams {
+  search_by?: string | null;
+  search_term?: string | null;
+  page?: number;
+  page_size?: number;
+  sort_by?: string;
+  sort_order?: string;
+}
+
+export interface VendorSpocSearchParams {
+  search_by?: string | null;
+  search_term?: string | null;
+  vendor_id?: string | null;
+  page?: number;
+  page_size?: number;
+  sort_by?: string;
+  sort_order?: string;
+}

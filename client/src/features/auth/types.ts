@@ -1,6 +1,7 @@
 export interface LoginPayload {
   email_or_mobile_number?: string;
   password: string;
+  captcha_token?: string;
   mfa_code: string;
 }
 

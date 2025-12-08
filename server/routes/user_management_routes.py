@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import Annotated
+from typing import Annotated, Literal
 
 from db.connection import get_db_conn
 from models.schemas.auth_schemas import (
@@ -10,10 +10,10 @@ from models.schemas.auth_schemas import (
     PasswordResetVerifySchema,
     PasswordChangeSchema,
     UserOut,
+    UsersSearchParams,
 )
 from services.auth.deps import get_current_user
 from controllers.user_management_controller import (
-    admin_create_user,
     admin_update_user,
     admin_delete_user,
     admin_get_all_users,
@@ -41,24 +41,52 @@ def require_admin(current_user: UserOut = Depends(get_current_user)):
 # ============================================
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_user(
     payload: AdminCreateUserRequest,
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(require_admin)],
 ):
     """Admin creates a new user with default password"""
-    return admin_create_user(payload, db, current_user.id)
 
 
-@router.get("/", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK)
 async def get_all_users(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(require_admin)],
+    # ---- Search ----
+    search_by: Annotated[
+        Literal["id", "email", "mobile_number", "full_name", "role"] | None,
+        Query(title="Search users by"),
+    ] = None,
+    search_term: Annotated[str | None, Query(title="Search term")] = None,
+    # ---- Sorting ----
+    sort_by: Annotated[
+        Literal["created_at", "updated_at", "full_name", "email"],
+        Query(title="Sort users by"),
+    ] = "created_at",
+    sort_order: Annotated[
+        Literal["asc", "desc"], Query(title="Order of sorting")
+    ] = "desc",
+    # ---- Filters ----
+    role: Annotated[str | None, Query(title="Filter by role")] = None,
+    disabled: Annotated[bool | None, Query(title="Filter by disabled status")] = None,
+    # ---- Pagination ----
+    page: Annotated[int, Query(title="Page number")] = 1,
+    page_size: Annotated[int, Query(title="Items per page")] = 15,
 ):
-    """Admin gets all users"""
-    users = admin_get_all_users(db)
-    return {"msg": "Users retrieved successfully", "data": {"users": users}}
+    params = UsersSearchParams(
+        search_by=search_by,
+        search_term=search_term,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        role=role,
+        disabled=disabled,
+        page=page,
+        page_size=page_size,
+    )
+
+    return admin_get_all_users(db, params)
 
 
 @router.get("/{user_id}", status_code=status.HTTP_200_OK)

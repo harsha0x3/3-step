@@ -73,7 +73,7 @@ const ConsolidateVerification: React.FC = () => {
       const errMsg =
         err?.data?.detail?.msg ??
         err?.data?.detail ??
-        "Error adding Vendor SPOC";
+        "Error in facial recognition try again";
       toast.error(errMsg);
     }
   };

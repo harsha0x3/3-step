@@ -452,7 +452,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                 </Label>
                 <Input
                   id={"aadhar_number"}
-                  type="number"
+                  type="text"
                   minLength={12}
                   maxLength={12}
                   readOnly={
@@ -464,6 +464,10 @@ const CandidateFormDialog: React.FC<Props> = ({
                   }
                   {...register("aadhar_number", {
                     required: `Aadhar number is required`,
+                    pattern: {
+                      value: /^\d{12}$/,
+                      message: "Aadhar number must be 12 digits",
+                    },
                   })}
                 />
                 {errors.aadhar_number && (

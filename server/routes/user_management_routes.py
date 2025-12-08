@@ -22,6 +22,7 @@ from controllers.user_management_controller import (
     verify_password_reset,
     change_password,
     admin_reset_user_password,
+    admin_create_user,
 )
 
 router = APIRouter(prefix="/users", tags=["User Management"])
@@ -47,6 +48,11 @@ async def create_user(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(require_admin)],
 ):
+    if current_user.role not in ["admin", "super_admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
+        )
+    return admin_create_user(payload=payload, db=db, admin_user_id=current_user.id)
     """Admin creates a new user with default password"""
 
 

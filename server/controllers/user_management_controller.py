@@ -45,14 +45,14 @@ def admin_create_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="store_id is required for store_agent role",
         )
-
+    store_id = payload.store_id if payload.store_id not in ("", None) else None
     try:
         new_user = User(
             mobile_number=payload.mobile_number,
             email=payload.email,
             full_name=payload.full_name,
             role=payload.role,
-            store_id=payload.store_id,
+            store_id=store_id,
             is_first_login=True,
             must_change_password=True,
             mfa_enabled=False,
@@ -76,6 +76,7 @@ def admin_create_user(
         }
 
     except Exception as e:
+        print(e)
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -216,7 +217,7 @@ def admin_get_all_users(db: Session, params: UsersSearchParams):
 
         # ---- Sorting ----
         sort_col = getattr(User, params.sort_by)
-        sort_col = asc(sort_col) if params.sort_order == "asc" else desc(sort_col)
+        sort_col = desc(sort_col)
 
         # ---- Pagination ----
         # if params.page >= 1:

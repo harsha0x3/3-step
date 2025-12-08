@@ -262,10 +262,10 @@ def admin_get_user_by_id(user_id: str, db: Session) -> UserDetailOut:
 async def request_password_reset(payload: PasswordResetRequestSchema, db: Session):
     """User requests password reset - sends OTP to email"""
 
-    user = (
-        db.scalar(select(User).where(User.email == payload.email))
-        if payload.email
-        else db.scalar(select(User).where(User.mobile_number == payload.mobile_number))
+    user = db.scalar(
+        select(User).where(
+            or_(User.email == payload.email, User.mobile_number == payload.email)
+        )
     )
     if not user:
         # Don't reveal if email exists or not
@@ -304,10 +304,10 @@ async def request_password_reset(payload: PasswordResetRequestSchema, db: Sessio
 async def verify_password_reset(payload: PasswordResetVerifySchema, db: Session):
     """User verifies OTP and sets new password"""
 
-    user = (
-        db.scalar(select(User).where(User.email == payload.email))
-        if payload.email
-        else db.scalar(select(User).where(User.mobile_number == payload.mobile_number))
+    user = db.scalar(
+        select(User).where(
+            or_(User.email == payload.email, User.mobile_number == payload.email)
+        )
     )
     if not user:
         raise HTTPException(

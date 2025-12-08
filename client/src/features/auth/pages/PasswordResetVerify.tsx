@@ -70,10 +70,10 @@ const PasswordResetVerify: React.FC = () => {
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Mobile Number</Label>
               <Input
                 id="email"
-                type="email"
+                type="text"
                 {...register("email")}
                 readOnly
                 className="bg-gray-100"

@@ -31,7 +31,7 @@ const PasswordResetRequest: React.FC = () => {
     try {
       await requestReset({ email: data.email }).unwrap();
       setEmailSent(true);
-      toast.success("Reset code sent to your email");
+      toast.success("Reset code sent to your mobile number");
 
       // Navigate to verify page after 2 seconds
       setTimeout(() => {
@@ -52,12 +52,11 @@ const PasswordResetRequest: React.FC = () => {
           {!emailSent ? (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email">Mobile Number</Label>
                 <Input
                   id="email"
                   type="text"
                   placeholder="your mobile"
-                  readOnly
                   {...register("email", { required: "Email is required" })}
                 />
                 {errors.email?.message && (

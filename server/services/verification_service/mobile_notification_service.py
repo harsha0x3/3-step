@@ -89,7 +89,7 @@ async def send_login_sms_otp(payload: SmsOtpPayload):
                     "to": f"91{payload.mobile_number}",
                     "contactKey": f"91{payload.mobile_number}",
                     "attributes": {
-                        "message": f"Your OTP is {payload.otp} for receiving the laptop. Please do not share it with anyone, other than store person. Company Ltd.",
+                        "message": f"Your OTP is {payload.otp} for receiving the laptop. Please do not share it with anyone, other than croma store person. Titan Company Ltd.",
                         "FromName": "TITAN",
                     },
                 },
@@ -100,6 +100,8 @@ async def send_login_sms_otp(payload: SmsOtpPayload):
             sms_response = await client.post(
                 sms_url, headers=sms_headers, json=sms_payload
             )
+
+            print("SMS RES", sms_response.json())
 
             if sms_response.status_code not in (200, 202):
                 raise ValueError(

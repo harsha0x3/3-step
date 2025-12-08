@@ -94,7 +94,7 @@ class PasswordResetRequestSchema(BaseModel):
 
 
 class PasswordResetVerifySchema(BaseModel):
-    email: EmailStr | None = None
+    email: str | None = None
     mobile_number: str | None = None
     otp: str
     new_password: str

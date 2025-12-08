@@ -1,84 +1,242 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+import { selectAuth } from "@/features/auth/store/authSlice";
 import { useGetAllUsersQuery } from "../store/usersApiSlice";
 import UserManagementTable from "../components/UserManagementTable";
 import UserFormDialog from "../components/UserFormDialog";
 import { Button } from "@/components/ui/button";
-import { UserPlus } from "lucide-react";
-import { useSelector } from "react-redux";
-import { selectAuth } from "@/features/auth/store/authSlice";
+import {
+  UserPlus,
+  RefreshCcw,
+  Check,
+  SlidersHorizontalIcon,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { useSearchParams } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuGroup,
+} from "@/components/ui/dropdown-menu";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+} from "@/components/ui/pagination";
+import {
+  ChevronFirstIcon,
+  ChevronLastIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 20;
 
 const UserManagement: React.FC = () => {
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
+  const currentUser = useSelector(selectAuth);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const page = parseInt(searchParams.get("userPage") || "1", 10);
+  const pageSize = parseInt(
+    searchParams.get("userPageSize") || DEFAULT_PAGE_SIZE.toString(),
+    10
+  );
+  const sortBy = searchParams.get("userSortBy") || "created_at";
+  const sortOrder = searchParams.get("userSortOrder") || "desc";
+  const searchTerm = searchParams.get("userSearchTerm") || "";
+
+  const [searchInput, setSearchInput] = useState(searchTerm);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
-  const currentUser = useSelector(selectAuth);
 
-  const { data, isLoading, isFetching } = useGetAllUsersQuery({
-    page,
-    page_size: PAGE_SIZE,
-    search,
-    sort_by: "created_at",
-    sort_order: "asc",
-  });
+  const queryParams = useMemo(
+    () => ({
+      page,
+      page_size: pageSize,
+      search: searchTerm,
+      sort_by: sortBy,
+      sort_order: sortOrder,
+    }),
+    [page, pageSize, searchTerm, sortBy, sortOrder]
+  );
 
-  if (currentUser.role !== "admin" && currentUser.role !== "super_admin") {
+  const { data, isLoading, isFetching, refetch } = useGetAllUsersQuery(
+    queryParams,
+    {
+      refetchOnMountOrArgChange: true,
+    }
+  );
+
+  if (!["admin", "super_admin"].includes(currentUser.role)) {
     return <div>Access Denied</div>;
   }
 
-  const handleEdit = (user: any) => {
-    setSelectedUser(user);
-    setDialogOpen(true);
+  const users = data?.data?.users ?? [];
+  const totalUsers = data?.data?.count ?? 0;
+  const totalPages = Math.ceil(totalUsers / pageSize);
+
+  // ✅ Helpers
+  const updateSearchParams = (
+    updates: Record<string, string | number | null>
+  ) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([k, v]) => {
+      if (v === null || v === undefined) next.delete(k);
+      else next.set(k, String(v));
+    });
+    setSearchParams(next);
   };
 
-  const handleCreate = () => {
-    setSelectedUser(null);
-    setDialogOpen(true);
+  const goToPage = (p: number) => {
+    updateSearchParams({ userPage: p });
   };
 
-  if (isLoading) {
-    return <div>Loading users...</div>;
-  }
-
-  const users = data?.data?.users || [];
-  const totalUsers = data?.data?.total || 0;
-  const totalPages = Math.ceil(totalUsers / PAGE_SIZE);
+  // ✅ Debounced search sync
+  useEffect(() => {
+    const t = setTimeout(() => {
+      updateSearchParams({ userSearchTerm: searchInput, userPage: 1 });
+    }, 500);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="flex flex-col gap-4 p-4">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">User Management</h1>
-        <Button onClick={handleCreate}>
-          <UserPlus className="w-4 h-4 mr-2" />
+        <Button onClick={() => setDialogOpen(true)}>
+          <UserPlus className="h-4 w-4 mr-2" />
           Add User
         </Button>
       </div>
 
-      <UserManagementTable users={users} onEdit={handleEdit} />
+      {/* Search + Filters */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <Input
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search users..."
+          className="h-8 max-w-xs"
+        />
 
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-4">
-          <Button
-            disabled={page === 1 || isFetching}
-            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-          >
-            Previous
-          </Button>
-          <span className="flex items-center gap-2">
-            Page {page} of {totalPages}
-          </span>
-          <Button
-            disabled={page === totalPages || isFetching}
-            onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-          >
-            Next
-          </Button>
-        </div>
-      )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="secondary" className="px-2">
+              <SlidersHorizontalIcon className="w-4 h-4 mr-2" />
+              Filters
+            </Button>
+          </DropdownMenuTrigger>
 
+          <DropdownMenuContent>
+            <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              {["created_at", "full_name", "email"].map((field) => (
+                <DropdownMenuItem
+                  key={field}
+                  onClick={() =>
+                    updateSearchParams({ userSortBy: field, userPage: 1 })
+                  }
+                >
+                  {sortBy === field && <Check className="h-4 w-4 mr-2" />}
+                  {field}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Sort Order</DropdownMenuLabel>
+            <DropdownMenuGroup>
+              {["asc", "desc"].map((ord) => (
+                <DropdownMenuItem
+                  key={ord}
+                  onClick={() =>
+                    updateSearchParams({ userSortOrder: ord, userPage: 1 })
+                  }
+                >
+                  {sortOrder === ord && <Check className="h-4 w-4 mr-2" />}
+                  {ord.toUpperCase()}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Button onClick={() => refetch()}>
+          <RefreshCcw
+            className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
+          />
+          Refresh
+        </Button>
+      </div>
+
+      {/* Table */}
+      <UserManagementTable users={users} onEdit={setSelectedUser} />
+
+      {/* Pagination */}
+      <Pagination>
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationLink onClick={() => goToPage(1)}>
+              <ChevronFirstIcon className="h-4 w-4" />
+            </PaginationLink>
+          </PaginationItem>
+
+          <PaginationItem>
+            <PaginationLink onClick={() => page > 1 && goToPage(page - 1)}>
+              <ChevronLeftIcon className="h-4 w-4" />
+            </PaginationLink>
+          </PaginationItem>
+
+          <PaginationItem>
+            <Select
+              value={String(page)}
+              onValueChange={(v) => goToPage(Number(v))}
+            >
+              <SelectTrigger className="w-[110px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (p) => (
+                    <SelectItem key={p} value={String(p)}>
+                      Page {p}
+                    </SelectItem>
+                  )
+                )}
+              </SelectContent>
+            </Select>
+          </PaginationItem>
+
+          <PaginationItem>
+            <PaginationLink
+              onClick={() => page < totalPages && goToPage(page + 1)}
+            >
+              <ChevronRightIcon className="h-4 w-4" />
+            </PaginationLink>
+          </PaginationItem>
+
+          <PaginationItem>
+            <PaginationLink onClick={() => goToPage(totalPages)}>
+              <ChevronLastIcon className="h-4 w-4" />
+            </PaginationLink>
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
+
+      {/* Dialog */}
       <UserFormDialog
         user={selectedUser}
         open={dialogOpen}

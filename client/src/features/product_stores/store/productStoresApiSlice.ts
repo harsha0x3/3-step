@@ -36,6 +36,7 @@ export const productStoresApiSlice = rootApiSlice.injectEndpoints({
     getAllStores: builder.query<
       ApiResponse<{
         stores: StoreItemWithUser[];
+        total_stock: number;
         count: number;
         cities: string[];
       }>,

@@ -14,6 +14,7 @@ import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useVerifyPasswordResetMutation } from "@/features/auth/store/usersApiSlice";
 import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
+import { PasswordInput } from "../components/PasswordInput";
 
 const PasswordResetVerify: React.FC = () => {
   const [verifyReset, { isLoading }] = useVerifyPasswordResetMutation();
@@ -24,7 +25,6 @@ const PasswordResetVerify: React.FC = () => {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -33,8 +33,6 @@ const PasswordResetVerify: React.FC = () => {
       confirm_password: "",
     },
   });
-
-  const newPassword = watch("new_password");
 
   const onSubmit = async (data: any) => {
     if (data.new_password !== data.confirm_password) {
@@ -106,15 +104,11 @@ const PasswordResetVerify: React.FC = () => {
 
             <div className="space-y-2">
               <Label htmlFor="new_password">New Password</Label>
-              <Input
+              <PasswordInput
                 id="new_password"
-                type="password"
+                autoComplete="new-password"
                 {...register("new_password", {
-                  required: "Password is required",
-                  minLength: {
-                    value: 8,
-                    message: "Password must be at least 8 characters",
-                  },
+                  required: "Please enter new password",
                 })}
               />
               {errors.new_password && (
@@ -126,9 +120,9 @@ const PasswordResetVerify: React.FC = () => {
 
             <div className="space-y-2">
               <Label htmlFor="confirm_password">Confirm Password</Label>
-              <Input
+              <PasswordInput
                 id="confirm_password"
-                type="password"
+                autoComplete="confirm-password"
                 {...register("confirm_password", {
                   required: "Please confirm your password",
                 })}

@@ -113,11 +113,19 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route
           path="/password-reset/request"
-          element={<PasswordResetRequest />}
+          element={
+            <Suspense fallback={<div>Loading...</div>}>
+              <PasswordResetRequest />
+            </Suspense>
+          }
         />
         <Route
           path="/password-reset/verify"
-          element={<PasswordResetVerify />}
+          element={
+            <Suspense fallback={<div>Loading...</div>}>
+              <PasswordResetVerify />
+            </Suspense>
+          }
         />
 
         <Route path="/" element={<ProtectedLayout />}>

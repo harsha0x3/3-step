@@ -131,6 +131,7 @@ const AllStores: React.FC = () => {
   }, [allStoresData]);
 
   const totalStores = allStoresData?.data?.count ?? 0;
+  const totalStock = allStoresData?.data?.total_stock ?? 0;
 
   return (
     <div className="flex flex-col gap-2 sm:px-1 sm:py-0">
@@ -290,7 +291,9 @@ const AllStores: React.FC = () => {
             </Button>
           </Hint>
           <div className="flex gap-2 items-center">
-            <p className="">Total Stoes: {totalStores}</p>
+            <p className="">Total Stroes: {totalStores}</p>
+            <p>|</p>
+            <p>Total Stock: {totalStock}</p>
             <p>|</p>
             <p>
               Page {storePage} of {Math.ceil(totalStores / storePageSize)}

@@ -192,4 +192,5 @@ export const {
   useOverrideVerificationMutation,
   useSendOtpToAdminMutation,
   useGetLatestLaptopIssuerQuery,
+  useLazyGetCandidateIssuanceDetailsQuery,
 } = verificationApi;

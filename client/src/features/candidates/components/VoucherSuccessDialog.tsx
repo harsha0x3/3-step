@@ -35,7 +35,7 @@ const VoucherSuccessDialog: React.FC<VoucherSuccessDialogProps> = ({
         <div className="flex items-center justify-end ">
           <Button
             onClick={() => {
-              navigate("registration_officer/beneficiary/verify");
+              navigate("/registration_officer/beneficiary/verify");
               setOpen(false);
             }}
           >

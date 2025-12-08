@@ -2,9 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGetCandidateByIdQuery } from "@/features/candidates/store/candidatesApiSlice";
 import { CheckCircle2 } from "lucide-react";
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import IssuanceDetails from "../components/IssuanceDetails";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 
 const LaptopIssuanceSuccessPage: React.FC = () => {
   const { candidateId } = useParams<{ candidateId: string | undefined }>();
@@ -12,6 +13,7 @@ const LaptopIssuanceSuccessPage: React.FC = () => {
     useGetCandidateByIdQuery(candidateId!, {
       skip: !candidateId,
     });
+  const navigate = useNavigate();
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -22,6 +24,12 @@ const LaptopIssuanceSuccessPage: React.FC = () => {
               <CheckCircle2 className="text-green-600 w-8 h-8" />
               Laptop Issuance Completed
             </CardTitle>
+            <Button
+              onClick={() => navigate("/store/beneficiary")}
+              className="ml-3"
+            >
+              Issue New
+            </Button>
           </div>
         </CardHeader>
         <ScrollArea className="flex-1 overflow-y-auto min-h-0">

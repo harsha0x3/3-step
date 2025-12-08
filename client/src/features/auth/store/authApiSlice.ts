@@ -25,11 +25,11 @@ export const authApiSlice = rootApiSlice.injectEndpoints({
           dispatch(loginSuccess(data));
         } catch (err: any) {
           const errMsg: string =
-            err?.data?.detail?.msg ??
-            err?.data?.detail ??
+            err?.error?.data?.detail?.msg ??
+            err?.error?.data?.detail ??
             "Unexpected error in Logging in. Try again.";
 
-          dispatch(setError(errMsg));
+          dispatch(setError(`${errMsg}`));
         } finally {
           dispatch(setIsLoading(false));
         }
@@ -84,7 +84,7 @@ export const authApiSlice = rootApiSlice.injectEndpoints({
           //   err?.data?.detail ??
           //   "Unexpected error in Auorization.";
 
-          // dispatch(setError(errMsg + " Login again."));
+          // dispatch(setError("Session timedout. Login again."));
         }
       },
     }),

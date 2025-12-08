@@ -343,10 +343,12 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
             <Input
               placeholder="Enter your mobile number"
               value={storeEmployeeMobile}
+              type="tel"
               onChange={(e) => setStoreEmployeeMobile(e.target.value)}
               className="w-74"
               minLength={10}
               maxLength={10}
+              pattern="[0-9]{10}"
               required
             />
           </div>

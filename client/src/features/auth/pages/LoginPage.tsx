@@ -16,6 +16,7 @@ import { useSelector } from "react-redux";
 import { selectIsAuthenticated } from "../store/authSlice";
 import { toast } from "sonner";
 import Hint from "@/components/ui/hint";
+import { PasswordInput } from "../components/PasswordInput";
 
 // import {
 //   InputOTP,
@@ -41,6 +42,10 @@ const LoginPage: React.FC = () => {
     mfa_code: "",
     captcha_token: "",
   });
+  const [captchaStatus, setCaptchaStatus] = useState<
+    "idle" | "loading" | "solved" | "error"
+  >("idle");
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -54,10 +59,15 @@ const LoginPage: React.FC = () => {
     let widgetId: string | null = null;
 
     if (window.turnstile) {
+      setCaptchaStatus("loading");
       widgetId = window.turnstile.render("#turnstile-widget", {
         sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
         callback: (token: string) => {
           setCredentials((prev) => ({ ...prev, captcha_token: token }));
+          setCaptchaStatus("solved");
+        },
+        "error-callback": () => {
+          setCaptchaStatus("error");
         },
       });
     }
@@ -128,12 +138,12 @@ const LoginPage: React.FC = () => {
           <form id="login-form" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-6">
               {/* Email */}
-              <div className="flex items-center gap-4">
+              <div className="grid grid-cols-[100px_1fr]">
                 <Label
                   htmlFor="email_or_mobile_number"
                   className="w-64 text-left"
                 >
-                  User-ID or Mobile Number
+                  Mobile Number
                 </Label>
                 <Input
                   id="email_or_mobile_number"
@@ -145,13 +155,12 @@ const LoginPage: React.FC = () => {
               </div>
 
               {/* Password */}
-              <div className="flex items-center gap-4">
-                <Label htmlFor="password" className="w-64 text-right">
+              <div className="grid grid-cols-[100px_1fr]">
+                <Label htmlFor="password" className="text-right">
                   Password
                 </Label>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
                   value={credentials.password}
                   onChange={handleChange}
                   required
@@ -166,6 +175,9 @@ const LoginPage: React.FC = () => {
           <p className="text-accent-foreground">
             Contact admin for password related issues.
           </p>
+          {captchaStatus === "error" && (
+            <p>Captcha Failed to fetch refresh the page and try again.</p>
+          )}
           <div className="flex items-center justify-center gap-2">
             <div>
               <Hint label="Reset the credentials" side="left">
@@ -185,15 +197,37 @@ const LoginPage: React.FC = () => {
               </Hint>
             </div>
             <div>
-              <Hint label="Login to your account" side="right">
-                <Button
-                  type="submit"
-                  form="login-form"
-                  className="w-full"
-                  disabled={isLoggingIn}
-                >
-                  {isLoggingIn ? "Logging in..." : "Login"}
-                </Button>
+              <Hint
+                label={
+                  isLoggingIn
+                    ? "Logging in ..."
+                    : captchaStatus === "loading"
+                    ? "Captcha Loading. Please wait."
+                    : captchaStatus === "error"
+                    ? "Captcha Error. refresh page and try again."
+                    : "Login to your account"
+                }
+                side="right"
+              >
+                <div>
+                  <Button
+                    type="submit"
+                    form="login-form"
+                    className="w-full"
+                    disabled={
+                      isLoggingIn ||
+                      captchaStatus === "loading" ||
+                      captchaStatus === "error" ||
+                      !credentials.captcha_token
+                    }
+                  >
+                    {captchaStatus === "loading"
+                      ? "Loading captcha..."
+                      : isLoggingIn
+                      ? "Logging in..."
+                      : "Login"}
+                  </Button>
+                </div>
               </Hint>
             </div>
           </div>

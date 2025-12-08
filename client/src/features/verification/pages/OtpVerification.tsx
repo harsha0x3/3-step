@@ -130,8 +130,10 @@ const OtpVerification = () => {
       if (
         v.is_coupon_verified &&
         v.is_facial_verified &&
-        v.is_aadhar_verified
+        v.is_aadhar_verified &&
+        v.is_otp_verified
       ) {
+        toast.info("OTP verification of the beneficiary completed.");
         navigate(`/store/beneficiary/${candidateId}/issuance`);
         return;
       }

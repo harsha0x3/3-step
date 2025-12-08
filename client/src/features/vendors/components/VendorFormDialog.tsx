@@ -156,6 +156,25 @@ const VendorFormDialog: React.FC<Props> = ({
             "text",
             false
           )}
+          <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-0">
+            <Label htmlFor={"mobile_number"}>{"Owner Mobile Number"}</Label>
+            <Input
+              id={"mobile_number"}
+              type={"tel"}
+              readOnly={viewOnly}
+              {...register("mobile_number", {
+                pattern: {
+                  value: /^\d{10}$/,
+                  message: "Mobile number must be 10 digits",
+                },
+              })}
+            />
+            {errors["mobile_number"] && (
+              <span className="text-sm text-red-500">
+                {errors["mobile_number"]?.message as string}
+              </span>
+            )}
+          </div>
 
           {!viewOnly && (
             <DialogFooter className="pt-4">

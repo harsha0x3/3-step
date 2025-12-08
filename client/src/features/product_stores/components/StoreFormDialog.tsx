@@ -165,7 +165,6 @@ const StoreFormDialog: React.FC<Props> = ({
               </span>
             )}
           </div>
-          ``
           {/* Count */}
           <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-3">
             <Label htmlFor="count">Total Stock</Label>
@@ -191,7 +190,14 @@ const StoreFormDialog: React.FC<Props> = ({
             <Label htmlFor="address">Mobile Number</Label>
             <Input
               id="mobile_number"
-              {...register("mobile_number", { required: true })}
+              required
+              {...register("mobile_number", {
+                required: `Mobile number is required`,
+                pattern: {
+                  value: /^\d{10}$/,
+                  message: "Mobile number must be 10 digits",
+                },
+              })}
             />
             {errors.mobile_number && (
               <span className="text-sm text-red-500">

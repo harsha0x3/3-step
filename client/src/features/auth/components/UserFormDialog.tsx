@@ -105,7 +105,17 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="mobile_number">Mobile Number</Label>
-            <Input id="mobile_number" {...register("mobile_number")} />
+            <Input
+              type="tel"
+              id="mobile_number"
+              {...register("mobile_number", {
+                required: `Mobile number is required`,
+                pattern: {
+                  value: /^\d{10}$/,
+                  message: "Mobile number must be 10 digits",
+                },
+              })}
+            />
           </div>
 
           <div className="space-y-2">

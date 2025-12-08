@@ -15,6 +15,7 @@ export interface VerificationResult {
   };
   failed_verifications: string[];
   requires_consent: boolean;
+  is_already_issued: boolean;
 }
 
 export interface ConsolidateVerificationRequest {

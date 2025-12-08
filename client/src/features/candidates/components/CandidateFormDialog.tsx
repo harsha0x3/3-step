@@ -43,6 +43,7 @@ import { useNavigate } from "react-router-dom";
 import { flushSync } from "react-dom";
 
 import type { StoreItemWithUser } from "@/features/product_stores/types";
+import VoucherSuccessDialog from "./VoucherSuccessDialog";
 
 type Props = {
   store_id?: string;
@@ -183,7 +184,7 @@ const CandidateFormDialog: React.FC<Props> = ({
 
         toast.success("Voucher issued successfully!");
         setShowSuccess(true);
-        closeAndGoBack();
+        // closeAndGoBack();
         return;
       }
 
@@ -422,7 +423,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                 </Label>
                 <Input
                   id={"mobile_number"}
-                  type="number"
+                  type="tel"
                   minLength={10}
                   maxLength={10}
                   readOnly={
@@ -434,6 +435,10 @@ const CandidateFormDialog: React.FC<Props> = ({
                   }
                   {...register("mobile_number", {
                     required: `Mobile number is required`,
+                    pattern: {
+                      value: /^\d{10}$/,
+                      message: "Mobile number must be 10 digits",
+                    },
                   })}
                 />
                 {errors.mobile_number && (
@@ -585,7 +590,11 @@ const CandidateFormDialog: React.FC<Props> = ({
                         toVerify &&
                         (currentUserInfo.role === "admin" ||
                           currentUserInfo.role === "super_admin" ||
-                          currentUserInfo.role === "registration_officer") && (
+                          currentUserInfo.role === "registration_officer") &&
+                        !(
+                          candidate.is_candidate_verified &&
+                          !["super_admin"].includes(currentUserInfo.role)
+                        ) && (
                           <div className="flex gap-3 items-center">
                             <div className="flex gap-1 items-center">
                               <Label
@@ -602,12 +611,19 @@ const CandidateFormDialog: React.FC<Props> = ({
                                   handleImageUpload("candidate", e)
                                 }
                                 className="hidden"
+                                disabled={
+                                  candidate.is_candidate_verified &&
+                                  !["super_admin"].includes(
+                                    currentUserInfo.role
+                                  )
+                                }
                               />
                               {isUploadingPhoto && (
                                 <Loader className="w-3 h-3 animate-spin" />
                               )}
                             </div>
                             <p>(OR)</p>
+
                             <CandidatePhotoCapture
                               candidateId={candidate?.id}
                             />
@@ -657,7 +673,11 @@ const CandidateFormDialog: React.FC<Props> = ({
                         toVerify &&
                         (currentUserInfo.role === "admin" ||
                           currentUserInfo.role === "super_admin" ||
-                          currentUserInfo.role === "registration_officer") && (
+                          currentUserInfo.role === "registration_officer") &&
+                        !(
+                          candidate.is_candidate_verified &&
+                          !["super_admin"].includes(currentUserInfo.role)
+                        ) && (
                           <div className="flex gap-3 items-center">
                             <div className="flex gap-1 items-center">
                               <Label
@@ -672,6 +692,12 @@ const CandidateFormDialog: React.FC<Props> = ({
                                 accept="image/*"
                                 onChange={(e) => handleImageUpload("aadhar", e)}
                                 className="hidden"
+                                disabled={
+                                  candidate.is_candidate_verified &&
+                                  !["super_admin"].includes(
+                                    currentUserInfo.role
+                                  )
+                                }
                               />
                               {isUploadingPhoto && (
                                 <Loader className="w-3 h-3 animate-spin" />
@@ -681,6 +707,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                               )}
                             </div>
                             <p>(OR)</p>
+
                             <AadharPhotoCapture candidateId={candidate?.id} />
                           </div>
                         )}
@@ -796,19 +823,38 @@ const CandidateFormDialog: React.FC<Props> = ({
           </DialogContent>
         </Dialog>
 
+        {showSuccess && (
+          <VoucherSuccessDialog open={showSuccess} setOpen={setShowSuccess} />
+        )}
+
         {!viewOnly && (
           <DialogFooter className="w-full">
             <div className="flex justify-center gap-2 items-center w-full">
               {/* Left side — secondary actions */}
               <div>
                 {(mode === "view" || mode === "verify") && canEdit && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setIsEditMode(true)}
+                  <Hint
+                    label={
+                      candidate.is_candidate_verified &&
+                      !["super_admin"].includes(currentUserInfo.role)
+                        ? "Cannot edit details after issuing voucher, Please contact admin"
+                        : "Edit beneficiary details."
+                    }
                   >
-                    Edit Details
-                  </Button>
+                    <div>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => setIsEditMode(true)}
+                        disabled={
+                          candidate.is_candidate_verified &&
+                          !["super_admin"].includes(currentUserInfo.role)
+                        }
+                      >
+                        Edit Details
+                      </Button>
+                    </div>
+                  </Hint>
                 )}
 
                 {mode === "edit" && (

@@ -5,7 +5,14 @@ import type { UserItem } from "../types";
 export const usersApiSlice = rootApiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getAllUsers: builder.query<
-      ApiResponse<{ users: UserItem[]; total: number }>,
+      ApiResponse<{
+        users: UserItem[];
+        count: number;
+        total_store_agents: number;
+        total_registration_officers: number;
+        total_super_admins: number;
+        total_admins: number;
+      }>,
       {
         page?: number;
         page_size?: number;
@@ -16,15 +23,17 @@ export const usersApiSlice = rootApiSlice.injectEndpoints({
     >({
       query: (params) => {
         const {
-          page = -1,
+          page = 1,
           page_size = 20,
           search = "",
           sort_by = "created_at",
-          sort_order = "asc",
+          sort_order = "desc",
         } = params || {};
+
         const urlParams = new URLSearchParams();
-        urlParams.append("page", "-1");
+        urlParams.append("page", page.toString());
         urlParams.append("page_size", page_size.toString());
+
         if (search) urlParams.append("search", search);
         if (sort_by) urlParams.append("sort_by", sort_by);
         if (sort_order) urlParams.append("sort_order", sort_order);

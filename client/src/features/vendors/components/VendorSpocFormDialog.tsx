@@ -195,7 +195,27 @@ const VendorSpocFormDialog: React.FC<Props> = ({
           </div>
 
           {renderTextInput("full_name", "Full Name (of contact)")}
-          {renderTextInput("mobile_number", "Phone")}
+          <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-0">
+            <Label htmlFor={"mobile_number"}>{"Owner Mobile Number"}</Label>
+            <Input
+              id={"mobile_number"}
+              type={"tel"}
+              readOnly={viewOnly}
+              required
+              {...register("mobile_number", {
+                required: "Mobile number is required",
+                pattern: {
+                  value: /^\d{10}$/,
+                  message: "Mobile number must be 10 digits",
+                },
+              })}
+            />
+            {errors["mobile_number"] && (
+              <span className="text-sm text-red-500">
+                {errors["mobile_number"]?.message as string}
+              </span>
+            )}
+          </div>
 
           <div className="grid gap-cols-1 sm:grid-cols-[200px_1fr] gap-0 items-start">
             <div className="flex flex-col gap-2">

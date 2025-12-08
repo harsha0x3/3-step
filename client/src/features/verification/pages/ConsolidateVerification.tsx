@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import type {
   VerificationResult,
@@ -15,7 +15,10 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useConsolidateVerificationMutation } from "../store/verificationApiSlice";
+import {
+  useConsolidateVerificationMutation,
+  useLazyGetCandidateIssuanceDetailsQuery,
+} from "../store/verificationApiSlice";
 import CandidateFaceCapture from "../components/CandidateFaceCapture";
 import { Loader2Icon, XIcon } from "lucide-react";
 import Hint from "@/components/ui/hint";
@@ -33,6 +36,10 @@ const ConsolidateVerification: React.FC = () => {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [consolidateVerify, { isLoading: isVerifying }] =
     useConsolidateVerificationMutation();
+  const [
+    getIssuanceDetails,
+    { data: issuanceDetails, isFetching: isFetchingIssuanceDetails },
+  ] = useLazyGetCandidateIssuanceDetailsQuery();
   const navigate = useNavigate();
   const [verificationResult, setVerificationResult] =
     useState<VerificationResult | null>(null);
@@ -62,6 +69,16 @@ const ConsolidateVerification: React.FC = () => {
       formData.append("photo", photo);
 
       const res = await consolidateVerify(formData).unwrap();
+      console.log("ℹ️ℹ️ℹ️ℹ️RESPONSE", JSON.stringify(res));
+      console.log("RES KEYS", Object.keys(res));
+
+      if (res.data.is_already_issued) {
+        toast.info("Laptop has already been issued");
+        navigate(
+          `/store/beneficiary/${res.data.candidate.candidate_id}/issuance/success`
+        );
+        return;
+      }
       if (res.data.verification_status.is_all_verified) {
         navigate(
           `/store/beneficiary/${res.data.candidate.candidate_id}/verify/otp`
@@ -70,6 +87,7 @@ const ConsolidateVerification: React.FC = () => {
       setVerificationResult(res.data);
       toast.info(res.msg);
     } catch (err) {
+      console.log("EOOR IN FAC", err);
       const errMsg =
         err?.data?.detail?.msg ??
         err?.data?.detail ??
@@ -77,6 +95,11 @@ const ConsolidateVerification: React.FC = () => {
       toast.error(errMsg);
     }
   };
+
+  useEffect(() => {
+    if (verificationResult)
+      console.log("verificationResult", verificationResult);
+  }, [verificationResult]);
 
   return (
     <div className="container mx-auto py-6 px-4 sm:px-6 md:px-8 max-w-full md:max-w-2xl">

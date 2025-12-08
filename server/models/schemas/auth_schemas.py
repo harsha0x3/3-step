@@ -89,7 +89,7 @@ class AdminUpdateUserRequest(BaseModel):
 
 
 class PasswordResetRequestSchema(BaseModel):
-    email: EmailStr | None = None
+    email: str | None = None
     mobile_number: str | None = None
 
 

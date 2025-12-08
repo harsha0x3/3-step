@@ -219,14 +219,14 @@ def admin_get_all_users(db: Session, params: UsersSearchParams):
         sort_col = asc(sort_col) if params.sort_order == "asc" else desc(sort_col)
 
         # ---- Pagination ----
-        if params.page >= 1:
-            users = db.scalars(
-                stmt.order_by(sort_col)
-                .limit(params.page_size)
-                .offset((params.page - 1) * params.page_size)
-            ).all()
-        else:
-            users = db.scalars(stmt.order_by(sort_col)).all()
+        # if params.page >= 1:
+        #     users = db.scalars(
+        #         stmt.order_by(sort_col)
+        #         .limit(params.page_size)
+        #         .offset((params.page - 1) * params.page_size)
+        #     ).all()
+        # else:
+        users = db.scalars(stmt.order_by(sort_col)).all()
 
         result = [UserDetailOut.model_validate(u) for u in users]
 

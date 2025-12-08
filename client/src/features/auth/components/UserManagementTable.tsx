@@ -71,10 +71,10 @@ const UserManagementTable: React.FC<Props> = ({ users, onEdit }) => {
       header: "Mobile Number",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("email", {
-      header: "Email",
-      cell: (info) => info.getValue(),
-    }),
+    // columnHelper.accessor("email", {
+    //   header: "Email",
+    //   cell: (info) => info.getValue(),
+    // }),
     columnHelper.accessor("full_name", {
       header: "Full Name",
       cell: (info) => info.getValue(),

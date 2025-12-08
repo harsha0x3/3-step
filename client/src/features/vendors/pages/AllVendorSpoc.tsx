@@ -233,24 +233,27 @@ const AllVendorSpoc: React.FC = () => {
         </div>
 
         {/* Refresh */}
-        <Hint label="Refresh Vendor SPOCs data">
-          <Button
-            onClick={async () => {
-              try {
-                await refetch().unwrap();
-              } catch (err) {
-                const msg =
-                  err?.data?.detail?.msg ??
-                  err?.data?.detail ??
-                  "Failed to refresh vendor spocs";
-                toast.error(msg);
-              }
-            }}
-          >
-            <RefreshCcw className={`${isFetching ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-        </Hint>
+        <div className="flex gap-2">
+          <Hint label="Refresh Vendor SPOCs data">
+            <Button
+              onClick={async () => {
+                try {
+                  await refetch().unwrap();
+                } catch (err) {
+                  const msg =
+                    err?.data?.detail?.msg ??
+                    err?.data?.detail ??
+                    "Failed to refresh vendor spocs";
+                  toast.error(msg);
+                }
+              }}
+            >
+              <RefreshCcw className={`${isFetching ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </Hint>
+          <p>Total Vendor Contact Persons: {totalSpocs}</p>
+        </div>
       </div>
 
       {/* Table */}

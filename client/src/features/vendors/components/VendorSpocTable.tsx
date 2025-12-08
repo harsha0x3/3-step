@@ -136,10 +136,6 @@ const VendorSpocTable: React.FC<Props> = ({
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center">
-        <div />
-        <p>Total Vendor Contact Persons: {vendorSpocs?.length}</p>
-      </div>
       {selectedVendorSpoc && (
         <VendorSpocFormDialog
           vendorSpoc={selectedVendorSpoc}

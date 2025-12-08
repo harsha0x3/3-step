@@ -111,10 +111,6 @@ const VendorsTable: React.FC<Props> = ({ vendors, isLoading, error }) => {
 
   return (
     <div className="w-full">
-      <div className="flex justify-between">
-        <div />
-        <p>Total Vendors: {vendors.length}</p>
-      </div>
       {selectedVendor && (
         <VendorFormDialog
           vendor={selectedVendor}

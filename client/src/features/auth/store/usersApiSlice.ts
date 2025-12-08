@@ -1,9 +1,36 @@
 import { rootApiSlice } from "@/store/rootApiSlice";
+import type { ApiResponse } from "@/store/rootTypes";
+import type { UserItem } from "../types";
 
 export const usersApiSlice = rootApiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getAllUsers: builder.query({
-      query: () => "/users",
+    getAllUsers: builder.query<
+      ApiResponse<{ users: UserItem[]; total: number }>,
+      {
+        page?: number;
+        page_size?: number;
+        search?: string;
+        sort_by?: string;
+        sort_order?: "asc" | "desc";
+      } | void
+    >({
+      query: (params) => {
+        const {
+          page = -1,
+          page_size = 20,
+          search = "",
+          sort_by = "created_at",
+          sort_order = "asc",
+        } = params || {};
+        const urlParams = new URLSearchParams();
+        urlParams.append("page", "-1");
+        urlParams.append("page_size", page_size.toString());
+        if (search) urlParams.append("search", search);
+        if (sort_by) urlParams.append("sort_by", sort_by);
+        if (sort_order) urlParams.append("sort_order", sort_order);
+
+        return `/users?${urlParams.toString()}`;
+      },
       providesTags: ["Users"],
     }),
 

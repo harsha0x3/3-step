@@ -7,11 +7,22 @@ import { UserPlus } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
 
+const PAGE_SIZE = 20;
+
 const UserManagement: React.FC = () => {
-  const { data, isLoading } = useGetAllUsersQuery(undefined);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const currentUser = useSelector(selectAuth);
+
+  const { data, isLoading, isFetching } = useGetAllUsersQuery({
+    page,
+    page_size: PAGE_SIZE,
+    search,
+    sort_by: "created_at",
+    sort_order: "asc",
+  });
 
   if (currentUser.role !== "admin" && currentUser.role !== "super_admin") {
     return <div>Access Denied</div>;
@@ -32,6 +43,8 @@ const UserManagement: React.FC = () => {
   }
 
   const users = data?.data?.users || [];
+  const totalUsers = data?.data?.total || 0;
+  const totalPages = Math.ceil(totalUsers / PAGE_SIZE);
 
   return (
     <div className="p-6 space-y-4">
@@ -44,6 +57,27 @@ const UserManagement: React.FC = () => {
       </div>
 
       <UserManagementTable users={users} onEdit={handleEdit} />
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-4">
+          <Button
+            disabled={page === 1 || isFetching}
+            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+          >
+            Previous
+          </Button>
+          <span className="flex items-center gap-2">
+            Page {page} of {totalPages}
+          </span>
+          <Button
+            disabled={page === totalPages || isFetching}
+            onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+          >
+            Next
+          </Button>
+        </div>
+      )}
 
       <UserFormDialog
         user={selectedUser}

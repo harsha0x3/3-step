@@ -57,7 +57,9 @@ const PasswordResetRequest: React.FC = () => {
                   id="email"
                   type="text"
                   placeholder="your mobile"
-                  {...register("email", { required: "Email is required" })}
+                  {...register("email", {
+                    required: "Mobile Number is required",
+                  })}
                 />
                 {errors.email?.message && (
                   <span className="text-sm text-red-500">
@@ -67,7 +69,7 @@ const PasswordResetRequest: React.FC = () => {
               </div>
 
               <p className="text-sm text-gray-600">
-                We'll send a 6-digit code to your email address.
+                We'll send a 6-digit code to your mobile number.
               </p>
 
               <Button type="submit" className="w-full" disabled={isLoading}>

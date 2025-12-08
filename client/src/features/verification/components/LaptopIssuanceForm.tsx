@@ -156,7 +156,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
       const errDesc = err?.data?.detail?.msg
         ? err?.data?.detail?.err_stack
         : "";
-      toast.error(errMsg, { description: JSON.stringify(err) });
+      toast.error(errMsg);
     }
   };
 

@@ -84,6 +84,7 @@ const CandidateFormDialog: React.FC<Props> = ({
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [openConfirm, setOpenConfirm] = useState<boolean>(false);
   const navigate = useNavigate();
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const currentUserInfo = useSelector(selectAuth);
   const canEdit =
@@ -181,6 +182,7 @@ const CandidateFormDialog: React.FC<Props> = ({
         }).unwrap();
 
         toast.success("Voucher issued successfully!");
+        setShowSuccess(true);
         closeAndGoBack();
         return;
       }

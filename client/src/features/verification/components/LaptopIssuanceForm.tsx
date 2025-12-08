@@ -22,6 +22,8 @@ import {
 import EvidenceCaptures from "./EvidenceCaptures";
 import type { IssuanceDetailsItem } from "../types";
 import { useGetCandidateByIdQuery } from "@/features/candidates/store/candidatesApiSlice";
+import { useSelector } from "react-redux";
+import { selectAuth } from "@/features/auth/store/authSlice";
 // import SuccessDialog from "./SuccessDialog";
 
 interface LaptopIssuanceFormProps {
@@ -51,6 +53,8 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
   >(null);
   const [openConfirm, setOpenConfirm] = useState(false);
 
+  const currentUserInfo = useSelector(selectAuth);
+
   const {
     data: issuanceDetails,
     isLoading: isLoadingIssuanceDetails,
@@ -66,9 +70,13 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
 
   useEffect(() => {
     if (!isLoadingLatestLaptopIssuer && latestLaptopIssuer) {
-      setStoreEmployeeName(latestLaptopIssuer?.data?.store_employee_name ?? "");
+      setStoreEmployeeName(
+        latestLaptopIssuer?.data?.store_employee_name ??
+          currentUserInfo.full_name
+      );
       setStoreEmployeeMobile(
-        latestLaptopIssuer?.data?.store_employee_mobile ?? ""
+        latestLaptopIssuer?.data?.store_employee_mobile ??
+          currentUserInfo.mobile_number
       );
       setEmployeePhotoUrl(latestLaptopIssuer?.data?.store_employee_photo ?? "");
       setEmployeePhotoPreview(

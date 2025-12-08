@@ -23,7 +23,7 @@ class LoginRequest(BaseModel):
     email_or_mobile_number: EmailStr | str
     password: str
     mfa_code: str | None = None
-    captcha_token: str
+    captcha_token: str | None = None
 
 
 class Tokens(BaseModel):

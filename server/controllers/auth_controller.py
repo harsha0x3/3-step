@@ -77,14 +77,14 @@ def register_user(
 async def login_user(
     log_user: LoginRequest, db: Session, response: Response, request: Request
 ) -> UserDetailOut:
-    is_valid_captcha = await verify_turnstile_token(
-        log_user.captcha_token, request.client.host
-    )
-    if not is_valid_captcha:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Captcha verification failed",
-        )
+    # is_valid_captcha = await verify_turnstile_token(
+    #     log_user.captcha_token, request.client.host
+    # )
+    # if not is_valid_captcha:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail="Captcha verification failed",
+    #     )
     user = db.scalar(
         select(User).where(
             or_(

@@ -13,7 +13,8 @@ from models.schemas.auth_schemas import (
     UserDetailOut,
     UsersSearchParams,
 )
-from services.verification_service.email_service import send_password_reset_email
+from models.schemas.otp_schemas import SmsOtpPayload
+from services.verification_service.mobile_notification_service import send_login_sms_otp
 from datetime import datetime, timezone
 from utils.helpers import ensure_utc
 
@@ -287,9 +288,8 @@ async def request_password_reset(payload: PasswordResetRequestSchema, db: Sessio
         db.commit()
 
         # Send OTP via email
-        await send_password_reset_email(
-            email=user.email, full_name=user.full_name, otp=otp_value
-        )
+        sms_payload = SmsOtpPayload(otp=otp_value, mobile_number=user.mobile_number)
+        await send_login_sms_otp(payload=sms_payload)
 
         return {"msg": "Password reset code sent to your email"}
 

@@ -95,11 +95,14 @@ async def login_user(
     )
 
     if not user:
+        print("no user")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not exists.",
         )
     if not user.verify_password(log_user.password):
+        print("wrong pass")
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
         )

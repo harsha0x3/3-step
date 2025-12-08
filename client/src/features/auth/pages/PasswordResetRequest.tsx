@@ -55,8 +55,9 @@ const PasswordResetRequest: React.FC = () => {
                 <Label htmlFor="email">Email Address</Label>
                 <Input
                   id="email"
-                  type="email"
-                  placeholder="your@email.com"
+                  type="text"
+                  placeholder="your mobile"
+                  readOnly
                   {...register("email", { required: "Email is required" })}
                 />
                 {errors.email?.message && (

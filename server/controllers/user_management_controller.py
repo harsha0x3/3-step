@@ -1,7 +1,7 @@
 from typing import Any
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import select, or_, func, asc, desc
+from sqlalchemy import select, or_, func, asc, desc, case
 from models.users import User
 from models.password_reset_otps import PasswordResetOtp
 from models.schemas.auth_schemas import (
@@ -200,7 +200,19 @@ def admin_get_all_users(db: Session, params: UsersSearchParams):
 
         # ---- Count Query ----
         count_stmt = select(func.count(User.id))
-        total_count = db.scalar(count_stmt)
+        count_stats = db.query(
+            func.count(User.id).label("total_users"),
+            func.sum(case((User.role == "registration_officer", 1), else_=0)).label(
+                "total_registration_officers"
+            ),
+            func.sum(case((User.role == "admin", 1), else_=0)).label("total_admins"),
+            func.sum(case((User.role == "store_agent", 1), else_=0)).label(
+                "total_store_agents"
+            ),
+            func.sum(case((User.role == "super_admin", 1), else_=0)).label(
+                "total_super_admins"
+            ),
+        ).first()
 
         # ---- Filters ----
         if params.role and params.role != "null":
@@ -217,17 +229,17 @@ def admin_get_all_users(db: Session, params: UsersSearchParams):
 
         # ---- Sorting ----
         sort_col = getattr(User, params.sort_by)
-        sort_col = desc(sort_col)
+        sort_col = desc(sort_col) if params.sort_order == "desc" else asc(sort_col)
 
         # ---- Pagination ----
-        # if params.page >= 1:
-        #     users = db.scalars(
-        #         stmt.order_by(sort_col)
-        #         .limit(params.page_size)
-        #         .offset((params.page - 1) * params.page_size)
-        #     ).all()
-        # else:
-        users = db.scalars(stmt.order_by(sort_col)).all()
+        if params.page >= 1:
+            users = db.scalars(
+                stmt.order_by(sort_col)
+                .limit(params.page_size)
+                .offset((params.page - 1) * params.page_size)
+            ).all()
+        else:
+            users = db.scalars(stmt.order_by(sort_col)).all()
 
         result = [UserDetailOut.model_validate(u) for u in users]
 
@@ -235,8 +247,17 @@ def admin_get_all_users(db: Session, params: UsersSearchParams):
             "msg": "Users retrieved successfully",
             "data": {
                 "users": result,
-                "total_count": total_count,
-                "count": len(result),
+                "count": count_stats.total_users if count_stats else 0,
+                "total_store_agents": count_stats.total_store_agents
+                if count_stats
+                else 0,
+                "total_registration_officers": count_stats.total_registration_officers
+                if count_stats
+                else 0,
+                "total_super_admins": count_stats.total_super_admins
+                if count_stats
+                else 0,
+                "total_admins": count_stats.total_admins if count_stats else 0,
             },
         }
 

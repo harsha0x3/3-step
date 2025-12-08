@@ -60,7 +60,12 @@ async def get_all_stores(db: Session, params: StoreSearchParams):
         else:
             sort_col = desc(sort_col)
 
-        total_count = db.scalar(select(func.count()).select_from(query.subquery()))
+        stats_count = db.query(
+            func.count(Store.id).label("total_count"),
+            func.sum(Store.count).label("total_stock"),
+        ).first()
+
+        print("Stats count: ", stats_count)
 
         # ✅ PAGINATION
         if params.page >= 1:
@@ -124,7 +129,8 @@ async def get_all_stores(db: Session, params: StoreSearchParams):
         return {
             "stores": result,
             "cities": cities,
-            "total_count": total_count,
+            "total_count": stats_count.total_count if stats_count else 0,
+            "total_stock": int(stats_count.total_stock) if stats_count else 0,
         }
 
     except Exception as e:

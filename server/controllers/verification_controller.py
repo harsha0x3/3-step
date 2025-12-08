@@ -368,7 +368,33 @@ async def candidate_verification_consolidate(
         is_coupon_verified=True
     )
 
+    try:
+        issuanceDetails = db.scalar(
+            select(IssuedStatus).where(IssuedStatus.candidate_id == candidate.id)
+        )
+        if issuanceDetails and issuanceDetails.issued_status == "issued":
+            result = {
+                "verification_status": verification_status_in.model_dump(),
+                "candidate": {
+                    "candidate_id": candidate.id,
+                    "photo": candidate.photo,
+                    "full_name": candidate.full_name,
+                    "mobile_number": candidate.mobile_number,
+                },
+                "is_already_issued": True,
+                "failed_verifications": [],
+                "requires_consent": False,
+            }
+
+            return {
+                "msg": "Laptop has already been issued for beneficiary",
+                "data": result,
+            }
+    except Exception as e:
+        pass
+
     # Aadhaar verification
+
     if candidate.aadhar_number == payload.aadhar_number:
         verification_status_in.is_aadhar_verified = True
     else:
@@ -466,6 +492,7 @@ async def candidate_verification_consolidate(
             },
             "failed_verifications": verification_issues,
             "requires_consent": not verification_status_in.is_all_verified,
+            "is_already_issued": False,
         }
 
         if verification_status_in.is_all_verified:

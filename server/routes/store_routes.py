@@ -96,6 +96,7 @@ async def list_stores(
         "data": {
             "stores": result.get("stores", []),
             "count": result.get("total_count", 0),
+            "total_stock": result.get("total_stock"),
             "cities": result.get("cities", []),
         },
     }

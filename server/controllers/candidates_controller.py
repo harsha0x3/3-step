@@ -562,8 +562,25 @@ def update_candidate_details(
         store = candidate.store
 
         if payload.is_candidate_verified:
-            cand_out = CandidateOut.model_validate(candidate)
-            print(f"CAND OUT - {cand_out.model_dump()}")
+            cand_out = CandidateOut(
+                id=candidate.id,
+                full_name=candidate.full_name,
+                mobile_number=candidate.mobile_number,
+                dob=candidate.dob,
+                state=candidate.state,
+                city=candidate.city,
+                division=candidate.division,
+                store_id=candidate.store_id,
+                photo=candidate.photo if candidate.photo else None,
+                issued_status=candidate.issued_status.issued_status
+                if candidate.issued_status
+                else "not_issued",
+                vendor_spoc_id=candidate.vendor_spoc_id,
+                aadhar_number=candidate.aadhar_number,
+                aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
+                is_candidate_verified=candidate.is_candidate_verified,
+                coupon_code=candidate.coupon_code,
+            )
             is_cand_ready = is_candidate_ready_to_verify(cand_out.model_dump())
             if not is_cand_ready.get("status"):
                 db.rollback()

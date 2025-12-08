@@ -74,6 +74,11 @@ def get_current_user(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Inactive user",
                 )
+            if user.must_change_password:
+                raise HTTPException(
+                    status_code=403,
+                    detail="You must reset your password before using the system",
+                )
 
             # Create new tokens
             access, refresh = create_tokens(

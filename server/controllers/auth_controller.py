@@ -77,14 +77,21 @@ def register_user(
 async def login_user(
     log_user: LoginRequest, db: Session, response: Response, request: Request
 ) -> UserDetailOut:
-    # is_valid_captcha = await verify_turnstile_token(
-    #     log_user.captcha_token, request.client.host
-    # )
-    # if not is_valid_captcha:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail="Captcha verification failed",
-    #     )
+    if not log_user.captcha_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Captcha Not found",
+        )
+    client_host = (
+        request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    ) or (request.client.host if request.client else "unknown")
+
+    is_valid_captcha = await verify_turnstile_token(log_user.captcha_token, client_host)
+    if not is_valid_captcha:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Captcha verification failed",
+        )
     user = db.scalar(
         select(User).where(
             or_(
@@ -124,7 +131,8 @@ async def login_user(
         user_id=user.id, role=user.role, mfa_verified=mfa_verified
     )
     set_csrf_cookie(response)
-    set_jwt_cookies(response=response, access_token=access, refresh_token=refresh)
+    if not user.must_change_password:
+        set_jwt_cookies(response=response, access_token=access, refresh_token=refresh)
 
     return UserDetailOut.model_validate(user)
 

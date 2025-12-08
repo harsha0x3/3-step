@@ -147,6 +147,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
       setLaptopSerial("");
       onSuccess?.();
     } catch (err) {
+      console.log("ERR in issuance rec", err);
       const errMsg: string =
         err?.data?.detail?.msg ??
         err?.data?.detail ??

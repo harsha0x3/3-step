@@ -43,9 +43,12 @@ const LoginPage: React.FC = () => {
   });
   const navigate = useNavigate();
   const location = useLocation();
-  const fromLocation = location.state?.from;
 
   const [login, { isLoading: isLoggingIn }] = useLoginMutation();
+
+  const fromPath = location.state?.from?.pathname || "/dashboard";
+  const fromSearch = location.state?.from?.search || "";
+  const from = `${fromPath}${fromSearch}`;
 
   useEffect(() => {
     let widgetId: string | null = null;
@@ -103,11 +106,9 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      // console.log("IS AUTH", currentAuthState.isAuthenticated);
-      // console.log("FROM LOC", fromLocation);
-      navigate(fromLocation, { replace: true });
+      navigate(from, { replace: true });
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigate, from]);
 
   return (
     <div className="flex flex-col items-center h-screen gap-10">

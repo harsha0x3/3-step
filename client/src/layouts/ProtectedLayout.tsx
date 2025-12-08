@@ -14,41 +14,50 @@ const ProtectedLayout: React.FC = () => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isLoading = useSelector(selectIsLoading);
   const currentUserRole = useSelector(selectUserRole);
+
   const location = useLocation();
   const navigate = useNavigate();
 
+  const fromPath = location.state?.from?.pathname || "/dashboard";
+  const fromSearch = location.state?.from?.search || "";
+  const from = `${fromPath}${fromSearch}`;
+
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate("/login");
+      navigate("/login", { state: { from: location }, replace: true });
       console.log("NOT LOGGED IN");
       return;
     }
+    // else {
+    //   navigate(from, { replace: true });
+    //   return;
+    // }
 
-    switch (currentUserRole) {
-      case "admin":
-        navigate("/dashboard", { state: { from: location }, replace: true });
-        break;
-      case "super_admin":
-        navigate("/dashboard", { state: { from: location }, replace: true });
-        break;
+    //   switch (currentUserRole) {
+    //     case "admin":
+    //       navigate("/dashboard", { state: { from: location }, replace: true });
+    //       break;
+    //     case "super_admin":
+    //       navigate("/dashboard", { state: { from: location }, replace: true });
+    //       break;
 
-      case "store_agent":
-        navigate("/dashboard", {
-          state: { from: location },
-          replace: true,
-        });
-        break;
-      case "registration_officer":
-        navigate("/dashboard", {
-          state: { from: location },
-          replace: true,
-        });
-        break;
+    //     case "store_agent":
+    //       navigate("/dashboard", {
+    //         state: { from: location },
+    //         replace: true,
+    //       });
+    //       break;
+    //     case "registration_officer":
+    //       navigate("/dashboard", {
+    //         state: { from: location },
+    //         replace: true,
+    //       });
+    //       break;
 
-      default:
-        break;
-    }
-  }, [isAuthenticated, currentUserRole]);
+    //     default:
+    //       break;
+    //   }
+  }, [isAuthenticated]);
 
   if (isLoading) {
     return (

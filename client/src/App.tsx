@@ -1,9 +1,13 @@
 import "./index.css";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./features/auth/pages/LoginPage";
 import ProtectedLayout from "./layouts/ProtectedLayout";
-import { selectAuth, selectError } from "./features/auth/store/authSlice";
-import { useSelector } from "react-redux";
+import {
+  selectAuth,
+  selectError,
+  setError,
+} from "./features/auth/store/authSlice";
+import { useDispatch, useSelector } from "react-redux";
 import type { AuthState } from "./features/auth/types";
 import { Toaster } from "./components/ui/sonner";
 import { useGetCurrentUserQuery } from "./features/auth/store/authApiSlice";
@@ -14,6 +18,7 @@ import CandidateVoucherDistribution from "./features/candidates/components/Candi
 import { toast } from "sonner";
 
 function App() {
+  const dispatch = useDispatch();
   const IndexPage = lazy(() => import("./features/dashboards/pages/IndexPage"));
   const AllStores = lazy(
     () => import("./features/product_stores/pages/AllStores")
@@ -76,6 +81,14 @@ function App() {
     skip: currentAuthState.isAuthenticated,
   });
 
+  const isAuthenticated = currentAuthState.isAuthenticated;
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(setError(null));
+    }
+  }, [isAuthenticated, dispatch]);
+
   const loginError = useSelector(selectError);
 
   useEffect(() => {
@@ -108,6 +121,8 @@ function App() {
         />
 
         <Route path="/" element={<ProtectedLayout />}>
+          <Route index element={<Navigate to={`dashboard`} replace />} />
+
           <Route
             path="/"
             element={

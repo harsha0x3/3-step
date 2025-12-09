@@ -22,6 +22,7 @@ import VendorsCombobox from "./VendorsCombobox";
 import VendorSpocPhotoCapture from "./VendorSpocPhotoCapture";
 import { DialogClose } from "@radix-ui/react-dialog";
 import { flushSync } from "react-dom";
+import { compressImage } from "@/utils/imgCompressor";
 
 type Props = {
   vendorSpoc?: VendorSpocItem | null;
@@ -249,8 +250,13 @@ const VendorSpocFormDialog: React.FC<Props> = ({
                   id="candidateFileInput"
                   type="file"
                   accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] ?? null;
+                  onChange={async (e) => {
+                    let file = e.target.files?.[0] ?? null;
+                    if (!file) {
+                      return;
+                    }
+                    file = await compressImage(file, 1.5);
+
                     setPhoto(file);
                     if (file) setPhotoPreview(URL.createObjectURL(file));
                   }}

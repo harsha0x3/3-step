@@ -84,7 +84,7 @@ def get_current_user(
             access, refresh = create_tokens(
                 user_id=user.id, role=user.role, mfa_verified=user.mfa_enabled
             )
-            set_jwt_cookies(response, access, refresh)
+            set_jwt_cookies(response, access)
 
             # print("Access token refreshed successfully")
 
@@ -92,13 +92,13 @@ def get_current_user(
             # print(f"Refresh token invalid: {e}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid access and refresh token. Login again.",
+                detail="Invalid access. Login again.",
             )
 
     elif not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired access token.",
+            detail="Invalid or expired Session. Login again",
         )
 
     # Fetch the user (works for both valid or refreshed tokens)
@@ -126,7 +126,7 @@ def get_current_user(
         if not csrf_token or not csrf_header or csrf_token != csrf_header:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="CSRF token missing or invalid",
+                detail="Invalid Session. Please login again.",
             )
 
     return UserOut.model_validate(user)

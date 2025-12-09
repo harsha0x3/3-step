@@ -44,6 +44,7 @@ import { flushSync } from "react-dom";
 
 import type { StoreItemWithUser } from "@/features/product_stores/types";
 import VoucherSuccessDialog from "./VoucherSuccessDialog";
+import { compressImage } from "@/utils/imgCompressor";
 
 type Props = {
   store_id?: string;
@@ -242,8 +243,9 @@ const CandidateFormDialog: React.FC<Props> = ({
   ) => {
     e.preventDefault();
     e.stopPropagation();
-    const file = e.target.files?.[0];
+    let file = e.target.files?.[0];
     if (!file) return;
+    file = await compressImage(file, 1.5);
     const formData = new FormData();
     formData.append("photo", file);
 

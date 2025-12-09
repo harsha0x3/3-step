@@ -13,6 +13,9 @@ export default defineConfig({
       typescript: false,
     }),
   ],
+  optimizeDeps: {
+    include: ["browser-image-compression"],
+  },
 
   server: {
     port: 8070,

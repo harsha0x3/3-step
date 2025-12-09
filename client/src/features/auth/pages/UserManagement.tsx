@@ -183,7 +183,13 @@ const UserManagement: React.FC = () => {
       </div>
 
       {/* Table */}
-      <UserManagementTable users={users} onEdit={setSelectedUser} />
+      <UserManagementTable
+        users={users}
+        onEdit={(user) => {
+          setSelectedUser(user);
+          setDialogOpen(true);
+        }}
+      />
 
       {/* Pagination */}
       <Pagination>

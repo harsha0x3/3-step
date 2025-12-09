@@ -3,6 +3,7 @@ import React, { useCallback, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { compressImage } from "@/utils/imgCompressor";
 
 interface PhotoCaptureSectionProps {
   candidateId?: string;
@@ -48,7 +49,8 @@ const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
 
   const handleSubmit = async () => {
     if (!preview) return toast.error("Please capture a photo first");
-    const file = base64ToFile(preview, "captured_photo.jpg");
+    let file = base64ToFile(preview, "captured_photo.jpg");
+    file = await compressImage(file, 1.5);
     const formData = new FormData();
     formData.append("photo", file);
     try {

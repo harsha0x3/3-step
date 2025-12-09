@@ -24,6 +24,7 @@ import type { IssuanceDetailsItem } from "../types";
 import { useGetCandidateByIdQuery } from "@/features/candidates/store/candidatesApiSlice";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
+import { compressImage } from "@/utils/imgCompressor";
 // import SuccessDialog from "./SuccessDialog";
 
 interface LaptopIssuanceFormProps {
@@ -216,11 +217,13 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
                   id="laptop-evidence"
                   type="file"
                   accept="image/*"
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
                     console.log("INSIDE ON CHANGE");
-                    const file = e.target.files?.[0];
+                    let file = e.target.files?.[0];
                     if (file) {
                       console.log("FILE DOES EXIST");
+                      file = await compressImage(file, 1.5);
+
                       setEvidencePhoto(file);
                       setEvidencePhotoPreview(URL.createObjectURL(file));
                     }
@@ -277,9 +280,11 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
                   id="bill-reciept"
                   type="file"
                   accept="image/*"
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    const file = e.target.files?.[0];
+                  onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
+                    let file = e.target.files?.[0];
                     if (file) {
+                      file = await compressImage(file, 1.5);
+
                       setBillPhoto(file);
                       setBillPhotoPreview(URL.createObjectURL(file));
                     }
@@ -370,9 +375,13 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
                     id="store-employee"
                     type="file"
                     accept="image/*"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      const file = e.target.files?.[0];
+                    onChange={async (
+                      e: React.ChangeEvent<HTMLInputElement>
+                    ) => {
+                      let file = e.target.files?.[0];
                       if (file) {
+                        file = await compressImage(file, 1.5);
+
                         setEmployeePhoto(file);
                         setEmployeePhotoPreview(URL.createObjectURL(file));
                       }

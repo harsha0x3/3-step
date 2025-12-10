@@ -3,6 +3,7 @@ import {
   useGetCandidateIssuanceDetailsQuery,
   useGetLatestLaptopIssuerQuery,
   useIssueLaptopMutation,
+  useRequestUpgradeMutation,
 } from "../store/verificationApiSlice";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -20,11 +21,13 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import EvidenceCaptures from "./EvidenceCaptures";
-import type { IssuanceDetailsItem } from "../types";
 import { useGetCandidateByIdQuery } from "@/features/candidates/store/candidatesApiSlice";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
 import { compressImage } from "@/utils/imgCompressor";
+import type { UpgradeRequestPayload } from "../types";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertDescription } from "@/components/ui/alert";
 // import SuccessDialog from "./SuccessDialog";
 
 interface LaptopIssuanceFormProps {
@@ -37,6 +40,23 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
   onSuccess,
 }) => {
   // const [openSuccess, setOpenSuccess] = useState<boolean>(false);
+  const [upgradeFormData, setUpgradeFormData] = useState<UpgradeRequestPayload>(
+    {
+      upgrade_product_type: "",
+      upgrade_product_info: "",
+      upgrade_reason: "",
+      payment_difference: 0,
+    }
+  );
+  const [toUpgrade, setToUpgrade] = useState<boolean>(false);
+  const [showUpgradeCancel, setShowUpgradeCancel] = useState<boolean>(false);
+  const handleUpgradeFormChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setUpgradeFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
   const [laptopSerial, setLaptopSerial] = useState("");
   const [storeEmployeeName, setStoreEmployeeName] = useState("");
   const [storeEmployeeMobile, setStoreEmployeeMobile] = useState("");
@@ -68,6 +88,8 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
   const { data: candidateDetails } = useGetCandidateByIdQuery(candidateId, {
     skip: !candidateId,
   });
+
+  const [requestForUpgrade] = useRequestUpgradeMutation();
 
   useEffect(() => {
     if (!isLoadingLatestLaptopIssuer && latestLaptopIssuer) {
@@ -142,6 +164,27 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
       return;
     }
 
+    if (toUpgrade) {
+      try {
+        const upgradeRes = await requestForUpgrade({
+          candidateId: candidateId,
+          payload: upgradeFormData,
+        });
+        console.log("Upgrade Res");
+      } catch (err) {
+        const errMsg: string =
+          err?.data?.detail?.msg ??
+          err?.data?.detail ??
+          "Error Registring the Issuance of laptop.";
+
+        const errDesc = err?.data?.detail?.msg
+          ? err?.data?.detail?.err_stack
+          : "";
+        toast.error(errMsg);
+        return;
+      }
+    }
+
     try {
       await issueLaptop({ candidateId, formData }).unwrap();
       toast.success("Laptop issuance recorded successfully!");
@@ -181,11 +224,83 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
 
   return (
     <div>
+      <div className="flex justify-center pb-5 pt-0">
+        <Button
+          className="text-center"
+          onClick={() => {
+            if (!toUpgrade) setToUpgrade(true);
+            else {
+              setShowUpgradeCancel(true);
+            }
+          }}
+          variant={toUpgrade ? "destructive" : "default"}
+        >
+          {toUpgrade ? "Cancel Upgrade" : "Upgrade Product"}
+        </Button>
+      </div>
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* SERIAL NUMBER */}
+        {toUpgrade && (
+          <div className="border rounded px-4 py-6 space-y-6 relative">
+            <p className="absolute translate-x-55 -translate-y-10 text-lg font-bold bg-card rounded-md px-1">
+              Product Upgrade Form
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr]">
+              <Label className="font-medium">
+                Product Type<span className="text-red-600"> *</span>
+              </Label>
+              <Input
+                name="upgrade_product_type"
+                placeholder="Enter the type of upgrading product"
+                value={upgradeFormData.upgrade_product_type}
+                onChange={handleUpgradeFormChange}
+                className="w-74"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr]">
+              <Label className="font-medium">
+                Product Info (Specs)<span className="text-red-600"> *</span>
+              </Label>
+              <Textarea
+                name="upgrade_product_info"
+                placeholder="Enter the description or specs of upgrading product"
+                value={upgradeFormData.upgrade_product_info}
+                onChange={handleUpgradeFormChange}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr]">
+              <Label className="font-medium">
+                Reason for Upgrade<span className="text-red-600"> *</span>
+              </Label>
+              <Textarea
+                name="upgrade_reason"
+                placeholder="Enter the reason for upgrading product"
+                value={upgradeFormData.upgrade_reason}
+                onChange={handleUpgradeFormChange}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr]">
+              <Label className="font-medium">
+                Price Difference between new and old products
+                <span className="text-red-600"> *</span>
+              </Label>
+              <Input
+                name="payment_difference"
+                type="number"
+                placeholder="Enter the difference of the price between old and upgrading product"
+                value={upgradeFormData.payment_difference}
+                onChange={handleUpgradeFormChange}
+              />
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr]">
           <Label className="font-medium">
-            Laptop Serial Number<span className="text-red-600"> *</span>
+            {toUpgrade ? upgradeFormData.upgrade_product_type : "Laptop"} Serial
+            Number<span className="text-red-600"> *</span>
           </Label>
           <Input
             placeholder="Enter laptop serial number"
@@ -431,6 +546,34 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
       </form>
       {/* <SuccessDialog open={openSuccess} setOpen={setOpenSuccess} /> */}
 
+      <AlertDialog open={showUpgradeCancel} onOpenChange={setShowUpgradeCancel}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure to cancel upgrade?</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDescription></AlertDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No</AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setToUpgrade(false);
+                  setUpgradeFormData({
+                    upgrade_product_type: "",
+                    upgrade_product_info: "",
+                    upgrade_reason: "",
+                    payment_difference: 0,
+                  });
+                }}
+              >
+                Yes
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={openConfirm} onOpenChange={setOpenConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -441,8 +584,30 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
 
           <AlertDialogDescription asChild>
             <div className="space-y-2 text-card-foreground! bg-card">
+              {toUpgrade && (
+                <>
+                  <p>You have upgraded the product to the following</p>
+                  <div className="grid grid-cols-[150px_1fr]">
+                    <strong>Product Type</strong>{" "}
+                    {upgradeFormData.upgrade_product_type}
+                  </div>
+                  <div className="grid grid-cols-[150px_1fr]">
+                    <strong>Product Description</strong>{" "}
+                    {upgradeFormData.upgrade_product_info}
+                  </div>
+                  <div className="grid grid-cols-[150px_1fr]">
+                    <strong>Reason</strong> {upgradeFormData.upgrade_reason}
+                  </div>
+                  <div className="grid grid-cols-[150px_1fr]">
+                    <strong>Price Difference</strong>{" "}
+                    {upgradeFormData.payment_difference}
+                  </div>
+                </>
+              )}
               <p>
-                You are issuing a laptop with serial number{" "}
+                You are issuing a{" "}
+                {toUpgrade ? upgradeFormData.upgrade_product_type : "laptop"}{" "}
+                with serial number{" "}
                 <strong className="text-[14px]">"{laptopSerial}"</strong> to the
                 following beneficiary:
               </p>

@@ -17,7 +17,11 @@ import {
   MapPinCheck,
   UserIcon,
 } from "lucide-react";
-import type { IssuanceDetailsItem } from "../types";
+import type {
+  IssuanceDetailsItem,
+  IssuedStatusWithUpgrade,
+  UpgradeRequestItem,
+} from "../types";
 import { useGetCandidateIssuanceDetailsQuery } from "../store/verificationApiSlice";
 import { useGetCandidateVerificationStatusQuery } from "../store/verificationApiSlice";
 import clsx from "clsx";
@@ -27,7 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 interface IssuanceDetailProps {
   candidate: CandidateItemWithStore;
-  issuanceDetails?: IssuanceDetailsItem;
+  issuanceDetails?: IssuedStatusWithUpgrade;
 }
 
 const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
@@ -52,11 +56,23 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
 
   const candidateIssuanceDetails: IssuanceDetailsItem = useMemo(() => {
     if (issuanceDetails) {
-      return issuanceDetails;
+      return issuanceDetails.issuance_details;
     } else if (!isLoadingIssuanceDetails && issuanceDetailsData) {
-      return issuanceDetailsData.data;
+      return issuanceDetailsData.data.issuance_details;
     }
   }, [issuanceDetailsData, issuanceDetails, isLoadingIssuanceDetails]);
+
+  const candidateUpgradeDetails: UpgradeRequestItem = useMemo(() => {
+    if (issuanceDetails && issuanceDetails?.is_upgrade_request) {
+      return issuanceDetails.upgrade_request_details;
+    } else if (
+      !isLoadingIssuanceDetails &&
+      issuanceDetailsData &&
+      issuanceDetailsData?.data?.is_upgrade_request
+    ) {
+      return issuanceDetailsData.data.upgrade_request_details;
+    }
+  }, [issuanceDetails, issuanceDetailsData, isLoadingIssuanceDetails]);
 
   const StatusItem = ({
     label,
@@ -233,6 +249,33 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {candidateUpgradeDetails && (
+              <div className="px-4 py-3 border rounded relative mt-2">
+                <p className="font-semibold text-[13px] w-fit text-center abosolute -translate-y-6 bg-card rounded px-1">
+                  Product Upgrade Details
+                </p>
+                <div className="grid grid-cols-2 gap-2 text-muted-foreground">
+                  <p>
+                    <strong>Product Type</strong>{" "}
+                    {candidateUpgradeDetails.upgrade_product_type}
+                  </p>
+                  <p>
+                    <strong>Price Difference</strong>{" "}
+                    {candidateUpgradeDetails.payment_difference}
+                  </p>
+                  <div className="grid grid-cols-1">
+                    <strong>Product Description</strong>{" "}
+                    {candidateUpgradeDetails.upgrade_product_info}
+                  </div>
+                  <div className="grid grid-cols-1">
+                    <strong>Reason</strong>{" "}
+                    {candidateUpgradeDetails.upgrade_reason}
+                  </div>
+                  <div className="grid grid-cols-[150px_1fr]"></div>
                 </div>
               </div>
             )}

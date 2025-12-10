@@ -14,6 +14,7 @@ from controllers.verification_controller import (
     candidate_verification_consolidate,
     override_verification_process,
     get_latest_issuer_details,
+    request_upgrade,
 )
 from controllers.store_controller import get_store_of_user
 from utils.helpers import save_image_file
@@ -583,6 +584,37 @@ async def get_latest_issuer(
         )
 
 
+@router.post("/upgrade-request/{candidate_id}")
+async def request_for_upgrade(
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+    payload: Annotated[
+        v_schemas.UpgradeRequestPayload, "Payload to request for product"
+    ],
+    candidate_id: Annotated[str, Path(title="Candidate ID")],
+):
+    try:
+        if current_user.role not in ["super_admin", "store_agent"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access Denied"
+            )
+        store = get_store_of_user(db=db, user=current_user)
+        if not store:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Store not found for user"
+            )
+        result = request_upgrade(
+            candidate_id=candidate_id, db=db, store=store, payload=payload
+        )
+        return result
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error requesting for upgrade. Try again.",
+        )
+
+
 ### ---------------- NOT USING ------------- ###
 
 
@@ -670,80 +702,80 @@ async def verify_candidate_details(
         )
 
 
-@router.post("/find-candidate/face/{candidate_id}")
-async def verify_candidate_via_face(
-    db: Annotated[Session, Depends(get_db_conn)],
-    current_user: Annotated[UserOut, Depends(get_current_user)],
-    photo: Annotated[UploadFile, File(title="Candidate's Photo")],
-    candidate_id: Annotated[str, Path(title="Candidate ID")],
-):
-    try:
-        if (
-            current_user.role != "store_agent"
-            and current_user.role != "super_admin"
-            and current_user.role != "admin"
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Unauthorised to verify candidates",
-            )
+# @router.post("/find-candidate/face/{candidate_id}")
+# async def verify_candidate_via_face(
+#     db: Annotated[Session, Depends(get_db_conn)],
+#     current_user: Annotated[UserOut, Depends(get_current_user)],
+#     photo: Annotated[UploadFile, File(title="Candidate's Photo")],
+#     candidate_id: Annotated[str, Path(title="Candidate ID")],
+# ):
+#     try:
+#         if (
+#             current_user.role != "store_agent"
+#             and current_user.role != "super_admin"
+#             and current_user.role != "admin"
+#         ):
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_FORBIDDEN,
+#                 detail="Unauthorised to verify candidates",
+#             )
 
-        store = get_store_of_user(db=db, user=current_user)
+#         store = get_store_of_user(db=db, user=current_user)
 
-        uploaded_img_path = await save_image_file(
-            store_id=store.id, photo=photo, isVerify=True, candidate_id=candidate_id
-        )
-        verified_path = await facial_recognition(
-            img_path=uploaded_img_path, store_id=store.id
-        )
+#         uploaded_img_path = await save_image_file(
+#             store_id=store.id, photo=photo, isVerify=True, candidate_id=candidate_id
+#         )
+#         verified_path = await facial_recognition(
+#             img_path=uploaded_img_path, store_id=store.id
+#         )
 
-        candidate = get_candidate_by_photo_url(verified_path, db)
-        if candidate.store_id != store.id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Candidate is not allotted to this store. Please check the candidate allotted store properly.",
-            )
-        if candidate.id != candidate_id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Invalid candidate face. canidate face and ID entered before doesn't match",
-            )
+#         candidate = get_candidate_by_photo_url(verified_path, db)
+#         if candidate.store_id != store.id:
+#             raise HTTPException(
+#                 status_code=status.HTTP_400_BAD_REQUEST,
+#                 detail="Candidate is not allotted to this store. Please check the candidate allotted store properly.",
+#             )
+#         if candidate.id != candidate_id:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail="Invalid candidate face. canidate face and ID entered before doesn't match",
+#             )
 
-        verification_status = db.scalar(
-            select(VerificationStatus).where(
-                VerificationStatus.candidate_id == candidate.id
-            )
-        )
+#         verification_status = db.scalar(
+#             select(VerificationStatus).where(
+#                 VerificationStatus.candidate_id == candidate.id
+#             )
+#         )
 
-        if not verification_status:
-            verification_status = VerificationStatus(
-                candidate_id=candidate.id, is_facial_verified=True
-            )
-        else:
-            verification_status.is_facial_verified = True
+#         if not verification_status:
+#             verification_status = VerificationStatus(
+#                 candidate_id=candidate.id, is_facial_verified=True
+#             )
+#         else:
+#             verification_status.is_facial_verified = True
 
-        db.add(verification_status)
-        db.commit()
-        db.refresh(verification_status)
+#         db.add(verification_status)
+#         db.commit()
+#         db.refresh(verification_status)
 
-        return {
-            "msg": "Candidate Found.",
-            "data": {
-                "candidate": {
-                    "id": candidate.id,
-                    "full_name": candidate.full_name,
-                    "store": {
-                        "name": candidate.store.name if candidate.store else None
-                    },
-                },
-            },
-        }
+#         return {
+#             "msg": "Candidate Found.",
+#             "data": {
+#                 "candidate": {
+#                     "id": candidate.id,
+#                     "full_name": candidate.full_name,
+#                     "store": {
+#                         "name": candidate.store.name if candidate.store else None
+#                     },
+#                 },
+#             },
+#         }
 
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"msg": "Error verifying candidate", "err_stack": str(e)},
-        )
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail={"msg": "Error verifying candidate", "err_stack": str(e)},
+#         )
 
 
 @router.get("/coupon-details/{coupon_code}", status_code=status.HTTP_200_OK)

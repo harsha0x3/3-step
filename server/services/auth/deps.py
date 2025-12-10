@@ -57,11 +57,6 @@ def get_current_user(
         except Exception as e:
             pass
             # print(f"Invalid access token: {e}")
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Access token not found",
-        )
 
     # If no valid access token, try refresh
     if not payload and lt_refresh_token:

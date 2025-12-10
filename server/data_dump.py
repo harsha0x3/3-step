@@ -13,7 +13,7 @@ REQUIRED_COLS = ["E.No", "Name", "Mobile Number", "DOB", "State", "City"]
 def dump_candidate_data():
     print("IN")
     df = pd.read_csv(
-        r"C:\Users\harshavardhancg\Titan\hard_verify\server\notebooks\filtered_data.csv",
+        r"C:\Users\harshavardhancg\Titan\hard_verify\server\notebooks\final_no_e_no_dups2.csv",
         dtype={"Mobile Number": str},
     )
     # missing_cols = []
@@ -54,11 +54,13 @@ def dump_candidate_data():
             try:
                 add_new_candidate(payload=payload, db=db)
             except Exception as e:
+                with open("errs.txt", "a", encoding="utf-8") as f:
+                    f.write(f"{str(e)} - \n {str(row)} \n")
                 print(e)
                 continue
 
 
-# dump_candidate_data()
+dump_candidate_data()
 
 # payload = (
 #     candidate_schemas.NewCandidatePayload(
@@ -120,17 +122,17 @@ def sanitize_phone(number):
 #         print(e)
 #         continue
 
-for db in get_db_conn():
-    try:
-        print("started")
-        v_spocs = db.scalars(select(VendorSpoc)).all()
-        for v_spoc in v_spocs:
-            if v_spoc.mobile_number and len(v_spoc.mobile_number) > 10:
-                print("processing..")
-                v_spoc.mobile_number = remove_os(v_spoc.mobile_number)
-                v_spoc.mobile_number = sanitize_phone(v_spoc.mobile_number)
-                db.commit()
-        print("done")
-    except Exception as e:
-        print(e)
-        continue
+# for db in get_db_conn():
+#     try:
+#         print("started")
+#         v_spocs = db.scalars(select(VendorSpoc)).all()
+#         for v_spoc in v_spocs:
+#             if v_spoc.mobile_number and len(v_spoc.mobile_number) > 10:
+#                 print("processing..")
+#                 v_spoc.mobile_number = remove_os(v_spoc.mobile_number)
+#                 v_spoc.mobile_number = sanitize_phone(v_spoc.mobile_number)
+#                 db.commit()
+#         print("done")
+#     except Exception as e:
+#         print(e)
+#         continue

@@ -95,7 +95,7 @@ def set_jwt_cookies(
             minutes=JWTConfig.ACCESS_TOKEN_EXPIRE_MINUTES
         )
         refresh_exp = datetime.now(timezone.utc) + timedelta(
-            days=JWTConfig.REFRESH_TOKEN_EXPIRE_HOURS
+            hours=JWTConfig.REFRESH_TOKEN_EXPIRE_HOURS
         )
 
         response.set_cookie(
@@ -105,7 +105,7 @@ def set_jwt_cookies(
             secure=not is_insecure,
             samesite="strict",
             path="/",
-            expires=int(access_exp.timestamp()),
+            max_age=JWTConfig.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         )
         if refresh_token:
             response.set_cookie(
@@ -115,7 +115,7 @@ def set_jwt_cookies(
                 secure=not is_insecure,
                 samesite="strict",
                 path="/",
-                expires=int(refresh_exp.timestamp()),
+                max_age=JWTConfig.REFRESH_TOKEN_EXPIRE_HOURS * 60 * 60,
             )
     except Exception as e:
         print(f"Encountered Error in Setting cookies {str(e)}")

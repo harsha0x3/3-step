@@ -42,6 +42,10 @@ class Candidate(Base, BaseMixin):
         Boolean, default=False, nullable=True
     )
 
+    gift_card_code: Mapped[str] = mapped_column(String(30), nullable=True)
+
+    # ------Relationships ------
+
     store = relationship("Store", back_populates="candidates")
     verification_status = relationship(
         "VerificationStatus", back_populates="candidate", uselist=False
@@ -50,6 +54,7 @@ class Candidate(Base, BaseMixin):
         "IssuedStatus", back_populates="candidate", uselist=False
     )
     vendor_spoc = relationship("VendorSpoc", back_populates="candidates")
+    upgrade = relationship("UpgradeRequest", back_populates="candidate")
 
     def set_aadhar_number(self, plain_aadhar_number: str) -> None:
         self.aadhar_number = hash_aadhar_number(plain_aadhar_number)

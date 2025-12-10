@@ -16,6 +16,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { Loader } from "lucide-react";
 import CandidateVoucherDistribution from "./features/candidates/components/CandidateVoucherDistribution";
 import { toast } from "sonner";
+import UpgradeRequestPage from "./features/verification/pages/UpgradeRequestPage";
 
 function App() {
   const dispatch = useDispatch();
@@ -316,6 +317,21 @@ function App() {
                   }
                 >
                   <LaptopIssuancePage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/store/beneficiary/upgrade-request"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col justify-center items-center">
+                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
+                      <p>Loading beneficiaries verification page...</p>
+                    </div>
+                  }
+                >
+                  <UpgradeRequestPage />
                 </Suspense>
               }
             />

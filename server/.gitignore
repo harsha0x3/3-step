@@ -13,3 +13,4 @@ wheels/
 downloads/
 /downloads/
 **/downloads/
+*.txt

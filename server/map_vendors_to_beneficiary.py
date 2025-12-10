@@ -3,9 +3,7 @@ from db.connection import get_db_conn
 from sqlalchemy import select
 from models import Candidate, VendorSpoc
 
-csv_path = (
-    r"C:\Users\harshavardhancg\Titan\hard_verify\server\notebooks\filtered_data.csv"
-)
+csv_path = r"C:\Users\harshavardhancg\Titan\hard_verify\server\notebooks\final_no_e_no_dups2.csv"
 
 
 def read_data(path: str) -> pd.DataFrame:
@@ -40,7 +38,9 @@ def map_vendor_to_beneficiary():
                 if not candidate:
                     print(f"Candidate not found for row {idx} {row['E.No']}")
                     continue
-                candidate.vendor_spoc_id = vendor_spoc.id
+                if not candidate.vendor_spoc_id:
+                    candidate.vendor_spoc_id = vendor_spoc.id
+                    print("Data mapped")
                 db.add(candidate)
                 db.commit()
             except Exception as e:

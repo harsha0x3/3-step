@@ -8,3 +8,4 @@ from .coupons import Coupon
 from .vendors import Vendor, VendorSpoc
 from .password_reset_otps import PasswordResetOtp
 from .offline_upload_results import BulkUploadResult, BulkUploadError
+from .upgrade_reqests import UpgradeRequest

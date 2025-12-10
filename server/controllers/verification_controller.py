@@ -7,16 +7,16 @@ from services.verification_service.mobile_notification_service import (
 )
 
 from fastapi import HTTPException, status, UploadFile
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select
 from models.candidates import Candidate
-from models.verification_statuses import VerificationStatus
 from models.otps import Otp
 from datetime import datetime, timezone
 from models.schemas.otp_schemas import CandidateInOtp, AdminOTPPayload, SmsOtpPayload
 from models.schemas import verification_schemas as v_schemas
+from models.schemas.store_schemas import StoreItemOut
 from models.schemas.auth_schemas import UserOut
-from models.issued_statuses import IssuedStatus
+from models import IssuedStatus, VerificationStatus, UpgradeRequest
 from deepface import DeepFace
 import os
 from utils.helpers import (
@@ -27,6 +27,7 @@ from utils.helpers import (
 )
 from dotenv import load_dotenv
 from datetime import datetime, timezone
+from .candidates_controller import get_candidate_details_by_id
 
 load_dotenv()
 
@@ -316,17 +317,40 @@ async def verify_otp(candidate_id: str, otp_input: str, db: Session):
 
 def get_issuance_details(candidate_id: str, db: Session):
     try:
-        issued_status = db.scalar(
-            select(IssuedStatus).where(IssuedStatus.candidate_id == candidate_id)
+        # Fetch IssuedStatus
+        result = db.scalar(
+            select(IssuedStatus)
+            .options(joinedload(IssuedStatus.issued_user))
+            .where(IssuedStatus.candidate_id == candidate_id)
         )
 
-        if not issued_status:
+        if not result:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Issuance details doesn't exist. Beneficiary didn't recieve the laptop yet.",
+                detail="Issuance details doesn't exist. Beneficiary didn't receive the laptop yet.",
             )
 
-        return v_schemas.IsuedStatusItem.model_validate(issued_status)
+        # Fetch UpgradeRequest (optional)
+        upgrade = db.scalar(
+            select(UpgradeRequest).where(UpgradeRequest.candidate_id == candidate_id)
+        )
+
+        # Convert ORM → Pydantic
+        issuance_data = v_schemas.IsuedStatusItem.model_validate(result)
+
+        upgrade_data = None
+        is_upgrade = False
+
+        if upgrade:
+            upgrade_data = v_schemas.UpgradeRequestItem.model_validate(upgrade)
+            is_upgrade = True
+
+        # Final response
+        return v_schemas.IssuedStatusWithUpgrade(
+            issuance_details=issuance_data,
+            is_upgrade_request=is_upgrade,
+            upgrade_request_details=upgrade_data,
+        )
 
     except HTTPException:
         raise
@@ -597,7 +621,13 @@ async def upload_laptop_issuance_details(
         db.add(issued_status)
         db.commit()
         db.refresh(issued_status)
-        return issued_status
+
+        result = db.scalar(
+            select(IssuedStatus).outerjoin(
+                UpgradeRequest, IssuedStatus.candidate_id == UpgradeRequest.candidate_id
+            )
+        )
+        return result
 
     except HTTPException:
         raise
@@ -630,50 +660,75 @@ def get_latest_issuer_details(db: Session, store_user_id: str):
         )
 
 
-async def upload_laptop_issuance(
-    candidate_id: str, db: Session, laptop_serial: str, user_id: str
+def request_upgrade(
+    candidate_id: str,
+    db: Session,
+    store: StoreItemOut,
+    payload: v_schemas.UpgradeRequestPayload,
 ):
     try:
-        issued_status = db.scalar(
-            select(IssuedStatus).where(IssuedStatus.candidate_id == candidate_id)
+        candidate = get_candidate_details_by_id(candidate_id=candidate_id, db=db)
+        if candidate.issued_status == "issued":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary already recieved the product, cannot upgrade now.",
+            )
+
+        verification_status = db.scalar(
+            select(VerificationStatus).where(
+                VerificationStatus.candidate_id == candidate.id
+            )
         )
-        if issued_status and issued_status.issued_status == "issued":
+        if not verification_status:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Beneficiary Already recieved the product.",
+                detail="Beneficiary details are not yet verified in store.",
             )
-        if not issued_status:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="None of the evidence photos are uploaded. please upload the evidence photo and reciept",
-            )
-
-        if not issued_status.evidence_photo:
+        if not verification_status.is_coupon_verified:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Evidence photo of laptop issuance is not uploaded. Please upload and try again.",
+                detail="Beneficiary voucher code is not yet verified in store.",
             )
-        if not issued_status.bill_reciept:
+        if (
+            not any(
+                [
+                    verification_status.is_aadhar_verified,
+                    verification_status.is_facial_verified,
+                ]
+            )
+            and not verification_status.overriding_reason
+        ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Bill Reciept photo of laptop issuance is not uploaded. Please upload and try again.",
+                detail="Beneficiary's verfication process is failed, please re-verify and override.",
             )
 
-        issued_status.issued_status = "issued"
+        new_upgrade = db.scalar(
+            select(UpgradeRequest).where(UpgradeRequest.candidate_id == candidate_id)
+        )
+        if not new_upgrade:
+            new_upgrade = UpgradeRequest(
+                candidate_id=candidate_id, **payload.model_dump()
+            )
+            db.add(new_upgrade)
 
-        issued_status.issued_at = datetime.now(timezone.utc)
-        issued_status.issued_laptop_serial = laptop_serial
-        issued_status.issued_by = user_id
-        db.add(issued_status)
+        else:
+            for key, val in payload.model_dump().items():
+                if hasattr(new_upgrade, key):
+                    setattr(new_upgrade, key, val)
+
         db.commit()
-        db.refresh(issued_status)
-        return issued_status
+        return {
+            "msg": "Upgrade request has been raised.",
+            "data": v_schemas.UpgradeRequestItem.model_validate(new_upgrade),
+        }
+
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error updating issued status: {str(e)}",
+            detail="Error in requesting fot upgrade",
         )
 
 

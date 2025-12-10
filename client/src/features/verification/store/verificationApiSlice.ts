@@ -1,10 +1,12 @@
 import { rootApiSlice } from "@/store/rootApiSlice";
 import type { ApiResponse } from "@/store/rootTypes";
 import type {
-  IssuanceDetailsItem,
+  IssuedStatusWithUpgrade,
   LatestIssuer,
   OverrideRequest,
   OverrideResult,
+  UpgradeRequestItem,
+  UpgradeRequestPayload,
   VerificationResult,
   VerificationStatusItem,
 } from "../types";
@@ -92,7 +94,7 @@ export const verificationApi = rootApiSlice.injectEndpoints({
     }),
 
     getCandidateIssuanceDetails: builder.query<
-      ApiResponse<IssuanceDetailsItem>,
+      ApiResponse<IssuedStatusWithUpgrade>,
       string
     >({
       query: (candidateId) => ({
@@ -170,6 +172,17 @@ export const verificationApi = rootApiSlice.injectEndpoints({
       }),
       invalidatesTags: ["VerificationStatus"],
     }),
+    requestUpgrade: builder.mutation<
+      ApiResponse<UpgradeRequestItem>,
+      { candidateId: string; payload: UpgradeRequestPayload }
+    >({
+      query: ({ candidateId, payload }) => ({
+        url: `/verify/upgrade-request/${candidateId}`,
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["Issuance"],
+    }),
   }),
 });
 
@@ -193,4 +206,5 @@ export const {
   useSendOtpToAdminMutation,
   useGetLatestLaptopIssuerQuery,
   useLazyGetCandidateIssuanceDetailsQuery,
+  useRequestUpgradeMutation,
 } = verificationApi;

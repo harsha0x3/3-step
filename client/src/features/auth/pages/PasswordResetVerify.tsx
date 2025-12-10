@@ -142,7 +142,11 @@ const PasswordResetVerify: React.FC = () => {
               type="button"
               variant="ghost"
               className="w-full"
-              onClick={() => navigate("/password-reset/request")}
+              onClick={() =>
+                navigate("/password-reset/request", {
+                  state: { email: location.state?.email || "" },
+                })
+              }
             >
               Didn't receive code? Resend
             </Button>

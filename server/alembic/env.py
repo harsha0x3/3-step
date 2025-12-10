@@ -19,6 +19,7 @@ from models import (
     PasswordResetOtp,
     BulkUploadResult,
     BulkUploadError,
+    UpgradeRequest,
 )
 
 load_dotenv()

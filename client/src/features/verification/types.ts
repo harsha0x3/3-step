@@ -44,6 +44,27 @@ export interface IssuanceDetailsItem {
   issued_user?: UserItem;
 }
 
+export interface UpgradeRequestItem {
+  candidate_id: string;
+  upgrade_reason: string;
+  upgrade_product_type: string;
+  payment_difference: number;
+  upgrade_product_info: string;
+}
+
+export interface IssuedStatusWithUpgrade {
+  issuance_details: IssuanceDetailsItem;
+  is_upgrade_request: boolean;
+  upgrade_request_details?: UpgradeRequestItem | null;
+}
+
+export interface UpgradeRequestPayload {
+  upgrade_reason: string;
+  upgrade_product_type: string;
+  payment_difference: number;
+  upgrade_product_info: string;
+}
+
 export interface LatestIssuer {
   store_employee_name?: string | null;
   store_employee_mobile?: string | null;

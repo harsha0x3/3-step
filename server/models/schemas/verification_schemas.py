@@ -19,6 +19,22 @@ class IsuedStatusItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class UpgradeRequestItem(BaseModel):
+    candidate_id: str
+    upgrade_reason: str
+    upgrade_product_type: str
+    payment_difference: int
+    upgrade_product_info: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class IssuedStatusWithUpgrade(BaseModel):
+    issuance_details: IsuedStatusItem
+    is_upgrade_request: bool
+    upgrade_request_details: UpgradeRequestItem | None = None
+
+
 class LatestIssuer(BaseModel):
     store_employee_name: str | None = None
     store_employee_mobile: str | None = None
@@ -70,3 +86,10 @@ class ConsolidateVerificationResponse(BaseModel):
 
 class OverridingRequest(BaseModel):
     overriding_reason: str
+
+
+class UpgradeRequestPayload(BaseModel):
+    upgrade_reason: str
+    upgrade_product_type: str
+    payment_difference: int
+    upgrade_product_info: str

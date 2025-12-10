@@ -46,15 +46,16 @@ const VendorsCombobox: React.FC<VendorsComboboxProps> = ({
 
   const { data } = useGetAllVendorsQuery(
     {
-      page: -1,
+      page: 1,
       page_size: 15,
       sort_by: "created_at",
       sort_order: "asc",
       search_by: "vendor_name",
-      search_term: "",
+      search_term: searchTerm,
     },
     {
       skip: disabled,
+      refetchOnMountOrArgChange: true,
     }
   );
 

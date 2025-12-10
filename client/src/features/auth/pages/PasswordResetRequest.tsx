@@ -60,6 +60,7 @@ const PasswordResetRequest: React.FC = () => {
                   {...register("email", {
                     required: "Mobile Number is required",
                   })}
+                  readOnly
                 />
                 {errors.email?.message && (
                   <span className="text-sm text-red-500">

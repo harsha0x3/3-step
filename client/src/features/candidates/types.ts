@@ -42,6 +42,8 @@ export interface CandidateItemWithStore extends NewCandidatePayload {
   store_id?: string;
   is_candidate_verified: boolean;
 
+  gift_card_code?: string;
+
   store?: StoreItemWithUser | null | undefined;
   verified_by?: UserItem | null | undefined;
 }

@@ -15,6 +15,7 @@ import {
   X,
   CopyPlusIcon,
   WifiOff,
+  ArrowBigUpDashIcon,
 } from "lucide-react";
 import {
   Collapsible,
@@ -232,6 +233,12 @@ const Sidebar: React.FC = () => {
       label: "Laptop Distribution",
       icon: LaptopIcon,
       path: "/store/beneficiary",
+      roles: ["store_agent"],
+    },
+    {
+      label: "Upgrade Latop",
+      icon: ArrowBigUpDashIcon,
+      path: "/store/upgrade-request",
       roles: ["store_agent"],
     },
   ];

@@ -17,6 +17,7 @@ import { Loader } from "lucide-react";
 import CandidateVoucherDistribution from "./features/candidates/components/CandidateVoucherDistribution";
 import { toast } from "sonner";
 import UpgradeRequestPage from "./features/verification/pages/UpgradeRequestPage";
+import UpgradeSubmitPage from "./features/verification/pages/UpgradeSubmitPage";
 
 function App() {
   const dispatch = useDispatch();
@@ -321,7 +322,7 @@ function App() {
               }
             />
             <Route
-              path="/store/beneficiary/upgrade-request"
+              path="/store/upgrade-request"
               element={
                 <Suspense
                   fallback={
@@ -332,6 +333,21 @@ function App() {
                   }
                 >
                   <UpgradeRequestPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/store/upgrade/beneficiary/:candidateId"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col justify-center items-center">
+                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
+                      <p>Loading beneficiaries verification page...</p>
+                    </div>
+                  }
+                >
+                  <UpgradeSubmitPage />
                 </Suspense>
               }
             />

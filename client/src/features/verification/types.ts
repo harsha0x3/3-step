@@ -48,7 +48,7 @@ export interface UpgradeRequestItem {
   candidate_id: string;
   upgrade_reason: string;
   upgrade_product_type: string;
-  payment_difference: number;
+  cost_of_upgrade: number;
   upgrade_product_info: string;
 }
 
@@ -59,10 +59,13 @@ export interface IssuedStatusWithUpgrade {
 }
 
 export interface UpgradeRequestPayload {
-  upgrade_reason: string;
-  upgrade_product_type: string;
-  payment_difference: number;
+  cost_of_upgrade: number;
   upgrade_product_info: string;
+  new_laptop_serial?: string;
+  existing_laptop_serial: string;
+
+  upgrade_reason?: string;
+  upgrade_product_type?: string;
 }
 
 export interface LatestIssuer {
@@ -87,4 +90,9 @@ export interface VerificationStatusItem {
   updated_at: string;
   overriding_user?: string;
   overriding_reason?: string;
+}
+
+export interface RequestForUploadPayload {
+  coupon_code: string;
+  existing_laptop_serial: string;
 }

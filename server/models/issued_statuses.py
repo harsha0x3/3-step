@@ -1,5 +1,5 @@
 from db.base import Base
-from sqlalchemy import ForeignKey, String, DateTime, Text, Boolean
+from sqlalchemy import ForeignKey, String, DateTime, Text, Boolean, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
@@ -23,6 +23,9 @@ class IssuedStatus(Base):
     )
     issued_by: Mapped[str] = mapped_column(
         String(40), ForeignKey("users.id", onupdate="cascade"), nullable=True
+    )
+    is_requested_to_upgrade: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=text("false")
     )
     is_offline: Mapped[bool] = mapped_column(Boolean, default=False)
     store_employee_name: Mapped[str] = mapped_column(String(150), nullable=True)

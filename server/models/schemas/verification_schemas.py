@@ -14,6 +14,8 @@ class IsuedStatusItem(BaseModel):
     store_employee_mobile: str | None = None
     store_employee_photo: str | None = None
 
+    is_requested_to_upgrade: bool
+
     issued_user: UserOut | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -21,10 +23,12 @@ class IsuedStatusItem(BaseModel):
 
 class UpgradeRequestItem(BaseModel):
     candidate_id: str
-    upgrade_reason: str
-    upgrade_product_type: str
-    payment_difference: int
+    cost_of_upgrade: int
     upgrade_product_info: str
+    new_laptop_serial: str | None = None
+
+    upgrade_reason: str | None = None
+    upgrade_product_type: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -89,7 +93,15 @@ class OverridingRequest(BaseModel):
 
 
 class UpgradeRequestPayload(BaseModel):
-    upgrade_reason: str
-    upgrade_product_type: str
-    payment_difference: int
     upgrade_product_info: str
+    cost_of_upgrade: int
+    new_laptop_serial: str | None = None
+    existing_laptop_serial: str
+
+    upgrade_product_type: str | None = None
+    upgrade_reason: str | None = None
+
+
+class RequestForUploadPayload(BaseModel):
+    coupon_code: str
+    existing_laptop_serial: str

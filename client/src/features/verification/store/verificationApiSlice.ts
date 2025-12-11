@@ -5,11 +5,13 @@ import type {
   LatestIssuer,
   OverrideRequest,
   OverrideResult,
+  RequestForUploadPayload,
   UpgradeRequestItem,
   UpgradeRequestPayload,
   VerificationResult,
   VerificationStatusItem,
 } from "../types";
+import type { CandidateItemWithStore } from "@/features/candidates/types";
 export const verificationApi = rootApiSlice.injectEndpoints({
   endpoints: (builder) => ({
     verifyFace: builder.mutation<
@@ -183,6 +185,43 @@ export const verificationApi = rootApiSlice.injectEndpoints({
       }),
       invalidatesTags: ["Issuance"],
     }),
+
+    newRequestForUpgrade: builder.mutation<
+      ApiResponse<{
+        candidate: CandidateItemWithStore;
+        issuance_details: IssuedStatusWithUpgrade;
+      }>,
+      RequestForUploadPayload
+    >({
+      query: (payload) => ({
+        url: `/verify/upgrade-initiate`,
+        method: "POST",
+        body: payload,
+      }),
+    }),
+    confirmRequestForUpgrade: builder.mutation<
+      ApiResponse<{
+        candidate: CandidateItemWithStore;
+        issuance_details: IssuedStatusWithUpgrade;
+      }>,
+      RequestForUploadPayload
+    >({
+      query: (payload) => ({
+        url: `/verify/upgrade-confirm`,
+        method: "POST",
+        body: payload,
+      }),
+    }),
+    confirmUpgrade: builder.mutation<
+      ApiResponse<UpgradeRequestPayload>,
+      { candidateId: string; payload: UpgradeRequestPayload }
+    >({
+      query: ({ candidateId, payload }) => ({
+        url: `/verify/upgrade-product/${candidateId}`,
+        method: "POST",
+        body: payload,
+      }),
+    }),
   }),
 });
 
@@ -207,4 +246,7 @@ export const {
   useGetLatestLaptopIssuerQuery,
   useLazyGetCandidateIssuanceDetailsQuery,
   useRequestUpgradeMutation,
+  useNewRequestForUpgradeMutation,
+  useConfirmUpgradeMutation,
+  useConfirmRequestForUpgradeMutation,
 } = verificationApi;

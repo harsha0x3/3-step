@@ -1,10 +1,8 @@
 from controllers.candidates_controller import (
-    get_candidate_by_photo_url,
     get_candidate_by_id,
     get_candidate_details_by_coupon_code,
 )
 from controllers.verification_controller import (
-    facial_recognition,
     otp_resend,
     verify_otp,
     upload_laptop_issuance_details,
@@ -15,6 +13,9 @@ from controllers.verification_controller import (
     override_verification_process,
     get_latest_issuer_details,
     request_upgrade,
+    new_request_upgrade,
+    verify_for_upgrade,
+    confirm_upgrade,
 )
 from controllers.store_controller import get_store_of_user
 from utils.helpers import save_image_file
@@ -581,6 +582,81 @@ async def get_latest_issuer(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unexpected error while fetching latest issuer",
+        )
+
+
+@router.post("/upgrade-initiate")
+async def new_request_for_upgrade(
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+    payload: Annotated[
+        v_schemas.RequestForUploadPayload, "Payload to request for product"
+    ],
+):
+    try:
+        store = get_store_of_user(db=db, user=current_user)
+        return verify_for_upgrade(payload=payload, db=db, store=store)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error occured during initiating upgrade request.",
+        )
+
+
+@router.post("/upgrade-confirm")
+async def confirm_laptop_upgrade(
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+    payload: Annotated[
+        v_schemas.RequestForUploadPayload, "Payload to request for product"
+    ],
+):
+    try:
+        store = get_store_of_user(db=db, user=current_user)
+        return confirm_upgrade(payload=payload, db=db, store=store)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error occured during confirming upgrade request.",
+        )
+
+
+@router.post("/upgrade-product/{candidate_id}")
+async def upgrade_product(
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+    payload: Annotated[
+        v_schemas.UpgradeRequestPayload, "Payload to request for product"
+    ],
+    candidate_id: Annotated[str, Path(title="Candidate ID")],
+):
+    try:
+        if current_user.role not in ["super_admin", "store_agent"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access Denied"
+            )
+        store = get_store_of_user(db=db, user=current_user)
+        if not store:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Store not found for user"
+            )
+        result = new_request_upgrade(
+            candidate_id=candidate_id, db=db, store=store, payload=payload
+        )
+        return result
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error requesting for upgrade. Try again.",
         )
 
 

@@ -139,7 +139,7 @@ const ConsolidateVerification: React.FC = () => {
                   required: "Voucher Code is required field",
                 })}
                 className="w-full sm:w-72"
-                maxLength={8}
+                maxLength={16}
                 minLength={8}
               />
             </div>

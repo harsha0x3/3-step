@@ -60,7 +60,7 @@ def dump_candidate_data():
                 continue
 
 
-dump_candidate_data()
+# dump_candidate_data()
 
 # payload = (
 #     candidate_schemas.NewCandidatePayload(

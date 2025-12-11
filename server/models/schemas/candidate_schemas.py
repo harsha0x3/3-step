@@ -60,6 +60,8 @@ class CandidateItemWithStore(BaseModel):
     aadhar_number: str | None = None
     aadhar_photo: str | None = None
 
+    gift_card_code: str | None = None
+
     store_id: str | None = None
     is_candidate_verified: bool
 
@@ -93,6 +95,8 @@ class CandidateOut(BaseModel):
 
     store_id: str | None = None
     vendor_spoc_id: str | None = None
+
+    gift_card_code: str | None = None
 
     is_candidate_verified: bool
 

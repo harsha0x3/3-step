@@ -782,6 +782,10 @@ const CandidateFormDialog: React.FC<Props> = ({
                 <span className="text-lg font-bold">
                   {candidate?.coupon_code ?? "-"}
                 </span>
+                <span className="font-semibold">Gift Card Code</span>
+                <span className="text-lg font-bold">
+                  {candidate?.gift_card_code ?? "-"}
+                </span>
 
                 <span className="font-semibold">Aadhar Number</span>
                 <span>{watch("aadhar_number")}</span>

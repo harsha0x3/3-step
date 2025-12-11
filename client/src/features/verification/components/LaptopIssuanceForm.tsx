@@ -42,10 +42,13 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
   // const [openSuccess, setOpenSuccess] = useState<boolean>(false);
   const [upgradeFormData, setUpgradeFormData] = useState<UpgradeRequestPayload>(
     {
-      upgrade_product_type: "",
       upgrade_product_info: "",
+      new_laptop_serial: "",
+      existing_laptop_serial: "",
+      cost_of_upgrade: 0,
+
       upgrade_reason: "",
-      payment_difference: 0,
+      upgrade_product_type: "",
     }
   );
   const [toUpgrade, setToUpgrade] = useState<boolean>(false);
@@ -224,7 +227,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
 
   return (
     <div>
-      <div className="flex justify-center pb-5 pt-0">
+      {/* <div className="flex justify-center pb-5 pt-0">
         <Button
           className="text-center"
           onClick={() => {
@@ -237,7 +240,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
         >
           {toUpgrade ? "Cancel Upgrade" : "Upgrade Product"}
         </Button>
-      </div>
+      </div> */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* SERIAL NUMBER */}
         {toUpgrade && (
@@ -288,10 +291,10 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
                 <span className="text-red-600"> *</span>
               </Label>
               <Input
-                name="payment_difference"
+                name="cost_of_upgrade"
                 type="number"
                 placeholder="Enter the difference of the price between old and upgrading product"
-                value={upgradeFormData.payment_difference}
+                value={upgradeFormData.cost_of_upgrade}
                 onChange={handleUpgradeFormChange}
               />
             </div>
@@ -563,7 +566,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
                     upgrade_product_type: "",
                     upgrade_product_info: "",
                     upgrade_reason: "",
-                    payment_difference: 0,
+                    cost_of_upgrade: 0,
                   });
                 }}
               >
@@ -600,7 +603,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
                   </div>
                   <div className="grid grid-cols-[150px_1fr]">
                     <strong>Price Difference</strong>{" "}
-                    {upgradeFormData.payment_difference}
+                    {upgradeFormData.cost_of_upgrade}
                   </div>
                 </>
               )}

@@ -147,6 +147,7 @@ def get_candidate_by_id(candidate_id: str, db: Session):
             aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
             is_candidate_verified=candidate.is_candidate_verified,
             coupon_code=candidate.coupon_code,
+            gift_card_code=candidate.gift_card_code,
             store=StoreItemOut(
                 name=store.name,
                 id=store.id,
@@ -194,6 +195,7 @@ def get_candidate_details_by_id(candidate_id: str, db: Session):
             aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
             is_candidate_verified=candidate.is_candidate_verified,
             coupon_code=candidate.coupon_code,
+            gift_card_code=candidate.gift_card_code,
             store=StoreItemOut(
                 name=store.name,
                 id=store.id,
@@ -250,6 +252,7 @@ def get_candidate_details_by_coupon_code(coupon_code: str, db: Session):
             aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
             is_candidate_verified=candidate.is_candidate_verified,
             coupon_code=candidate.coupon_code,
+            gift_card_code=candidate.gift_card_code,
             verified_by=verified_by_user,
             store=StoreItemOut(
                 name=store.name,
@@ -303,6 +306,7 @@ def get_candidate_by_photo_url(photo_url, db: Session):
             aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
             is_candidate_verified=candidate.is_candidate_verified,
             coupon_code=candidate.coupon_code,
+            gift_card_code=candidate.gift_card_code,
             store=StoreItemOut(
                 name=store.name,
                 id=store.id,
@@ -410,6 +414,7 @@ def get_all_candidates(db: Session, params: CandidatesSearchParams):
                 is_candidate_verified=candidate.is_candidate_verified,
                 coupon_code=candidate.coupon_code,
                 verified_by=verified_by_user,
+                gift_card_code=candidate.gift_card_code,
                 store=StoreItemOut(
                     name=store.name,
                     id=store.id,
@@ -580,6 +585,7 @@ def update_candidate_details(
                 aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
                 is_candidate_verified=candidate.is_candidate_verified,
                 coupon_code=candidate.coupon_code,
+                gift_card_code=candidate.gift_card_code,
             )
             is_cand_ready = is_candidate_ready_to_verify(cand_out.model_dump())
             if not is_cand_ready.get("status"):
@@ -611,6 +617,7 @@ def update_candidate_details(
             aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
             is_candidate_verified=candidate.is_candidate_verified,
             coupon_code=candidate.coupon_code,
+            gift_card_code=candidate.gift_card_code,
             store=StoreItemOut(
                 name=store.name,
                 id=store.id,

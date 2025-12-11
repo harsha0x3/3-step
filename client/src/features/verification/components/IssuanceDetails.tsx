@@ -16,6 +16,8 @@ import {
   TicketCheck,
   MapPinCheck,
   UserIcon,
+  Laptop,
+  GiftIcon,
 } from "lucide-react";
 import type {
   IssuanceDetailsItem,
@@ -32,11 +34,13 @@ import { Textarea } from "@/components/ui/textarea";
 interface IssuanceDetailProps {
   candidate: CandidateItemWithStore;
   issuanceDetails?: IssuedStatusWithUpgrade;
+  isToConfirm?: boolean;
 }
 
 const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
   candidate,
   issuanceDetails,
+  isToConfirm = false,
 }) => {
   const baseUrl = import.meta.env.VITE_API_BASE_API_URL;
 
@@ -171,17 +175,22 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
               <div className="flex items-center gap-2">
                 <Ticket className="w-4 h-4" />
                 <span>
-                  <strong>Voucher:</strong> {candidate.coupon_code}
+                  <strong>Voucher:</strong>{" "}
+                  <span className="text-[15px] font-semibold text-black">
+                    {candidate.coupon_code}
+                  </span>
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
-                <TicketCheck className="w-4 h-4" />
-                <span>
-                  <strong>Voucher Issued By:</strong>{" "}
-                  {candidate.verified_by?.full_name}
-                </span>
-              </div>
+              {!isToConfirm && (
+                <div className="flex items-center gap-2">
+                  <TicketCheck className="w-4 h-4" />
+                  <span>
+                    <strong>Voucher Issued By:</strong>{" "}
+                    {candidate.verified_by?.full_name}
+                  </span>
+                </div>
+              )}
 
               <div className="flex items-center gap-2">
                 <Store className="w-4 h-4" />
@@ -189,69 +198,91 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
                   <strong>Store:</strong> {candidate.store?.name}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <MapPinCheck className="w-4 h-4" />
-                <span>
-                  <strong>Voucher Issued at:</strong>{" "}
-                  {candidate.verified_by?.location}
-                </span>
-              </div>
+              {!isToConfirm && (
+                <div className="flex items-center gap-2">
+                  <MapPinCheck className="w-4 h-4" />
+                  <span>
+                    <strong>Voucher Issued at:</strong>{" "}
+                    {candidate.verified_by?.location}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
                 <span>
                   <strong>Store Location:</strong> {candidate.store?.name}
                 </span>
               </div>
+              <div className="flex items-center gap-2">
+                <Laptop className="w-4 h-4" />
+                <span>
+                  <strong>Laptop Serial:</strong>{" "}
+                  <span className="text-[15px] font-semibold text-black">
+                    {candidateIssuanceDetails?.issued_laptop_serial ?? ""}
+                  </span>
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <GiftIcon className="w-4 h-4" />
+                <span>
+                  <strong>Gift Card Code:</strong>{" "}
+                  <span className="text-[15px] font-semibold text-black">
+                    {candidate?.gift_card_code ?? ""}
+                  </span>
+                </span>
+              </div>
             </div>
 
-            {!isFetchingVerificationStatus && verificationStatus && (
-              <div className="pb-2">
-                <div className="flex items-center w-full gap-3 py-2">
-                  <strong className="text-muted-foreground">
-                    Verification Status:
-                  </strong>
-                  <div className="flex justify-between items-center text-sm py-1">
-                    <StatusItem
-                      label="Voucher Code"
-                      status={verificationStatus.data.is_coupon_verified}
-                    />
-                    <span className="px-2">|</span>
-                    <StatusItem
-                      label="Aadhar Number"
-                      status={verificationStatus.data.is_aadhar_verified}
-                    />
-                    <span className="px-2">|</span>
+            {!isToConfirm &&
+              !isFetchingVerificationStatus &&
+              verificationStatus && (
+                <div className="pb-2">
+                  <div className="flex items-center w-full gap-3 py-2">
+                    <strong className="text-muted-foreground">
+                      Verification Status:
+                    </strong>
+                    <div className="flex justify-between items-center text-sm py-1">
+                      <StatusItem
+                        label="Voucher Code"
+                        status={verificationStatus.data.is_coupon_verified}
+                      />
+                      <span className="px-2">|</span>
+                      <StatusItem
+                        label="Aadhar Number"
+                        status={verificationStatus.data.is_aadhar_verified}
+                      />
+                      <span className="px-2">|</span>
 
-                    <StatusItem
-                      label="Facial Recognition"
-                      status={verificationStatus.data.is_facial_verified}
-                    />
+                      <StatusItem
+                        label="Facial Recognition"
+                        status={verificationStatus.data.is_facial_verified}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="grid sm:grid-cols-2 gap-4 items-start text-sm text-muted-foreground">
+                      {verificationStatus.data?.overriding_user && (
+                        <div className="flex items-center gap-2">
+                          <span>
+                            <strong>Verification Overridden By:</strong>{" "}
+                            {verificationStatus.data?.overriding_user}
+                          </span>
+                        </div>
+                      )}
+                      {verificationStatus.data?.overriding_reason && (
+                        <div className="flex flex-col items-start gap-1">
+                          <strong>Reason For Verification Overriding:</strong>{" "}
+                          <Textarea
+                            value={verificationStatus.data?.overriding_reason}
+                            readOnly
+                            className="border rounded-md w-64 overflow-auto"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <div className="grid sm:grid-cols-2 gap-4 items-start text-sm text-muted-foreground">
-                    {verificationStatus.data?.overriding_user && (
-                      <div className="flex items-center gap-2">
-                        <span>
-                          <strong>Verification Overridden By:</strong>{" "}
-                          {verificationStatus.data?.overriding_user}
-                        </span>
-                      </div>
-                    )}
-                    {verificationStatus.data?.overriding_reason && (
-                      <div className="flex flex-col items-start gap-1">
-                        <strong>Reason For Verification Overriding:</strong>{" "}
-                        <Textarea
-                          value={verificationStatus.data?.overriding_reason}
-                          readOnly
-                          className="border rounded-md w-64 overflow-auto"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+              )}
 
             {candidateUpgradeDetails && (
               <div className="px-4 py-3 border rounded relative mt-2">
@@ -259,49 +290,61 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
                   Product Upgrade Details
                 </p>
                 <div className="grid grid-cols-2 gap-2 text-muted-foreground">
-                  <p>
+                  {/* <p>
                     <strong>Product Type</strong>{" "}
                     {candidateUpgradeDetails.upgrade_product_type}
-                  </p>
+                  </p> */}
                   <p>
                     <strong>Price Difference</strong>{" "}
-                    {candidateUpgradeDetails.payment_difference}
+                    {candidateUpgradeDetails.cost_of_upgrade}
                   </p>
                   <div className="grid grid-cols-1">
-                    <strong>Product Description</strong>{" "}
+                    <strong>Upgrades details</strong>{" "}
                     {candidateUpgradeDetails.upgrade_product_info}
                   </div>
-                  <div className="grid grid-cols-1">
+                  {/* <div className="grid grid-cols-1">
                     <strong>Reason</strong>{" "}
                     {candidateUpgradeDetails.upgrade_reason}
-                  </div>
+                  </div> */}
                   <div className="grid grid-cols-[150px_1fr]"></div>
                 </div>
               </div>
             )}
 
             {/* PHOTOS */}
-            <div className="grid sm:grid-cols-2 gap-5 pt-7">
-              <PhotoCard
-                title="Beneficiary with Laptop"
-                icon={ImageIcon}
-                image={candidateIssuanceDetails.evidence_photo}
-                fallback="No Evidence Photo"
-              />
+            {!isToConfirm && (
+              <div className="grid sm:grid-cols-2 gap-5 pt-7">
+                <PhotoCard
+                  title="Beneficiary with Laptop"
+                  icon={ImageIcon}
+                  image={candidateIssuanceDetails.evidence_photo}
+                  fallback="No Evidence Photo"
+                />
 
-              <PhotoCard
-                title="Bill / Receipt"
-                icon={ReceiptText}
-                image={candidateIssuanceDetails.bill_reciept}
-                fallback="No Receipt Uploaded"
-              />
-              <PhotoCard
-                title="Laptop Issued By"
-                icon={UserIcon}
-                image={candidateIssuanceDetails.store_employee_photo}
-                fallback="No Receipt Uploaded"
-              />
-            </div>
+                <PhotoCard
+                  title="Bill / Receipt"
+                  icon={ReceiptText}
+                  image={candidateIssuanceDetails.bill_reciept}
+                  fallback="No Receipt Uploaded"
+                />
+                <PhotoCard
+                  title="Laptop Issued By"
+                  icon={UserIcon}
+                  image={candidateIssuanceDetails.store_employee_photo}
+                  fallback="No Receipt Uploaded"
+                />
+              </div>
+            )}
+            {isToConfirm && (
+              <div className="grid sm:grid-cols-2 gap-5 pt-7">
+                <PhotoCard
+                  title="Beneficiary Photo"
+                  icon={UserIcon}
+                  image={candidate.photo}
+                  fallback="Beneficary Photo"
+                />
+              </div>
+            )}
           </ScrollArea>
         </div>
       ) : (

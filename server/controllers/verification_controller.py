@@ -14,9 +14,10 @@ from models.otps import Otp
 from datetime import datetime, timezone
 from models.schemas.otp_schemas import CandidateInOtp, AdminOTPPayload, SmsOtpPayload
 from models.schemas import verification_schemas as v_schemas
+from models.schemas.candidate_schemas import CandidateItemWithStore
 from models.schemas.store_schemas import StoreItemOut
 from models.schemas.auth_schemas import UserOut
-from models import IssuedStatus, VerificationStatus, UpgradeRequest
+from models import IssuedStatus, VerificationStatus, UpgradeRequest, User
 from deepface import DeepFace
 import os
 from utils.helpers import (
@@ -668,6 +669,12 @@ def request_upgrade(
 ):
     try:
         candidate = get_candidate_details_by_id(candidate_id=candidate_id, db=db)
+        if candidate.store_id != store.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Benficairy is not alloted to your store.",
+            )
+
         if candidate.issued_status == "issued":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -729,6 +736,268 @@ def request_upgrade(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error in requesting fot upgrade",
+        )
+
+
+def new_request_upgrade(
+    candidate_id: str,
+    db: Session,
+    store: StoreItemOut,
+    payload: v_schemas.UpgradeRequestPayload,
+):
+    try:
+        candidate = db.get(Candidate, candidate_id)
+        if not candidate:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Beneficairy not found"
+            )
+        if candidate.store and candidate.store.id != store.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Benficairy is not alloted to your store.",
+            )
+
+        verification_status = db.scalar(
+            select(VerificationStatus).where(
+                VerificationStatus.candidate_id == candidate.id
+            )
+        )
+        if not verification_status:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary details are not yet verified in store.",
+            )
+        if not verification_status.is_coupon_verified:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary voucher code is not yet verified in store.",
+            )
+        if (
+            not any(
+                [
+                    verification_status.is_aadhar_verified,
+                    verification_status.is_facial_verified,
+                ]
+            )
+            and not verification_status.overriding_reason
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary's verfication process is failed, please re-verify.",
+            )
+
+        candidate_issued_status = candidate.issued_status
+
+        if not candidate_issued_status:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary did not recieve the laptop yet. Please issue the laptop and upgrade later.",
+            )
+
+        if candidate_issued_status.issued_status != "issued":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary did not recieve the product yet, cannot upgrade now. Issue the product first",
+            )
+
+        if (
+            candidate_issued_status.issued_laptop_serial
+            != payload.existing_laptop_serial
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Previous Laptop serial and given serial doesn't match.",
+            )
+
+        new_upgrade = db.scalar(
+            select(UpgradeRequest).where(UpgradeRequest.candidate_id == candidate_id)
+        )
+        if not new_upgrade:
+            new_upgrade = UpgradeRequest(
+                candidate_id=candidate_id,
+                cost_of_upgrade=payload.cost_of_upgrade,
+                upgrade_product_info=payload.upgrade_product_info,
+                new_laptop_serial=payload.new_laptop_serial,
+                upgrade_reason=payload.upgrade_reason,
+                upgrade_product_type=payload.upgrade_product_type,
+            )
+            db.add(new_upgrade)
+
+        else:
+            for key, val in payload.model_dump().items():
+                if hasattr(new_upgrade, key):
+                    setattr(new_upgrade, key, val)
+
+        if payload.new_laptop_serial:
+            new_upgrade.new_laptop_serial = payload.new_laptop_serial
+
+        db.commit()
+        db.refresh(new_upgrade)
+        return {"msg": "Upgrade request has been raised.", "data": ""}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(e)
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error in requesting fot upgrade",
+        )
+
+
+def verify_for_upgrade(
+    payload: v_schemas.RequestForUploadPayload, db: Session, store: StoreItemOut
+):
+    try:
+        candidate_data = db.scalar(
+            select(Candidate).where(Candidate.coupon_code == payload.coupon_code)
+        )
+
+        if not candidate_data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Invalid coupon code"
+            )
+
+        if candidate_data.store_id != store.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Beneficiary no assigned to this store",
+            )
+        if not candidate_data.verification_status or (
+            candidate_data.verification_status
+            and not candidate_data.verification_status.is_coupon_verified
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficary is not verified in the store yet.",
+            )
+        if not candidate_data.issued_status:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary did not recieve the laptop yet. Please issue the laptop and upgrade later.",
+            )
+
+        if (
+            candidate_data.issued_status.issued_laptop_serial
+            != payload.existing_laptop_serial
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Previous Laptop serial and given serial doesn't match.",
+            )
+
+        issuance_details = get_issuance_details(candidate_id=candidate_data.id, db=db)
+        verified_by = (
+            db.get(User, candidate_data.verified_by)
+            if candidate_data.verified_by
+            else None
+        )
+        verified_by_user = UserOut.model_validate(verified_by) if verified_by else None
+
+        return {
+            "msg": "Upgrade request is acceped.",
+            "data": {
+                "issuance_details": issuance_details,
+                "candidate": CandidateItemWithStore(
+                    id=candidate_data.id,
+                    full_name=candidate_data.full_name,
+                    mobile_number=candidate_data.mobile_number,
+                    dob=candidate_data.dob,
+                    state=candidate_data.state,
+                    city=candidate_data.city,
+                    division=candidate_data.division,
+                    store_id=candidate_data.store_id,
+                    photo=candidate_data.photo if candidate_data.photo else None,
+                    issued_status=candidate_data.issued_status.issued_status
+                    if candidate_data.issued_status
+                    else "not_issued",
+                    vendor_spoc_id=candidate_data.vendor_spoc_id,
+                    aadhar_number=candidate_data.aadhar_number,
+                    aadhar_photo=candidate_data.aadhar_photo
+                    if candidate_data.aadhar_photo
+                    else None,
+                    is_candidate_verified=candidate_data.is_candidate_verified,
+                    coupon_code=candidate_data.coupon_code,
+                    verified_by=verified_by_user,
+                    gift_card_code=candidate_data.gift_card_code,
+                    store=StoreItemOut(
+                        name=store.name,
+                        id=store.id,
+                        city=store.city,
+                        count=store.count,
+                        email=store.email,
+                        mobile_number=store.mobile_number,
+                    )
+                    if store
+                    else None,
+                ),
+            },
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error requesting for upgrade.",
+        )
+
+
+def confirm_upgrade(
+    db: Session,
+    payload: v_schemas.RequestForUploadPayload,
+    store: StoreItemOut,
+):
+    try:
+        candidate_data = db.scalar(
+            select(Candidate).where(Candidate.coupon_code == payload.coupon_code)
+        )
+
+        if not candidate_data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Invalid coupon code"
+            )
+
+        if candidate_data.store_id != store.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Beneficiary no assigned to this store",
+            )
+        if not candidate_data.verification_status or (
+            candidate_data.verification_status
+            and not candidate_data.verification_status.is_coupon_verified
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficary is not verified in the store yet.",
+            )
+        issued_status = db.scalar(
+            select(IssuedStatus).where(IssuedStatus.candidate_id == candidate_data.id)
+        )
+        if not issued_status:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary did not recieve the laptop yet. Please issue the laptop and upgrade later.",
+            )
+
+        if issued_status.issued_laptop_serial != payload.existing_laptop_serial:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Previous Laptop serial and given serial doesn't match.",
+            )
+
+        issued_status.is_requested_to_upgrade = True
+        db.commit()
+        db.refresh(issued_status)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error confirming upgrade request",
         )
 
 

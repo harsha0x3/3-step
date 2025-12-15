@@ -20,7 +20,8 @@ class Candidate(Base, BaseMixin):
     city: Mapped[str] = mapped_column(String(100), nullable=True)
     division: Mapped[str] = mapped_column(String(555), nullable=True)
 
-    aadhar_number = mapped_column(String(32), nullable=True)
+    aadhar_number_hashed = mapped_column(String(100), nullable=True)
+    aadhar_number_masked = mapped_column(String(36), nullable=True)
     aadhar_photo = mapped_column(Text, nullable=True)
 
     photo: Mapped[str] = mapped_column(Text, nullable=True)
@@ -57,13 +58,33 @@ class Candidate(Base, BaseMixin):
     upgrade = relationship("UpgradeRequest", back_populates="candidate")
 
     def set_aadhar_number(self, plain_aadhar_number: str) -> None:
-        self.aadhar_number = hash_aadhar_number(plain_aadhar_number)
+        self.aadhar_number_hashed = hash_aadhar_number(plain_aadhar_number)
 
     def verify_aadhar_number(self, plain_aadhar_number: str) -> bool:
         return verify_aadhar_number(
             plain_aadhar_number=plain_aadhar_number,
-            hashed_aadhar_number=self.aadhar_number,
+            hashed_aadhar_number=self.aadhar_number_hashed,
         )
+
+    def set_mask_aadhar_number(self, aadhar_number: str, visible_digits: int = 4):
+        if not aadhar_number:
+            return None
+
+        # Remove spaces or hyphens
+        clean = "".join(filter(str.isdigit, aadhar_number))
+
+        if len(clean) != 12:
+            raise ValueError("Invalid Aadhaar number length")
+
+        masked_part = "X" * (len(clean) - visible_digits)
+        visible_part = clean[-visible_digits:]
+
+        masked = masked_part + visible_part
+
+        # Format as XXXX-XXXX-1234
+        masked_out = "-".join(masked[i : i + 4] for i in range(0, 12, 4))
+        self.aadhar_number_masked = masked_out
+        return masked_out
 
     __table_args__ = (Index("ix_candidates_coupon", "coupon_code"),)
 

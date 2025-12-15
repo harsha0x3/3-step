@@ -64,7 +64,7 @@ async def get_all_users(
     search_by: Annotated[
         Literal["id", "email", "mobile_number", "full_name", "role"] | None,
         Query(title="Search users by"),
-    ] = None,
+    ] = "full_name",
     search_term: Annotated[str | None, Query(title="Search term")] = None,
     # ---- Sorting ----
     sort_by: Annotated[

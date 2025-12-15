@@ -21,6 +21,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 import { useConfirmUpgradeMutation } from "../store/verificationApiSlice";
 import { toast } from "sonner";
 
@@ -43,18 +51,25 @@ const UpgradeSubmitPage: React.FC = () => {
       to: "Upgrade Processor",
     },
   ];
+  const upgradeChoices: Record<string, string[]> = {
+    ram: ["8 GB", "16 GB", "32 GB", "Other"],
+    storage: ["512 GB SSD", "1 TB SSD", "Other"],
+    processor: ["i5", "i7", "Other"],
+  };
 
   const [selectedUpgrades, setSelectedUpgrades] = useState<
-    Record<string, { from: string; to: string }>
+    Record<string, string>
   >({});
+
+  const [customUpgrades, setCustomUpgrades] = useState<Record<string, string>>(
+    {}
+  );
+
   const [showConfirm, setShowConfirm] = useState<boolean>(false);
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
-  const updateUpgradeInfo = (
-    updates: Record<string, { from: string; to: string }>
-  ) => {
+  const updateUpgradeInfo = (updates: Record<string, string>) => {
     const lines = Object.entries(updates).map(
-      ([key, val]) =>
-        `Upgrading ${key.toUpperCase()} from ${val.from} to ${val.to}`
+      ([key, value]) => `Upgrading ${key.toUpperCase()} to ${value}`
     );
 
     setFormData((prev) => ({
@@ -115,7 +130,7 @@ const UpgradeSubmitPage: React.FC = () => {
       <Card className="w-full max-w-3xl shadow-md">
         <CardHeader>
           <CardTitle className="text-center text-2xl">
-            Upgrading Product Details
+            Upgrading Laptop Details
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -135,14 +150,18 @@ const UpgradeSubmitPage: React.FC = () => {
 
               <div className="space-y-2 mt-2">
                 {upgradeOptions.map((opt) => (
-                  <div key={opt.key} className="border p-3 rounded-md">
+                  <div
+                    key={opt.key}
+                    className="border p-3 rounded-md space-y-3"
+                  >
                     {/* Checkbox */}
                     <div className="flex gap-2 items-center">
                       <Input
+                        required
                         id={opt.key}
                         type="checkbox"
-                        checked={!!selectedUpgrades[opt.key]}
-                        className="w-7 h-7"
+                        checked={opt.key in selectedUpgrades}
+                        className="w-6 h-6"
                         onChange={(e) => {
                           const checked = e.target.checked;
 
@@ -155,57 +174,72 @@ const UpgradeSubmitPage: React.FC = () => {
                               return updated;
                             }
 
-                            updated[opt.key] = { from: "", to: "" };
-                            updateUpgradeInfo(updated);
+                            updated[opt.key] = "";
                             return updated;
                           });
                         }}
                       />
-                      <Label className="" htmlFor={opt.key}>
-                        {opt.label}
-                      </Label>
+                      <Label htmlFor={opt.key}>{opt.label}</Label>
                     </div>
 
-                    {/* Show input fields when checked */}
-                    {selectedUpgrades[opt.key] && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                        <div className="">
-                          <Label>From:</Label>
-                          <Input
-                            placeholder={opt.from}
-                            value={selectedUpgrades[opt.key].from}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setSelectedUpgrades((prev) => {
-                                const updated = {
-                                  ...prev,
-                                  [opt.key]: { ...prev[opt.key], from: val },
-                                };
-                                updateUpgradeInfo(updated);
+                    {/* Select dropdown */}
+                    {opt.key in selectedUpgrades && (
+                      <>
+                        <Select
+                          value={selectedUpgrades[opt.key]}
+                          onValueChange={(value) => {
+                            setSelectedUpgrades((prev) => {
+                              const updated = { ...prev, [opt.key]: value };
+                              updateUpgradeInfo(updated);
+                              return updated;
+                            });
+
+                            // Reset custom input if not Other
+                            if (value !== "Other") {
+                              setCustomUpgrades((prev) => {
+                                const updated = { ...prev };
+                                delete updated[opt.key];
                                 return updated;
                               });
-                            }}
-                          />
-                        </div>
-                        <div className="">
-                          <Label>To:</Label>
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue
+                              placeholder={`Select ${opt.label} upgrade`}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {upgradeChoices[opt.key].map((choice) => (
+                              <SelectItem key={choice} value={choice}>
+                                {choice}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {selectedUpgrades[opt.key] === "Other" && (
                           <Input
-                            placeholder={opt.to}
-                            value={selectedUpgrades[opt.key].to}
+                            required
+                            placeholder={`Enter custom ${opt.label} upgrade`}
+                            value={customUpgrades[opt.key] || ""}
                             onChange={(e) => {
                               const val = e.target.value;
-                              setSelectedUpgrades((prev) => {
-                                const updated = {
-                                  ...prev,
-                                  [opt.key]: { ...prev[opt.key], to: val },
-                                };
-                                updateUpgradeInfo(updated);
-                                return updated;
-                              });
+
+                              setCustomUpgrades((prev) => ({
+                                ...prev,
+                                [opt.key]: val,
+                              }));
+
+                              // Update final payload with custom value
+                              const updated = {
+                                ...selectedUpgrades,
+                                [opt.key]: val,
+                              };
+                              updateUpgradeInfo(updated);
                             }}
                           />
-                        </div>
-                      </div>
+                        )}
+                      </>
                     )}
                   </div>
                 ))}
@@ -214,7 +248,7 @@ const UpgradeSubmitPage: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr]">
               <Label className="font-medium">
-                Cost of Upgrade
+                Cost of Upgrade (INR)
                 <span className="text-red-600"> *</span>
               </Label>
               <Input

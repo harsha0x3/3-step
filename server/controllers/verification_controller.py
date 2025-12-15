@@ -8,7 +8,7 @@ from services.verification_service.mobile_notification_service import (
 
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from models.candidates import Candidate
 from models.otps import Otp
 from datetime import datetime, timezone
@@ -365,17 +365,24 @@ def get_issuance_details(candidate_id: str, db: Session):
 async def candidate_verification_consolidate(
     payload: v_schemas.ConsolidateVerificationRequest, db: Session, store_id: str
 ):
-    from .candidates_controller import get_candidate_details_by_coupon_code
-
     msg = []
     verification_issues = []
 
     try:
-        candidate = get_candidate_details_by_coupon_code(
-            coupon_code=payload.coupon_code, db=db
+        candidate = db.scalar(
+            select(Candidate).where(
+                or_(
+                    Candidate.coupon_code == payload.coupon_code,
+                    Candidate.gift_card_code == payload.coupon_code,
+                )
+            )
         )
     except Exception as e:
         raise
+    if not candidate:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Invalid Gift Card Code."
+        )
 
     if not candidate.is_candidate_verified:
         raise HTTPException(
@@ -420,7 +427,7 @@ async def candidate_verification_consolidate(
 
     # Aadhaar verification
 
-    if candidate.aadhar_number == payload.aadhar_number:
+    if candidate.verify_aadhar_number(payload.aadhar_number):
         verification_status_in.is_aadhar_verified = True
     else:
         verification_issues.append("aadhar")
@@ -668,7 +675,12 @@ def request_upgrade(
     payload: v_schemas.UpgradeRequestPayload,
 ):
     try:
-        candidate = get_candidate_details_by_id(candidate_id=candidate_id, db=db)
+        candidate = db.get(Candidate, candidate_id)
+
+        if not candidate:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Beneficicary not found"
+            )
         if candidate.store_id != store.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -913,7 +925,7 @@ def verify_for_upgrade(
                     if candidate_data.issued_status
                     else "not_issued",
                     vendor_spoc_id=candidate_data.vendor_spoc_id,
-                    aadhar_number=candidate_data.aadhar_number,
+                    aadhar_number=candidate_data.aadhar_number_masked,
                     aadhar_photo=candidate_data.aadhar_photo
                     if candidate_data.aadhar_photo
                     else None,

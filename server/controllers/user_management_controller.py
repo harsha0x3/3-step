@@ -197,6 +197,7 @@ def admin_delete_user(user_id: str, db: Session) -> dict[str, Any]:
 def admin_get_all_users(db: Session, params: UsersSearchParams):
     try:
         stmt = select(User)
+        print("PARAMAs", params.model_dump())
 
         # ---- Count Query ----
         count_stmt = select(func.count(User.id))

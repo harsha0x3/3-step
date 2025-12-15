@@ -79,6 +79,13 @@ const UserManagement: React.FC = () => {
     }
   );
 
+  useEffect(() => {
+    const t = setTimeout(() => {
+      updateSearchParams({ userSearchTerm: searchInput, userPage: 1 });
+    }, 500);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
   if (!["admin", "super_admin"].includes(currentUser.role)) {
     return <div>Access Denied</div>;
   }
@@ -104,12 +111,6 @@ const UserManagement: React.FC = () => {
   };
 
   // ✅ Debounced search sync
-  useEffect(() => {
-    const t = setTimeout(() => {
-      updateSearchParams({ userSearchTerm: searchInput, userPage: 1 });
-    }, 500);
-    return () => clearTimeout(t);
-  }, [searchInput]);
 
   return (
     <div className="flex flex-col gap-4 p-4">

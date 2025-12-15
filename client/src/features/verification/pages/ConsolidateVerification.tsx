@@ -79,11 +79,11 @@ const ConsolidateVerification: React.FC = () => {
         );
         return;
       }
-      if (res.data.verification_status.is_all_verified) {
-        navigate(
-          `/store/beneficiary/${res.data.candidate.candidate_id}/verify/otp`
-        );
-      }
+      // if (res.data.verification_status.is_all_verified) {
+      //   navigate(
+      //     `/store/beneficiary/${res.data.candidate.candidate_id}/verify/otp`
+      //   );
+      // }
       setVerificationResult(res.data);
       toast.info(res.msg);
     } catch (err) {
@@ -103,7 +103,7 @@ const ConsolidateVerification: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6 px-4 sm:px-6 md:px-8 max-w-full md:max-w-2xl">
-      {!!verificationResult && verificationResult?.requires_consent && (
+      {!!verificationResult && (
         <OverrideAlert
           data={verificationResult}
           defOpen={true}

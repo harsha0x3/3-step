@@ -149,13 +149,6 @@ const VendorFormDialog: React.FC<Props> = ({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 py-2">
           {renderTextInput("vendor_name", "Vendor Name")}
           {renderTextInput("vendor_owner", "Owner Name")}
-
-          {renderTextInput(
-            "mobile_number",
-            "Owner Mobile Number",
-            "text",
-            false
-          )}
           <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-0">
             <Label htmlFor={"mobile_number"}>{"Owner Mobile Number"}</Label>
             <Input

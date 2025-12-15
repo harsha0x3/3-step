@@ -34,7 +34,7 @@ export const usersApiSlice = rootApiSlice.injectEndpoints({
         urlParams.append("page", page.toString());
         urlParams.append("page_size", page_size.toString());
 
-        if (search) urlParams.append("search", search);
+        if (search) urlParams.append("search_term", search);
         if (sort_by) urlParams.append("sort_by", sort_by);
         if (sort_order) urlParams.append("sort_order", sort_order);
 

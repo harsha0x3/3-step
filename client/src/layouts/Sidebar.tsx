@@ -236,9 +236,9 @@ const Sidebar: React.FC = () => {
       roles: ["store_agent"],
     },
     {
-      label: "Upgrade Latop",
+      label: "Upgrade Laptop",
       icon: ArrowBigUpDashIcon,
-      path: "/store/upgrade-request",
+      path: "/store/upgrade",
       roles: ["store_agent"],
     },
   ];

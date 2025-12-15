@@ -54,6 +54,9 @@ def add_new_candidate(payload: NewCandidatePayload, db: Session):
                     division=payload.division,
                     coupon_code=generate_coupon(),
                 )
+                if payload.aadhar_number:
+                    new_candidate.set_aadhar_number(payload.aadhar_number)
+                    new_candidate.set_mask_aadhar_number(payload.aadhar_number)
 
                 db.add(new_candidate)
                 db.commit()
@@ -143,7 +146,7 @@ def get_candidate_by_id(candidate_id: str, db: Session):
             if candidate.issued_status
             else "not_issued",
             vendor_spoc_id=candidate.vendor_spoc_id,
-            aadhar_number=candidate.aadhar_number,
+            aadhar_number=candidate.aadhar_number_masked,
             aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
             is_candidate_verified=candidate.is_candidate_verified,
             coupon_code=candidate.coupon_code,
@@ -191,7 +194,7 @@ def get_candidate_details_by_id(candidate_id: str, db: Session):
             if candidate.issued_status
             else "not_issued",
             vendor_spoc_id=candidate.vendor_spoc_id,
-            aadhar_number=candidate.aadhar_number,
+            aadhar_number=candidate.aadhar_number_masked,
             aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
             is_candidate_verified=candidate.is_candidate_verified,
             coupon_code=candidate.coupon_code,
@@ -248,7 +251,7 @@ def get_candidate_details_by_coupon_code(coupon_code: str, db: Session):
             if candidate.issued_status
             else "not_issued",
             vendor_spoc_id=candidate.vendor_spoc_id,
-            aadhar_number=candidate.aadhar_number,
+            aadhar_number=candidate.aadhar_number_masked,
             aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
             is_candidate_verified=candidate.is_candidate_verified,
             coupon_code=candidate.coupon_code,
@@ -302,7 +305,7 @@ def get_candidate_by_photo_url(photo_url, db: Session):
             if candidate.issued_status
             else "not_issued",
             vendor_spoc_id=candidate.vendor_spoc_id,
-            aadhar_number=candidate.aadhar_number,
+            aadhar_number=candidate.aadhar_number_masked,
             aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
             is_candidate_verified=candidate.is_candidate_verified,
             coupon_code=candidate.coupon_code,
@@ -328,7 +331,9 @@ def get_candidate_by_photo_url(photo_url, db: Session):
         )
 
 
-def get_all_candidates(db: Session, params: CandidatesSearchParams):
+def get_all_candidates(
+    db: Session, params: CandidatesSearchParams, current_user: UserOut
+):
     try:
         stmt = select(Candidate)
         stmt_count = select(
@@ -409,12 +414,14 @@ def get_all_candidates(db: Session, params: CandidatesSearchParams):
                 if candidate.issued_status
                 else "not_issued",
                 vendor_spoc_id=candidate.vendor_spoc_id,
-                aadhar_number=candidate.aadhar_number,
+                aadhar_number=candidate.aadhar_number_masked,
                 aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
                 is_candidate_verified=candidate.is_candidate_verified,
                 coupon_code=candidate.coupon_code,
                 verified_by=verified_by_user,
-                gift_card_code=candidate.gift_card_code,
+                gift_card_code=candidate.gift_card_code
+                if current_user.role == "super_admin"
+                else None,
                 store=StoreItemOut(
                     name=store.name,
                     id=store.id,
@@ -559,8 +566,12 @@ def update_candidate_details(
     try:
         # Dynamically update provided fields
         for field, value in payload.model_dump(exclude_unset=True).items():
-            print(f"field - {field} , value - {value}")
-            if hasattr(candidate, field):
+            # print(f"field - {field} , value - {value}")
+            if payload.aadhar_number:
+                candidate.set_aadhar_number(payload.aadhar_number)
+                candidate.set_mask_aadhar_number(payload.aadhar_number)
+                continue
+            if hasattr(candidate, field) and field != "aadhar_number":
                 print(f"ATTR FOUND {field}")
                 setattr(candidate, field, value)
 
@@ -581,7 +592,7 @@ def update_candidate_details(
                 if candidate.issued_status
                 else "not_issued",
                 vendor_spoc_id=candidate.vendor_spoc_id,
-                aadhar_number=candidate.aadhar_number,
+                aadhar_number=candidate.aadhar_number_masked,
                 aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
                 is_candidate_verified=candidate.is_candidate_verified,
                 coupon_code=candidate.coupon_code,
@@ -613,7 +624,7 @@ def update_candidate_details(
             if candidate.issued_status
             else "not_issued",
             vendor_spoc_id=candidate.vendor_spoc_id,
-            aadhar_number=candidate.aadhar_number,
+            aadhar_number=candidate.aadhar_number_masked,
             aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
             is_candidate_verified=candidate.is_candidate_verified,
             coupon_code=candidate.coupon_code,
@@ -690,7 +701,12 @@ def update_candidate_details(
 def is_candidate_ready_to_verify(payload):
     null_vals = []
     for key, val in payload.items():
-        if not val and key not in ["issued_status", "dob"]:
+        if not val and key not in [
+            "issued_status",
+            "dob",
+            "coupon_code",
+            "gift_card_code",
+        ]:
             null_vals.append(key)
     if len(null_vals) > 0:
         return {

@@ -154,7 +154,7 @@ async def list_candidates(
         is_verified=is_verified,
         is_issued=is_issued,
     )
-    return get_all_candidates(db, params)
+    return get_all_candidates(db, params, current_user)
 
 
 # ✅ Get all candidates belonging to a specific store

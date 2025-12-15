@@ -24,6 +24,7 @@ const Header: React.FC = () => {
       if (currentUserInfo.role === "store_agent") return "Dashboard";
       else return "Overall Statistics";
     }
+    if (path.includes("/store/upgrade-")) return "Laptop Upgrade";
     if (path.includes("/stores")) return "Store Details";
     if (path.includes("/admin/users")) return "User Management";
     if (path.includes("/registration_officer/beneficiary/verify"))

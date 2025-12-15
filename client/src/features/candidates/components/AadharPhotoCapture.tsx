@@ -37,16 +37,18 @@ const AadharPhotoCapture = ({ candidateId }: { candidateId: string }) => {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Capture benificiary employee's Aadhar Photo</DialogTitle>
+          <DialogTitle>
+            Capture benificiary employee's Aadhaar Photo
+          </DialogTitle>
           <DialogDescription>
             Capture the photo with proper lighting and background since, this
-            picture is going to be used by system to fetch the aadhar number.
+            picture is going to be used by system to fetch the aadhaar number.
           </DialogDescription>
         </DialogHeader>
         <PhotoCaptureSection
           candidateId={candidateId}
           onSubmit={handleImageUpload}
-          title="Aadhar photo of Benificiary Employee"
+          title="Aadhaar photo of Benificiary Employee"
           successMessage="Photo uploaded successfully!"
           submitLabel="Submit Photo"
           onSuccess={() => setOpen(false)}

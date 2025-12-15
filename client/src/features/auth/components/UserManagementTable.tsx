@@ -143,7 +143,7 @@ const UserManagementTable: React.FC<Props> = ({ users, onEdit }) => {
           </Hint>
 
           <AlertDialog>
-            <Hint label="Reset User's password to default Password@123">
+            <Hint label="Reset User's password to default password@123">
               <AlertDialogTrigger asChild>
                 <Button variant="ghost" size="sm">
                   <RefreshCw className="w-4 h-4" />

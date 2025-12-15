@@ -195,9 +195,9 @@ const VendorSpocFormDialog: React.FC<Props> = ({
             />
           </div>
 
-          {renderTextInput("full_name", "Full Name (of contact)")}
-          <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-0">
-            <Label htmlFor={"mobile_number"}>{"Owner Mobile Number"}</Label>
+          {renderTextInput("full_name", "Full Name (of contact person)")}
+          <div className="grid grid-cols-1  sm:grid-cols-[200px_1fr] gap-0">
+            <Label htmlFor={"mobile_number"}>{"Mobile Number"}</Label>
             <Input
               id={"mobile_number"}
               type={"tel"}

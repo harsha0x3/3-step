@@ -36,12 +36,15 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
   const [facialReason, setFacialReason] = useState("");
   const [aadharOther, setAadharOther] = useState("");
   const [facialOther, setFacialOther] = useState("");
-  const [overridePayload, setOverridePayload] = useState<OverrideRequest>({
-    overriding_reason: "",
-  });
 
   const [overrideVerification, { isLoading }] =
     useOverrideVerificationMutation();
+
+  const handleProceed = () => {
+    if (data.verification_status.is_all_verified) {
+      navigate(`/store/beneficiary/${data.candidate.candidate_id}/verify/otp`);
+    }
+  };
 
   const OVERRIDE_REASONS = {
     aadhar: [
@@ -145,8 +148,14 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
     >
       <AlertDialogContent className="max-w-3xl max-h-[600px] overflow-auto">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-center text-red-600">
-            Verification Failed
+          <AlertDialogTitle
+            className={`text-center ${
+              data.requires_consent ? "text-red-600" : ""
+            }`}
+          >
+            {data.requires_consent
+              ? "Verification Failed"
+              : "Verification Status"}
           </AlertDialogTitle>
         </AlertDialogHeader>
 
@@ -202,15 +211,27 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
 
         {/* ACTIONS */}
         <AlertDialogFooter className="flex justify-between items-center mt-6">
-          <p className="text-sm text-gray-600">
-            Do you want to proceed without verification?
-          </p>
+          {data.verification_status.is_all_verified ? (
+            <>
+              <p className="text-sm text-gray-600">
+                All verifications passed. Proceed to OTP verification.
+              </p>
+              <Button onClick={handleProceed}>Proceed</Button>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-gray-600">
+                Do you want to proceed without verification?
+              </p>
 
-          {!showOverrideForm ? (
-            <Button onClick={() => setShowOverrideForm(true)}>Yes</Button>
-          ) : null}
+              {!showOverrideForm ? (
+                <Button onClick={() => setShowOverrideForm(true)}>Yes</Button>
+              ) : null}
 
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+            </>
+          )}
         </AlertDialogFooter>
 
         {/* OVERRIDE FORM */}

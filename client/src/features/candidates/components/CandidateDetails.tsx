@@ -52,10 +52,6 @@ const CandidateDetailsSection: React.FC<Props> = ({ candidate }) => {
           <Label>Store Name</Label>
           <Input value={candidate.store?.name ?? ""} readOnly />
         </div>
-        <div>
-          <Label>Store Address</Label>
-          <Input value={candidate.store?.address ?? ""} readOnly />
-        </div>
       </section>
 
       {/* Parent Info */}

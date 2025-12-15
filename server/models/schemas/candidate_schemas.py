@@ -13,6 +13,7 @@ class NewCandidatePayload(BaseModel):
     city: str
     state: str
     division: str
+    aadhar_number: str | None = None
 
     store_id: str | None = None
 

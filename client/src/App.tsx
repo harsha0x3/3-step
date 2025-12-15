@@ -322,7 +322,7 @@ function App() {
               }
             />
             <Route
-              path="/store/upgrade-request"
+              path="/store/upgrade"
               element={
                 <Suspense
                   fallback={

@@ -233,7 +233,7 @@ const OtpVerification = () => {
 
         <CardContent className="space-y-4">
           <p className="text-sm text-gray-600 text-center">
-            Please enter the OTP sent to beneficiary's mobile number:{" "}
+            Enter the OTP sent to beneficiary's mobile number:{" "}
             {candidateDetails?.data?.candidate?.mobile_number}
           </p>
 

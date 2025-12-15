@@ -285,7 +285,7 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
               )}
 
             {candidateUpgradeDetails && (
-              <div className="px-4 py-3 border rounded relative mt-2">
+              <div className="px-4 py-3 border rounded relative mt-4">
                 <p className="font-semibold text-[13px] w-fit text-center abosolute -translate-y-6 bg-card rounded px-1">
                   Product Upgrade Details
                 </p>

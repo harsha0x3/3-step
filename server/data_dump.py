@@ -107,32 +107,32 @@ def sanitize_phone(number):
     return number if len(number) == 10 else None
 
 
-# for db in get_db_conn():
-#     try:
-#         print("started")
-#         candidates = db.scalars(select(Candidate)).all()
-#         for candidate in candidates:
-#             if candidate.mobile_number and len(candidate.mobile_number) > 10:
-#                 print("processing..")
-#                 candidate.mobile_number = remove_os(candidate.mobile_number)
-#                 candidate.mobile_number = sanitize_phone(candidate.mobile_number)
-#                 db.commit()
-#         print("done")
-#     except Exception as e:
-#         print(e)
-#         continue
+for db in get_db_conn():
+    try:
+        print("started")
+        candidates = db.scalars(select(Candidate)).all()
+        for candidate in candidates:
+            if candidate.mobile_number and len(candidate.mobile_number) > 10:
+                print("processing..")
+                candidate.mobile_number = remove_os(candidate.mobile_number)
+                candidate.mobile_number = sanitize_phone(candidate.mobile_number)
+                db.commit()
+        print("done")
+    except Exception as e:
+        print(e)
+        continue
 
-# for db in get_db_conn():
-#     try:
-#         print("started")
-#         v_spocs = db.scalars(select(VendorSpoc)).all()
-#         for v_spoc in v_spocs:
-#             if v_spoc.mobile_number and len(v_spoc.mobile_number) > 10:
-#                 print("processing..")
-#                 v_spoc.mobile_number = remove_os(v_spoc.mobile_number)
-#                 v_spoc.mobile_number = sanitize_phone(v_spoc.mobile_number)
-#                 db.commit()
-#         print("done")
-#     except Exception as e:
-#         print(e)
-#         continue
+for db in get_db_conn():
+    try:
+        print("started")
+        v_spocs = db.scalars(select(VendorSpoc)).all()
+        for v_spoc in v_spocs:
+            if v_spoc.mobile_number and len(v_spoc.mobile_number) > 10:
+                print("processing..")
+                v_spoc.mobile_number = remove_os(v_spoc.mobile_number)
+                v_spoc.mobile_number = sanitize_phone(v_spoc.mobile_number)
+                db.commit()
+        print("done")
+    except Exception as e:
+        print(e)
+        continue

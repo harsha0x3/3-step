@@ -130,6 +130,7 @@ const StoreFormDialog: React.FC<Props> = ({
               {...register("id", {
                 required: "Store Code is required",
               })}
+              required
             />
             {errors.id && (
               <span className="text-sm text-red-500">{errors.id.message}</span>
@@ -143,6 +144,7 @@ const StoreFormDialog: React.FC<Props> = ({
               {...register("city", {
                 required: "City name is required",
               })}
+              required
             />
             {errors.city && (
               <span className="text-sm text-red-500">
@@ -158,6 +160,7 @@ const StoreFormDialog: React.FC<Props> = ({
               {...register("name", {
                 required: "Store name is required",
               })}
+              required
             />
             {errors.name && (
               <span className="text-sm text-red-500">
@@ -168,7 +171,11 @@ const StoreFormDialog: React.FC<Props> = ({
           {/* Count */}
           <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-3">
             <Label htmlFor="count">Total Stock</Label>
-            <Input id="count" {...register("count", { required: true })} />
+            <Input
+              id="count"
+              {...register("count", { required: true })}
+              required
+            />
             {errors.count && (
               <span className="text-sm text-red-500">
                 {errors.count.message}
@@ -186,7 +193,7 @@ const StoreFormDialog: React.FC<Props> = ({
             )}
           </div> */}
           {/* Store Mobile_number */}
-          <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-3">
+          {/* <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-3">
             <Label htmlFor="address">Mobile Number</Label>
             <Input
               id="mobile_number"
@@ -204,7 +211,7 @@ const StoreFormDialog: React.FC<Props> = ({
                 {errors.mobile_number.message}
               </span>
             )}
-          </div>
+          </div> */}
           <DialogFooter className="pt-4">
             <div className="flex justify-end gap-2">
               <DialogClose asChild>

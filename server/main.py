@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
+from collections.abc import Callable
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from routes import (
@@ -32,12 +33,29 @@ app = FastAPI(lifespan=lifespan, root_path="/hard_verify/api/v1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "*",
+        "localhost:8000",
+        "localhost:8070",
+        "https://mdl.titan.in",
+        "https://www.mdl.titan.in",
     ],
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True,
 )
+
+
+@app.middleware("http")
+async def remove_server_header(
+    request: Request, call_next: Callable[[Request], Response]
+) -> Response:
+    response = await call_next(request)
+    # Remove the server header safely
+    if "Server" in response.headers:
+        del response.headers["Server"]
+    if "server" in response.headers:
+        del response.headers["server"]
+    return response
+
 
 app.mount("/uploads", StaticFiles(directory=BASE_UPLOAD_DIR), name="uploads")
 

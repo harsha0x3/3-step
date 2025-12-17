@@ -31,6 +31,7 @@ import {
 
 import { useConfirmUpgradeMutation } from "../store/verificationApiSlice";
 import { toast } from "sonner";
+import { Loader2, PlusIcon } from "lucide-react";
 
 const UpgradeSubmitPage: React.FC = () => {
   const { candidateId } = useParams<{ candidateId: string }>();
@@ -64,19 +65,10 @@ const UpgradeSubmitPage: React.FC = () => {
   const [customUpgrades, setCustomUpgrades] = useState<Record<string, string>>(
     {}
   );
+  const [otherUpgrades, setOtherUpgrades] = useState<string[]>([]);
 
   const [showConfirm, setShowConfirm] = useState<boolean>(false);
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
-  const updateUpgradeInfo = (updates: Record<string, string>) => {
-    const lines = Object.entries(updates).map(
-      ([key, value]) => `Upgrading ${key.toUpperCase()} to ${value}`
-    );
-
-    setFormData((prev) => ({
-      ...prev,
-      upgrade_product_info: lines.join("\n"),
-    }));
-  };
 
   const [formData, setFormData] = useState<UpgradeRequestPayload>({
     upgrade_product_info: "",
@@ -87,6 +79,24 @@ const UpgradeSubmitPage: React.FC = () => {
     upgrade_reason: "",
     upgrade_product_type: "",
   });
+  const updateUpgradeInfo = (
+    updates: Record<string, string>,
+    others: string[] = otherUpgrades
+  ) => {
+    const standardLines = Object.entries(updates).map(
+      ([key, value]) => `Upgrading ${key.toUpperCase()} to ${value}`
+    );
+
+    const otherLines = others
+      .filter((o) => o.trim() !== "")
+      .map((o) => `Other upgrade: ${o}`);
+
+    setFormData((prev) => ({
+      ...prev,
+      upgrade_product_info: [...standardLines, ...otherLines].join("\n"),
+    }));
+  };
+
   const [confirmUpgrade, { isLoading: isConfirming }] =
     useConfirmUpgradeMutation();
 
@@ -98,17 +108,31 @@ const UpgradeSubmitPage: React.FC = () => {
       }));
     }
   }, [location]);
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "cost_of_upgrade" ? Number(value) : value,
+    }));
   };
 
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      console.log(formData);
+      // console.log(formData);
+      const hasUpgrades =
+        Object.keys(selectedUpgrades).length > 0 ||
+        otherUpgrades.some((o) => o.trim() !== "");
+
+      if (!hasUpgrades) {
+        toast.error("Please select at least one upgrade");
+        return;
+      }
+
       await confirmUpgrade({
         candidateId: candidateId,
         payload: formData,
@@ -126,14 +150,14 @@ const UpgradeSubmitPage: React.FC = () => {
   };
 
   return (
-    <div className="flex justify-center py-10 px-4">
-      <Card className="w-full max-w-3xl shadow-md">
-        <CardHeader>
+    <div className="flex justify-center py-5 px-4">
+      <Card className="w-full max-w-3xl shadow-md sm:h-[520px] overflow-hidden flex flex-col gap-2 pb-3">
+        <CardHeader className="mb-2">
           <CardTitle className="text-center text-2xl">
             Upgrading Laptop Details
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 overflow-auto">
           <form className="space-y-3">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-[120px_1fr]">
               <Label>Laptop Serial</Label>
@@ -243,6 +267,51 @@ const UpgradeSubmitPage: React.FC = () => {
                     )}
                   </div>
                 ))}
+                {/* === Other Upgrades Section === */}
+                <div className="border rounded-md p-3 space-y-3">
+                  <Label className="font-medium">Other Upgrades</Label>
+
+                  {otherUpgrades.map((value, index) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      <Input
+                        placeholder="Enter other upgrade (e.g. Wi-Fi card, Battery, Keyboard)"
+                        value={value}
+                        onChange={(e) => {
+                          const updated = [...otherUpgrades];
+                          updated[index] = e.target.value;
+                          setOtherUpgrades(updated);
+                          updateUpgradeInfo(selectedUpgrades, updated);
+                        }}
+                      />
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const updated = otherUpgrades.filter(
+                            (_, i) => i !== index
+                          );
+                          setOtherUpgrades(updated);
+                          updateUpgradeInfo(selectedUpgrades, updated);
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      const updated = [...otherUpgrades, ""];
+                      setOtherUpgrades(updated);
+                      updateUpgradeInfo(selectedUpgrades, updated);
+                    }}
+                  >
+                    <PlusIcon /> Add Other Upgrade
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -261,7 +330,7 @@ const UpgradeSubmitPage: React.FC = () => {
             </div>
           </form>
         </CardContent>
-        <CardFooter className="justify-end">
+        <CardFooter className="justify-end py-0">
           <Button type="button" onClick={() => setShowConfirm(true)}>
             Submit
           </Button>
@@ -285,16 +354,25 @@ const UpgradeSubmitPage: React.FC = () => {
             <AlertDialogCancel onClick={() => setShowConfirm(false)}>
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirm}>
-              Confirm
+            <AlertDialogAction onClick={handleConfirm} disabled={isConfirming}>
+              {isConfirming ? (
+                <span className="flex gap-2 items-center">
+                  <Loader2 className="animate-spin h-4 w-4" />
+                  Confirming...
+                </span>
+              ) : (
+                "Confirm"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       <AlertDialog open={showSuccess} onOpenChange={setShowSuccess}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-green-200">
           <AlertDialogHeader>
-            <AlertDialogTitle>Laptop Upgraded Successfully</AlertDialogTitle>
+            <AlertDialogTitle className="text-green-500">
+              Laptop Upgraded Successfully
+            </AlertDialogTitle>
             <AlertDialogDescription></AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

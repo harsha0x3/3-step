@@ -81,7 +81,7 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
     }),
 
     columnHelper.accessor("aadhar_number", {
-      header: "Aadhar Number",
+      header: "Aadhaar Number",
       cell: (info) => info.getValue(),
     }),
 

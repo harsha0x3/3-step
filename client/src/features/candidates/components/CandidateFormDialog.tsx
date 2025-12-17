@@ -262,7 +262,7 @@ const CandidateFormDialog: React.FC<Props> = ({
           candidateId: candidate?.id,
           formData,
         }).unwrap();
-        toast.success(`Aadhar photo uploaded successfully`);
+        toast.success(`Aadhaar photo uploaded successfully`);
       }
     } catch (err: any) {
       const errMsg: string =
@@ -360,7 +360,7 @@ const CandidateFormDialog: React.FC<Props> = ({
               ) : toVerify ? (
                 <ol className="text-muted-foreground">
                   <li>
-                    Aadhar Number and beneficiary photo will be used to verify
+                    Aadhaar Number and beneficiary photo will be used to verify
                     beneficiary at the time of issuing laptop at store
                   </li>
                 </ol>
@@ -458,7 +458,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                   className="font-semibold text-md flex gap-2"
                   htmlFor={"aadhar_number"}
                 >
-                  Aadhar Number<span className="text-red-600">*</span>
+                  Aadhaar Number<span className="text-red-600">*</span>
                 </Label>
                 <Input
                   id={"aadhar_number"}
@@ -470,7 +470,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                       : toVerify && !!candidate?.aadhar_number)
                   }
                   {...register("aadhar_number", {
-                    required: `Aadhar number is required`,
+                    required: `Aadhaar number is required`,
                   })}
                 />
                 {errors.aadhar_number && (
@@ -635,20 +635,20 @@ const CandidateFormDialog: React.FC<Props> = ({
                     }`}
                   >
                     <p className="absolute -translate-y-5 bg-background rounded px-2">
-                      Beneficiary's Aadhar card photo.
+                      Beneficiary's Aadhaar card photo.
                     </p>
                     {!!candidate && toVerify && (
                       <p className="flex gap-3 items-center text-amber-700">
                         <Hint
                           label={
-                            "Take a photo of beneficiary's aadhar for future proof with number clearly visible."
+                            "Take a photo of beneficiary's aadhaar for future proof with number clearly visible."
                           }
                         >
                           <span>
                             <CircleQuestionMarkIcon className="w-3 h-3 text-blue-600" />
                           </span>
                         </Hint>
-                        Capture /upload the photo of beneficiary's aadhar card
+                        Capture /upload the photo of beneficiary's aadhaar card
                       </p>
                     )}
                     <div className="flex items-center gap-3">
@@ -662,7 +662,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                         />
                       ) : (
                         <div className="w-30 h-30 border rounded-md flex items-center justify-center text-gray-400">
-                          No Aadhar
+                          No Aadhaar
                         </div>
                       )}
                       {!!candidate &&
@@ -781,7 +781,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                   {candidate?.gift_card_code ?? "-"}
                 </span>
 
-                <span className="font-semibold">Aadhar Number</span>
+                <span className="font-semibold">Aadhaar Number</span>
                 <span>{watch("aadhar_number")}</span>
                 <span className="font-semibold">Store</span>
                 <div className="flex flex-col">

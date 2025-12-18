@@ -62,7 +62,7 @@ const VendorSpocCombobox: React.FC<VendorSpocComboboxProps> = ({
   // ✅ API call (paginated)
   const { data, isFetching } = useGetAllVendorSpocQuery(
     {
-      page,
+      page: -1,
       page_size: PAGE_SIZE,
       sort_by: "created_at",
       sort_order: "asc",

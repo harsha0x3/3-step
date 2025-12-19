@@ -249,9 +249,7 @@ async def facial_recognition(img_path: str, original_img: str):
     except ValueError as e:
         print("Value error in facial verificaion", e)
         err = str(e).lower()
-        raise HTTPException(
-            status_code=422, detail="No face detected in the uploaded image"
-        )
+        return False
     except Exception as e:
         print("Facial verification err", e)
         raise HTTPException(

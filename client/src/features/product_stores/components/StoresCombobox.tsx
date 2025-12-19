@@ -18,17 +18,20 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 type StoresComboboxProps = {
   value?: string; // current store id
   onChange?: (store: StoreItemWithUser) => void; // callback when store selected
   isDisabled?: boolean;
+  className?: string;
 };
 
 const StoresCombobox: React.FC<StoresComboboxProps> = ({
   value,
   onChange,
   isDisabled = false,
+  className,
 }) => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchInput, setSearchInput] = useState<string>("");
@@ -85,7 +88,10 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
             role="combobox"
             aria-expanded={open}
             disabled={isDisabled}
-            className="w-[95vw] sm:w-[340px] max-w-[340px] h-16 justify-between"
+            className={cn(
+              "w-[95vw] sm:w-[340px] max-w-[340px] h-16 justify-between",
+              className
+            )}
           >
             {selectedStore ? (
               <div className="flex flex-col text-left overflow-hidden">

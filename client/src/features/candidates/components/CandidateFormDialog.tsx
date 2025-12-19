@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -101,6 +101,7 @@ const CandidateFormDialog: React.FC<Props> = ({
     reset,
     watch,
     setValue,
+    control,
     formState: { errors, dirtyFields },
   } = useForm<NewCandidatePayload>({
     defaultValues: candidate
@@ -296,9 +297,10 @@ const CandidateFormDialog: React.FC<Props> = ({
           name,
           required ? { required: `${label} is required` } : {}
         )}
+        className={`${errors[name] ? "border-red-500 " : ""}`}
       />
       {errors[name] && (
-        <span className="text-sm text-amber-700">
+        <span className="text-sm text-red-600">
           {errors[name]?.message as string}
         </span>
       )}
@@ -429,6 +431,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                   type="tel"
                   minLength={10}
                   maxLength={10}
+                  className={`${errors.mobile_number ? "border-red-500 " : ""}`}
                   readOnly={
                     viewOnly ||
                     (!isEditMode && !!candidate) ||
@@ -445,7 +448,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                   })}
                 />
                 {errors.mobile_number && (
-                  <span className="text-sm text-amber-700">
+                  <span className="text-sm text-red-600">
                     {errors.mobile_number?.message as string}
                   </span>
                 )}
@@ -462,6 +465,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                 </Label>
                 <Input
                   id={"aadhar_number"}
+                  className={`${errors.aadhar_number ? "border-red-500 " : ""}`}
                   readOnly={
                     viewOnly ||
                     (!isEditMode && !!candidate) ||
@@ -474,7 +478,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                   })}
                 />
                 {errors.aadhar_number && (
-                  <span className="text-sm text-amber-700">
+                  <span className="text-sm text-red-600">
                     {errors.aadhar_number?.message as string}
                   </span>
                 )}
@@ -482,17 +486,38 @@ const CandidateFormDialog: React.FC<Props> = ({
             </section>
 
             <section className="flex flex-col gap-4">
-              <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
-                <Label className="font-semibold text-md flex ">Store</Label>
-                <StoresCombobox
-                  value={watch("store_id")}
-                  onChange={(store) => {
-                    setValue("store_id", store.id, { shouldDirty: true });
-                    setSelectedStore(store);
-                  }}
-                  isDisabled={!isEditMode && !!candidate}
-                />
-              </div>
+              <Controller
+                name="store_id"
+                control={control}
+                rules={{ required: "Assign a store" }}
+                render={({ field, fieldState }) => (
+                  <div>
+                    <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
+                      <div>
+                        <Label className="font-semibold text-md flex ">
+                          Store
+                        </Label>
+                        {fieldState.invalid && (
+                          <p className="text-red-500 text-sm">
+                            {fieldState.error.message}
+                          </p>
+                        )}
+                      </div>
+                      <StoresCombobox
+                        value={field.value}
+                        onChange={(store) => {
+                          field.onChange(store.id);
+                          setSelectedStore(store);
+                        }}
+                        className={`${
+                          fieldState.invalid ? "border-red-500 " : ""
+                        }`}
+                        isDisabled={!isEditMode && !!candidate}
+                      />
+                    </div>
+                  </div>
+                )}
+              />
 
               {!!candidate && (
                 <>
@@ -517,14 +542,29 @@ const CandidateFormDialog: React.FC<Props> = ({
                       )}
                     </div>
                     <div>
-                      <VendorSpocCombobox
-                        value={watch("vendor_spoc_id")}
-                        onChange={(vendor_spoc) =>
-                          setValue("vendor_spoc_id", vendor_spoc.id, {
-                            shouldDirty: true,
-                          })
-                        }
-                        isDisabled={!isEditMode}
+                      <Controller
+                        name="vendor_spoc_id"
+                        control={control}
+                        rules={{
+                          required: "Vendor Contact Person is required",
+                        }}
+                        render={({ field, fieldState }) => (
+                          <div>
+                            <VendorSpocCombobox
+                              value={field.value}
+                              onChange={(vendor_spoc) => {
+                                field.onChange(vendor_spoc?.id);
+                              }}
+                              isDisabled={!isEditMode}
+                            />
+
+                            {fieldState.invalid && (
+                              <p className="text-red-500 text-sm">
+                                {fieldState.error.message}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       />
                     </div>
                   </div>

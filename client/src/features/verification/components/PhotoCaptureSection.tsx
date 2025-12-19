@@ -12,6 +12,7 @@ interface PhotoCaptureSectionProps {
   successMessage?: string;
   submitLabel?: string;
   onSuccess?: () => void;
+  noCommpression?: boolean;
 }
 
 const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
@@ -21,6 +22,7 @@ const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
   successMessage,
   submitLabel = "Submit Photo",
   onSuccess,
+  noCommpression = false,
 }) => {
   const webcamRef = useRef<Webcam | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -50,7 +52,9 @@ const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
   const handleSubmit = async () => {
     if (!preview) return toast.error("Please capture a photo first");
     let file = base64ToFile(preview, "captured_photo.jpg");
-    file = await compressImage(file, 1.5);
+    if (!noCommpression) {
+      file = await compressImage(file, 1.5);
+    }
     const formData = new FormData();
     formData.append("photo", file);
     try {

@@ -36,6 +36,7 @@ const CandidateFaceCapture = ({
           successMessage="Photo Captured successfully"
           submitLabel="Submit photo"
           onSuccess={() => setOpen(false)}
+          noCommpression={false}
         />
       </DialogContent>
     </Dialog>

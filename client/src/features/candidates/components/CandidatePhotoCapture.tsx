@@ -53,6 +53,7 @@ const CandidatePhotoCapture = ({ candidateId }: { candidateId: string }) => {
           successMessage="Photo uploaded successfully!"
           submitLabel="Submit Photo"
           onSuccess={() => setOpen(false)}
+          noCommpression={true}
         />
       </DialogContent>
     </Dialog>

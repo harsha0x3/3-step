@@ -938,7 +938,8 @@ const CandidateFormDialog: React.FC<Props> = ({
                   </Button>
                 )}
               </div>
-              {candidate.is_candidate_verified &&
+              {candidate &&
+                candidate.is_candidate_verified &&
                 ["super_admin"].includes(currentUserInfo.role) &&
                 mode !== "edit" && (
                   <Hint label="Reset the Voucher issuance status">

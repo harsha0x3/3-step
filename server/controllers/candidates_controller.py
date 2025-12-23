@@ -1,5 +1,4 @@
-from models.candidates import Candidate
-from sqlalchemy import select, and_, func, desc, asc, or_, case
+from sqlalchemy import select, and_, func, desc, asc, or_, case, not_
 from sqlalchemy.orm import Session
 from models.schemas.candidate_schemas import (
     NewCandidatePayload,
@@ -11,12 +10,11 @@ from models.schemas.candidate_schemas import (
 )
 from sqlalchemy.exc import IntegrityError
 from utils.helpers import generate_readable_id
-from models.stores import Store
 from models.verification_statuses import VerificationStatus
 from models import IssuedStatus
 from fastapi import HTTPException, status, UploadFile
 from models.schemas.auth_schemas import UserOut
-from models.users import User
+from models import UpgradeRequest, User, Candidate, Store
 import time
 from models.schemas.store_schemas import StoreItemOut
 import os
@@ -365,6 +363,16 @@ def get_all_candidates(
                         Candidate.issued_status.is_(None),
                     )
                 )
+
+        if params.upgrade_request is not None:
+            if params.upgrade_request:
+                stmt = stmt.join(
+                    UpgradeRequest, UpgradeRequest.candidate_id == Candidate.id
+                ).where(UpgradeRequest.is_accepted)
+            if not params.upgrade_request:
+                stmt = stmt.join(
+                    UpgradeRequest, UpgradeRequest.candidate_id == Candidate.id
+                ).where(not_(UpgradeRequest.is_accepted))
 
         if params.store_id and params.store_id != "null":
             stmt = stmt.join(Store).where(Candidate.store_id == params.store_id)
@@ -753,6 +761,73 @@ async def upload_candidate_img(photo: UploadFile, candidate_id: str, db: Session
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"msg": "Error adding employee image to db", "err_stack": str(e)},
+        )
+
+
+def reset_voucher_issuance(candidate_id: str, db: Session):
+    try:
+        candidate = db.get(Candidate, candidate_id)
+        if not candidate:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Beneficiary not found"
+            )
+        if not candidate.is_candidate_verified:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Voucher has not yet issued.",
+            )
+        candidate.is_candidate_verified = False
+        if candidate.photo:
+            if os.path.exists(normalize_path(candidate.photo)):
+                os.remove(normalize_path(candidate.photo))
+            candidate.photo = None
+        if candidate.aadhar_photo:
+            if os.path.exists(normalize_path(candidate.aadhar_photo)):
+                os.remove(normalize_path(candidate.aadhar_photo))
+            candidate.aadhar_photo = None
+
+        db.commit()
+        db.refresh(candidate)
+
+        store = candidate.store
+
+        return CandidateItemWithStore(
+            id=candidate.id,
+            full_name=candidate.full_name,
+            mobile_number=candidate.mobile_number,
+            dob=candidate.dob,
+            state=candidate.state,
+            city=candidate.city,
+            division=candidate.division,
+            store_id=candidate.store_id,
+            photo=candidate.photo if candidate.photo else None,
+            issued_status=candidate.issued_status.issued_status
+            if candidate.issued_status
+            else "not_issued",
+            vendor_spoc_id=candidate.vendor_spoc_id,
+            aadhar_number=candidate.aadhar_number_masked,
+            aadhar_photo=candidate.aadhar_photo if candidate.aadhar_photo else None,
+            is_candidate_verified=candidate.is_candidate_verified,
+            coupon_code=candidate.coupon_code,
+            gift_card_code=candidate.gift_card_code,
+            store=StoreItemOut(
+                name=store.name,
+                id=store.id,
+                city=store.city,
+                count=store.count,
+                email=store.email,
+                mobile_number=store.mobile_number,
+            )
+            if store
+            else None,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error resetting the voucher issuance.",
         )
 
 

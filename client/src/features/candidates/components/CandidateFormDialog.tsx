@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import {
   useAddCandidateAadharMutation,
   useAddNewCandidateMutation,
+  useResetVoucherIssuanceMutation,
   useUpdateCandidateMutation,
   useUploadCandidatePhotoMutation,
 } from "../store/candidatesApiSlice";
@@ -29,6 +30,7 @@ import {
   CircleQuestionMarkIcon,
   EyeIcon,
   Loader,
+  Loader2Icon,
   TicketCheckIcon,
 } from "lucide-react";
 import { useSelector } from "react-redux";
@@ -45,6 +47,16 @@ import { flushSync } from "react-dom";
 import type { StoreItemWithUser } from "@/features/product_stores/types";
 import VoucherSuccessDialog from "./VoucherSuccessDialog";
 import { compressImage } from "@/utils/imgCompressor";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Props = {
   store_id?: string;
@@ -68,6 +80,7 @@ const CandidateFormDialog: React.FC<Props> = ({
   const [selectedStore, setSelectedStore] = useState<StoreItemWithUser | null>(
     null
   );
+  const [showResetIssuanceAlert, setShowResetIssuanceAlert] = useState(false);
   useEffect(() => {
     if (candidate?.store) {
       setSelectedStore(candidate.store); // assuming backend returns store object
@@ -83,6 +96,8 @@ const CandidateFormDialog: React.FC<Props> = ({
     useUploadCandidatePhotoMutation();
   const [addAadharPhoto, { isLoading: isUploadingAadhar }] =
     useAddCandidateAadharMutation();
+  const [resetVoucherIssuance, { isLoading: resettingVoucherIssuance }] =
+    useResetVoucherIssuanceMutation();
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [openConfirm, setOpenConfirm] = useState<boolean>(false);
   const navigate = useNavigate();
@@ -100,7 +115,6 @@ const CandidateFormDialog: React.FC<Props> = ({
     handleSubmit,
     reset,
     watch,
-    setValue,
     control,
     formState: { errors, dirtyFields },
   } = useForm<NewCandidatePayload>({
@@ -151,7 +165,6 @@ const CandidateFormDialog: React.FC<Props> = ({
 
         for (const key of dirty) {
           if (key === "is_candidate_verified") continue; // safety guard
-          // @ts-ignore
           payload[key] = data[key];
         }
 
@@ -199,7 +212,7 @@ const CandidateFormDialog: React.FC<Props> = ({
       }
 
       reset();
-    } catch (err: any) {
+    } catch (err: unknown) {
       const errMsg =
         err?.data?.detail?.msg ?? err?.data?.detail ?? "Something went wrong";
 
@@ -265,7 +278,7 @@ const CandidateFormDialog: React.FC<Props> = ({
         }).unwrap();
         toast.success(`Aadhaar photo uploaded successfully`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       const errMsg: string =
         err?.data?.detail?.msg ?? err?.data?.detail ?? "Error uploading photo";
 
@@ -273,6 +286,19 @@ const CandidateFormDialog: React.FC<Props> = ({
         ? err?.data?.detail?.err_stack
         : "";
       toast.error(errMsg, { description: errDesc });
+    }
+  };
+
+  const resetIssuanceOfVoucher = async () => {
+    try {
+      await resetVoucherIssuance({ candidateId: candidate.id }).unwrap();
+      toast.success("Resetting of Voucher Issuance completed");
+    } catch (err) {
+      const errMsg: string =
+        err?.data?.detail?.msg ??
+        err?.data?.detail ??
+        "Error resetting voucher issuance";
+      toast.error(errMsg);
     }
   };
 
@@ -432,6 +458,9 @@ const CandidateFormDialog: React.FC<Props> = ({
                   minLength={10}
                   maxLength={10}
                   className={`${errors.mobile_number ? "border-red-500 " : ""}`}
+                  onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    e.target.value = e.target.value.replace(/\D/g, "");
+                  }}
                   readOnly={
                     viewOnly ||
                     (!isEditMode && !!candidate) ||
@@ -466,6 +495,9 @@ const CandidateFormDialog: React.FC<Props> = ({
                 <Input
                   id={"aadhar_number"}
                   className={`${errors.aadhar_number ? "border-red-500 " : ""}`}
+                  onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    e.target.value = e.target.value.replace(/\D/g, "");
+                  }}
                   readOnly={
                     viewOnly ||
                     (!isEditMode && !!candidate) ||
@@ -495,7 +527,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
                       <div>
                         <Label className="font-semibold text-md flex ">
-                          Store
+                          Store<span className="text-red-500">*</span>
                         </Label>
                         {fieldState.invalid && (
                           <p className="text-red-500 text-sm">
@@ -525,6 +557,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                     <div>
                       <Label className="font-semibold text-md flex ">
                         Vendor Contact Person
+                        <span className="text-red-500">*</span>
                       </Label>
                       {!!candidate && toVerify && (
                         <div className="flex gap-2 items-center pt-2">
@@ -613,7 +646,9 @@ const CandidateFormDialog: React.FC<Props> = ({
                         <img
                           src={`${
                             import.meta.env.VITE_API_BASE_API_URL
-                          }/hard_verify/api/v1.0/${candidate?.photo}`}
+                          }/hard_verify/api/v1.0/secured_file?path=${encodeURIComponent(
+                            candidate?.photo
+                          )}`}
                           alt="Candidate"
                           className="w-30 h-30 object-cover rounded-md border"
                         />
@@ -696,7 +731,9 @@ const CandidateFormDialog: React.FC<Props> = ({
                         <img
                           src={`${
                             import.meta.env.VITE_API_BASE_API_URL
-                          }/hard_verify/api/v1.0/${candidate?.aadhar_photo}`}
+                          }/hard_verify/api/v1.0/secured_file?path=${encodeURIComponent(
+                            candidate?.aadhar_photo
+                          )}`}
                           alt="Candidate"
                           className="w-30 h-30 object-cover rounded-md border"
                         />
@@ -760,7 +797,10 @@ const CandidateFormDialog: React.FC<Props> = ({
                     type="checkbox"
                     id="is_candidate_verified"
                     {...register("is_candidate_verified")}
-                    disabled={viewOnly || candidate.is_candidate_verified}
+                    disabled={
+                      (viewOnly || candidate.is_candidate_verified) &&
+                      currentUserInfo.role !== "super_admin"
+                    }
                     className="w-7 h-7 hover:cursor-pointer"
                   />
                 </Hint>
@@ -776,15 +816,6 @@ const CandidateFormDialog: React.FC<Props> = ({
                 </p>
               </div>
             )}
-
-            {/* <section>
-            <h3 className="font-semibold text-lg mb-2">Parent Details</h3>
-            {renderTextInput("parent_name", "Parent Name")}
-            {renderTextInput("parent_employee_code", "Parent Employee Code")}
-            {renderTextInput("parent_relation", "Relation")}
-            {renderTextInput("parent_mobile_number", "Parent Mobile Number")}
-            {renderTextInput("parent_email", "Parent Email", "email")}
-          </section> */}
           </form>
         </ScrollArea>
         {/* Verification Confirmation Dialog */}
@@ -907,6 +938,15 @@ const CandidateFormDialog: React.FC<Props> = ({
                   </Button>
                 )}
               </div>
+              {candidate.is_candidate_verified &&
+                ["super_admin"].includes(currentUserInfo.role) &&
+                mode !== "edit" && (
+                  <Hint label="Reset the Voucher issuance status">
+                    <Button onClick={() => setShowResetIssuanceAlert(true)}>
+                      Reset Voucher Issuance
+                    </Button>
+                  </Hint>
+                )}
 
               {/* Right side — primary actions */}
               <div className="flex gap-2">
@@ -945,7 +985,9 @@ const CandidateFormDialog: React.FC<Props> = ({
                           !isVerifiedChecked ? "cursor-not-allowed" : ""
                         }`}
                         disabled={
-                          !isVerifiedChecked || candidate.is_candidate_verified
+                          (!isVerifiedChecked ||
+                            candidate.is_candidate_verified) &&
+                          currentUserInfo.role !== "super_admin"
                         }
                         onClick={() => setShowVerifyConfirm(true)}
                       >
@@ -957,6 +999,83 @@ const CandidateFormDialog: React.FC<Props> = ({
               </div>
             </div>
           </DialogFooter>
+        )}
+        {showResetIssuanceAlert && (
+          <AlertDialog
+            open={showResetIssuanceAlert}
+            onOpenChange={setShowResetIssuanceAlert}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Confirm voucher issuance reset of beneficiary
+                </AlertDialogTitle>
+              </AlertDialogHeader>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3 text-sm">
+                  <div className="grid grid-cols-[120px_1fr] gap-3">
+                    <span className="font-semibold">Full Name</span>
+                    <span>{watch("full_name")}</span>
+
+                    <span className="font-semibold">Mobile Number</span>
+                    <span>{watch("mobile_number")}</span>
+
+                    <span className="font-semibold">Employee ID</span>
+                    <span>{watch("id")}</span>
+
+                    <span className="font-semibold">Coupon Code</span>
+                    <span className="text-lg font-bold">
+                      {candidate?.coupon_code ?? "-"}
+                    </span>
+                    <span className="font-semibold">Gift Card Code</span>
+                    <span className="text-lg font-bold">
+                      {candidate?.gift_card_code ?? "-"}
+                    </span>
+
+                    <span className="font-semibold">Aadhaar Number</span>
+                    <span>{watch("aadhar_number")}</span>
+                    <span className="font-semibold">Store</span>
+                    <div className="flex flex-col">
+                      {selectedStore ? (
+                        <>
+                          <span className="font-medium">
+                            {selectedStore.name}
+                          </span>
+
+                          <span className="text-xs text-muted-foreground">
+                            {selectedStore.city}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-red-500">No store selected</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </AlertDialogDescription>
+              <AlertDialogFooter>
+                <p className="mt-3 text-amber-700 font-medium">
+                  Are you sure everything is correct and you want to proceed?
+                </p>
+                <AlertDialogAction asChild>
+                  <Button
+                    onClick={resetIssuanceOfVoucher}
+                    disabled={resettingVoucherIssuance}
+                  >
+                    {resettingVoucherIssuance ? (
+                      <span>
+                        <Loader2Icon className="animate-spin" />
+                        Resetting
+                      </span>
+                    ) : (
+                      "Ok"
+                    )}
+                  </Button>
+                </AlertDialogAction>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
       </DialogContent>
     </Dialog>

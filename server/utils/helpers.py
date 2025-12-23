@@ -239,6 +239,56 @@ async def save_offline_uploaded_file(file: UploadFile, store_name: str) -> str:
     return get_relative_upload_path(norm_uploaded_img_path)
 
 
+async def save_utility_pdf(file: UploadFile, file_name: str) -> str:
+    """
+    Save uploaded PDF file into uploads/utilities/ and return its relative path.
+    """
+
+    try:
+        # Validate file existence
+        if not file or not file.filename:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="No file uploaded."
+            )
+
+        # Validate MIME type (PDF only)
+        valid_mime = ["application/pdf", "application/x-pdf"]
+        if file.content_type not in valid_mime:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid file format. Only PDF files are allowed.",
+            )
+
+        # Ensure directories exist
+        utilities_dir = os.path.join(BASE_UPLOAD_DIR, "utilities")
+        os.makedirs(utilities_dir, exist_ok=True)
+
+        # Generate unique filename
+        ext = file.filename.split(".")[-1].lower()
+
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        filename = f"utility_{file_name}_{timestamp}.{ext}"
+
+        # Full path
+        saved_path = os.path.join(utilities_dir, filename)
+        norm_path = normalize_path(saved_path)
+
+        # Save file
+        with open(norm_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        # Return relative path (your existing function)
+        return get_relative_upload_path(norm_path)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"msg": "Error saving utility PDF", "err_stack": str(e)},
+        )
+
+
 def ensure_utc(dt: datetime) -> datetime:
     """Ensure a datetime is timezone-aware (UTC)."""
     if dt is None:

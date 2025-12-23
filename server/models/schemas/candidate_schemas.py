@@ -44,6 +44,8 @@ class CandidatesSearchParams(BaseModel):
     is_verified: bool | None = None
     is_issued: bool | None = None
 
+    upgrade_request: bool | None = None
+
 
 class CandidateItemWithStore(BaseModel):
     id: str

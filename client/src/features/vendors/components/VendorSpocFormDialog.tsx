@@ -230,7 +230,9 @@ const VendorSpocFormDialog: React.FC<Props> = ({
                         ? photoPreview
                         : `${
                             import.meta.env.VITE_API_BASE_API_URL
-                          }/hard_verify/api/v1.0/${vendorSpoc?.photo}`
+                          }/hard_verify/api/v1.0/secured_file?path=${encodeURIComponent(
+                            vendorSpoc?.photo
+                          )}`
                     }
                     alt="Selected Contact Photo"
                     className="w-32 h-32 object-cover rounded-md border-2"

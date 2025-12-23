@@ -87,15 +87,15 @@ class User(Base, BaseMixin):
                 return True
         return False
 
-    @validates("email")
-    def validate_email(self, key, email):
-        if email is None:
-            return None
+    # @validates("email")
+    # def validate_email(self, key, email):
+    #     if email is None:
+    #         return None
 
-        email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-        if not re.match(email_pattern, email):
-            raise ValueError("Invalid Email Format")
-        return email.lower()
+    #     email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    #     if not re.match(email_pattern, email):
+    #         raise ValueError("Invalid Email Format")
+    #     return email.lower()
 
     def to_dict_safe(self):
         # Return user data without sensitive information

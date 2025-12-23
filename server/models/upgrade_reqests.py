@@ -15,12 +15,11 @@ class UpgradeRequest(Base):
     cost_of_upgrade: Mapped[int] = mapped_column(Integer, nullable=False)
     upgrade_product_info: Mapped[str] = mapped_column(Text, nullable=True)
     new_laptop_serial: Mapped[str] = mapped_column(String(100), nullable=True)
+    is_accepted: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=text("false")
+    )
 
     upgrade_reason: Mapped[str] = mapped_column(String(500), nullable=True)
     upgrade_product_type: Mapped[str] = mapped_column(String(122), nullable=True)
-
-    is_accepted: Mapped[bool] = mapped_column(
-        Boolean, default=True, server_default=text("true")
-    )
 
     candidate = relationship("Candidate", back_populates="upgrade")

@@ -15,7 +15,9 @@ def hash_aadhar_number(plain_aadhar_number: str) -> str:
     return hashed.decode("utf-8")
 
 
-def verify_aadhar_number(plain_aadhar_number: str, hashed_aadhar_number: str) -> bool:
+def verify_aadhar_number_service(
+    plain_aadhar_number: str, hashed_aadhar_number: str
+) -> bool:
     try:
         aadhar_number_bytes = plain_aadhar_number.encode("utf-8")
         hashed_bytes = hashed_aadhar_number.encode("utf-8")

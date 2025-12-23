@@ -1,6 +1,6 @@
 from enum import Enum
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, ConfigDict
 from typing import Literal
 
 
@@ -12,7 +12,7 @@ class RoleEnum(str, Enum):
 
 
 class RegisterRequest(BaseModel):
-    email: EmailStr | None = None
+    email: str | None = None
     mobile_number: str | None = None
     password: str
     full_name: str
@@ -20,7 +20,7 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email_or_mobile_number: EmailStr | str
+    email_or_mobile_number: str | str
     password: str
     mfa_code: str | None = None
     captcha_token: str | None = None
@@ -70,7 +70,7 @@ class UserOut(BaseModel):
 
 
 class AdminCreateUserRequest(BaseModel):
-    email: EmailStr | None = None
+    email: str | None = None
     full_name: str
     mobile_number: str | None = None
     role: RoleEnum
@@ -79,7 +79,7 @@ class AdminCreateUserRequest(BaseModel):
 
 
 class AdminUpdateUserRequest(BaseModel):
-    email: EmailStr | None = None
+    email: str | None = None
     full_name: str | None = None
     role: RoleEnum | None = None
     store_id: str | None = None

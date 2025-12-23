@@ -16,6 +16,7 @@ import {
   CopyPlusIcon,
   WifiOff,
   ArrowBigUpDashIcon,
+  HelpCircleIcon,
 } from "lucide-react";
 import {
   Collapsible,
@@ -240,6 +241,12 @@ const Sidebar: React.FC = () => {
       icon: ArrowBigUpDashIcon,
       path: "/store/upgrade",
       roles: ["store_agent"],
+    },
+    {
+      label: "Help",
+      icon: HelpCircleIcon,
+      path: "/help",
+      roles: ["store_agent", "admin", "super_admin", "registration_officer"],
     },
   ];
 

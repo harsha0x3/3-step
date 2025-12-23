@@ -21,9 +21,10 @@ import {
   useCreateUserMutation,
   useUpdateUserMutation,
 } from "../store/usersApiSlice";
-import { useGetAllStoresQuery } from "@/features/product_stores/store/productStoresApiSlice";
 import { toast } from "sonner";
 import StoresCombobox from "@/features/product_stores/components/StoresCombobox";
+import { useSelector } from "react-redux";
+import { selectAuth } from "../store/authSlice";
 
 type UserFormData = {
   mobile_number: string;
@@ -43,6 +44,7 @@ type Props = {
 const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
   const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
+  const currentUserInfo = useSelector(selectAuth);
 
   const {
     register,
@@ -63,7 +65,6 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
     } else {
       reset({
         mobile_number: "",
-        email: "",
         full_name: "",
         role: "",
         store_id: "",
@@ -74,7 +75,7 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
 
   const onSubmit = async (data: UserFormData) => {
     try {
-      if (!data.email && !data.mobile_number) {
+      if (!data.mobile_number) {
         toast.error("any one of email or mobile number is required.");
         return;
       }
@@ -91,7 +92,13 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
       reset();
       onOpenChange(false);
     } catch (error: any) {
-      toast.error(error?.data?.detail || "Failed to save user");
+      const detail = error?.data?.detail;
+
+      const message = Array.isArray(detail)
+        ? detail[0]?.msg
+        : detail || "Failed to save user";
+
+      toast.error(message);
     }
   };
 
@@ -118,10 +125,10 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
             />
           </div>
 
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" {...register("email")} />
-          </div>
+          </div> */}
 
           <div className="space-y-2">
             <Label htmlFor="full_name">Full Name</Label>
@@ -147,7 +154,9 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="super_admin">Super Admin</SelectItem>
+                {currentUserInfo.role === "super_admin" && (
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                )}
                 <SelectItem value="store_agent">Store Agent</SelectItem>
                 <SelectItem value="registration_officer">
                   Registration Officer

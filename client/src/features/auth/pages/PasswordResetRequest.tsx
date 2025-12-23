@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRequestPasswordResetMutation } from "@/features/auth/store/usersApiSlice";
 import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
+import LoginSupportFooter from "@/features/shared/LoginSupportFooter";
 
 const PasswordResetRequest: React.FC = () => {
   const [requestReset, { isLoading }] = useRequestPasswordResetMutation();
@@ -43,8 +44,8 @@ const PasswordResetRequest: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <Card className="w-full max-w-md">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 overflow-auto">
+      <Card className="w-full max-w-md mt-10 sm:mt-40">
         <CardHeader>
           <CardTitle>Initial Password Reset</CardTitle>
         </CardHeader>
@@ -101,6 +102,7 @@ const PasswordResetRequest: React.FC = () => {
           )}
         </CardContent>
       </Card>
+      <LoginSupportFooter />
     </div>
   );
 };

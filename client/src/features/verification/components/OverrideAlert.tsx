@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { OverrideRequest, VerificationResult } from "../types";
+import type { VerificationResult } from "../types";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -19,7 +19,7 @@ import clsx from "clsx";
 import Hint from "@/components/ui/hint";
 
 interface OverrideAlertProps {
-  data: VerificationResult;
+  data: { result: VerificationResult; errDetails?: string };
   defOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }
@@ -41,8 +41,10 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
     useOverrideVerificationMutation();
 
   const handleProceed = () => {
-    if (data.verification_status.is_all_verified) {
-      navigate(`/store/beneficiary/${data.candidate.candidate_id}/verify/otp`);
+    if (data.result.verification_status.is_all_verified) {
+      navigate(
+        `/store/beneficiary/${data.result.candidate.candidate_id}/verify/otp`
+      );
     }
   };
 
@@ -59,8 +61,8 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
       "Temporary facial change (injury, swelling)",
     ],
   };
-  const aadharFailed = !data.verification_status.is_aadhar_verified;
-  const facialFailed = !data.verification_status.is_facial_verified;
+  const aadharFailed = !data.result.verification_status.is_aadhar_verified;
+  const facialFailed = !data.result.verification_status.is_facial_verified;
 
   const handleOverrideSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,7 +94,7 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
 
     try {
       const res = await overrideVerification({
-        candidateId: data.candidate.candidate_id,
+        candidateId: data.result.candidate.candidate_id,
         payload: { overriding_reason: finalReason },
       }).unwrap();
 
@@ -100,7 +102,7 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
 
       if (res.data.can_proceed_to_otp) {
         navigate(
-          `/store/beneficiary/${data.candidate.candidate_id}/verify/otp`
+          `/store/beneficiary/${data.result.candidate.candidate_id}/verify/otp`
         );
       }
     } catch (err: any) {
@@ -150,10 +152,10 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
         <AlertDialogHeader>
           <AlertDialogTitle
             className={`text-center ${
-              data.requires_consent ? "text-red-600" : ""
+              data.result.requires_consent ? "text-red-600" : ""
             }`}
           >
-            {data.requires_consent
+            {data.result.requires_consent
               ? "Verification Failed"
               : "Verification Status"}
           </AlertDialogTitle>
@@ -168,17 +170,38 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
             <ul>
               <StatusItem
                 label="Voucher Code"
-                status={data.verification_status.is_coupon_verified}
+                status={data.result.verification_status.is_coupon_verified}
               />
               <StatusItem
-                label="Aadhar Number"
-                status={data.verification_status.is_aadhar_verified}
+                label="Aadhaar Number"
+                status={data.result.verification_status.is_aadhar_verified}
               />
               <StatusItem
                 label="Facial Recognition"
-                status={data.verification_status.is_facial_verified}
+                status={data.result.verification_status.is_facial_verified}
               />
             </ul>
+            {!data.result.verification_status.is_all_verified &&
+              data.errDetails &&
+              data.errDetails.trim() !== "" && (
+                <div className="mt-3 border border-red-400 rounded-md p-1">
+                  <p className="font-semibold">Failure Details:</p>
+
+                  <ul className="list-disc ml-6 text-red-500">
+                    {data.errDetails
+                      .split(".")
+                      .map((d) => d.trim())
+                      .filter(
+                        (det) =>
+                          det !== "" &&
+                          det !== "Store agent consent required to proceed"
+                      )
+                      .map((det, idx) => (
+                        <li key={idx}>{det}</li>
+                      ))}
+                  </ul>
+                </div>
+              )}
           </div>
 
           {/* RIGHT BLOCK */}
@@ -188,13 +211,13 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
             </h3>
             <div className="text-sm space-y-1">
               <p>
-                <strong>ID:</strong> {data.candidate.candidate_id}
+                <strong>ID:</strong> {data.result.candidate.candidate_id}
               </p>
               <p>
-                <strong>Name:</strong> {data.candidate.full_name}
+                <strong>Name:</strong> {data.result.candidate.full_name}
               </p>
               <p>
-                <strong>Mobile:</strong> {data.candidate.mobile_number}
+                <strong>Mobile:</strong> {data.result.candidate.mobile_number}
               </p>
             </div>
 
@@ -202,7 +225,9 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
               <img
                 src={`${
                   import.meta.env.VITE_API_BASE_API_URL
-                }/hard_verify/api/v1.0/${data.candidate.photo}`}
+                }/hard_verify/api/v1.0/secured_file?path=${encodeURIComponent(
+                  data.result.candidate.photo
+                )}`}
                 className="w-32 h-32 border rounded-md object-cover"
               />
             </div>
@@ -211,7 +236,7 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
 
         {/* ACTIONS */}
         <AlertDialogFooter className="flex justify-between items-center mt-6">
-          {data.verification_status.is_all_verified ? (
+          {data.result.verification_status.is_all_verified ? (
             <>
               <p className="text-sm text-gray-600">
                 All verifications passed. Proceed to OTP verification.
@@ -221,7 +246,7 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
             </>
           ) : (
             <>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-amber-600">
                 Do you want to proceed without verification?
               </p>
 

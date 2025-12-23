@@ -39,8 +39,9 @@ function App() {
   const AllVendorSpoc = lazy(
     () => import("./features/vendors/pages/AllVendorSpoc")
   );
-  const CandidatesSearch = lazy(
-    () => import("./features/candidates/components/CandidateSearch")
+
+  const VoucherIssuancePage = lazy(
+    () => import("./features/candidates/pages/VoucherIssuancePage")
   );
   const UserManagement = lazy(
     () => import("./features/auth/pages/UserManagement")
@@ -77,8 +78,12 @@ function App() {
     () => import("./features/product_stores/pages/OfflineReportsPage")
   );
 
+  const UtilityFilesPage = lazy(
+    () => import("./features/shared/UtilityFilesPage")
+  );
   const RootLayout = lazy(() => import("@/layouts/RootLayout"));
   const currentAuthState: AuthState = useSelector(selectAuth);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { data: _currentUser } = useGetCurrentUserQuery(undefined, {
     skip: currentAuthState.isAuthenticated,
   });
@@ -227,12 +232,12 @@ function App() {
                     </div>
                   }
                 >
-                  <CandidatesSearch />
+                  <VoucherIssuancePage />
                 </Suspense>
               }
             />
             <Route
-              path="/registration_officer/beneficiary/verify/:candidateId"
+              path="registration_officer/beneficiary/verify/:candidateId"
               element={
                 <Suspense
                   fallback={
@@ -277,7 +282,7 @@ function App() {
               }
             />
             <Route
-              path="store/beneficiary/all"
+              path="dashboard/store/beneficiary/all"
               element={
                 <Suspense
                   fallback={
@@ -292,7 +297,7 @@ function App() {
               }
             />
             <Route
-              path="/store/beneficiary/:candidateId/verify/otp"
+              path="store/beneficiary/:candidateId/verify/otp"
               element={
                 <Suspense
                   fallback={
@@ -307,7 +312,7 @@ function App() {
               }
             />
             <Route
-              path="/store/beneficiary/:candidateId/issuance"
+              path="store/beneficiary/:candidateId/issuance"
               element={
                 <Suspense
                   fallback={
@@ -322,7 +327,7 @@ function App() {
               }
             />
             <Route
-              path="/store/upgrade"
+              path="store/upgrade"
               element={
                 <Suspense
                   fallback={
@@ -337,7 +342,7 @@ function App() {
               }
             />
             <Route
-              path="/store/upgrade/beneficiary/:candidateId"
+              path="store/upgrade/beneficiary/:candidateId"
               element={
                 <Suspense
                   fallback={
@@ -352,7 +357,7 @@ function App() {
               }
             />
             <Route
-              path="/store/beneficiary/:candidateId/issuance/success"
+              path="store/beneficiary/:candidateId/issuance/success"
               element={
                 <Suspense
                   fallback={
@@ -367,7 +372,7 @@ function App() {
               }
             />
             <Route
-              path="/store/offline-reports"
+              path="store/offline-reports"
               element={
                 <Suspense
                   fallback={
@@ -439,6 +444,21 @@ function App() {
                   }
                 >
                   <NewVendorSpoc />
+                </Suspense>
+              }
+            />
+            <Route
+              path="help"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col justify-center items-center">
+                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
+                      <p>Loading new vendor contact person adding page...</p>
+                    </div>
+                  }
+                >
+                  <UtilityFilesPage />
                 </Suspense>
               }
             />

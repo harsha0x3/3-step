@@ -20,7 +20,6 @@ const ProtectedLayout: React.FC = () => {
 
   const fromPath = location.state?.from?.pathname || "/dashboard";
   const fromSearch = location.state?.from?.search || "";
-  const from = `${fromPath}${fromSearch}`;
 
   useEffect(() => {
     if (!isAuthenticated) {

@@ -115,71 +115,79 @@ const UserManagement: React.FC = () => {
   return (
     <div className="flex flex-col gap-4 p-4">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">User Management</h1>
+      <div className="flex justify-between items-center"></div>
+
+      {/* Search + Filters */}
+      <div className="flex flex-wrap gap-2 items-center justify-between">
+        <div className="flex flex-wrap gap-2 items-center flex-1">
+          <Input
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search users..."
+            className="h-8 max-w-xs"
+          />
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" className="px-2">
+                <SlidersHorizontalIcon className="w-4 h-4 mr-2" />
+                Filters
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                {[
+                  { field: "created_at", label: "Created At" },
+                  { field: "full_name", label: "Full Name" },
+                ].map((item) => (
+                  <DropdownMenuItem
+                    key={item.field}
+                    onClick={() =>
+                      updateSearchParams({
+                        userSortBy: item.field,
+                        userPage: 1,
+                      })
+                    }
+                  >
+                    {sortBy === item.field && (
+                      <Check className="h-4 w-4 mr-2" />
+                    )}
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Sort Order</DropdownMenuLabel>
+              <DropdownMenuGroup>
+                {["asc", "desc"].map((ord) => (
+                  <DropdownMenuItem
+                    key={ord}
+                    onClick={() =>
+                      updateSearchParams({ userSortOrder: ord, userPage: 1 })
+                    }
+                  >
+                    {sortOrder === ord && <Check className="h-4 w-4 mr-2" />}
+                    {ord.toUpperCase()}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button onClick={() => refetch()}>
+            <RefreshCcw
+              className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
+            />
+            Refresh
+          </Button>
+        </div>
         <Button onClick={() => setDialogOpen(true)}>
           <UserPlus className="h-4 w-4 mr-2" />
           Add User
-        </Button>
-      </div>
-
-      {/* Search + Filters */}
-      <div className="flex flex-wrap gap-2 items-center">
-        <Input
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Search users..."
-          className="h-8 max-w-xs"
-        />
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="secondary" className="px-2">
-              <SlidersHorizontalIcon className="w-4 h-4 mr-2" />
-              Filters
-            </Button>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent>
-            <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              {["created_at", "full_name", "email"].map((field) => (
-                <DropdownMenuItem
-                  key={field}
-                  onClick={() =>
-                    updateSearchParams({ userSortBy: field, userPage: 1 })
-                  }
-                >
-                  {sortBy === field && <Check className="h-4 w-4 mr-2" />}
-                  {field}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuGroup>
-
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Sort Order</DropdownMenuLabel>
-            <DropdownMenuGroup>
-              {["asc", "desc"].map((ord) => (
-                <DropdownMenuItem
-                  key={ord}
-                  onClick={() =>
-                    updateSearchParams({ userSortOrder: ord, userPage: 1 })
-                  }
-                >
-                  {sortOrder === ord && <Check className="h-4 w-4 mr-2" />}
-                  {ord.toUpperCase()}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <Button onClick={() => refetch()}>
-          <RefreshCcw
-            className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
-          />
-          Refresh
         </Button>
       </div>
 

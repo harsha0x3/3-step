@@ -12,6 +12,7 @@ from models.schemas.auth_schemas import (
     PasswordChangeSchema,
     UserDetailOut,
     UsersSearchParams,
+    UserOut,
 )
 from models.schemas.otp_schemas import SmsOtpPayload
 from services.verification_service.mobile_notification_service import send_login_sms_otp
@@ -85,7 +86,7 @@ def admin_create_user(
 
 
 def admin_update_user(
-    user_id: str, payload: AdminUpdateUserRequest, db: Session
+    user_id: str, payload: AdminUpdateUserRequest, db: Session, current_user: UserOut
 ) -> dict[str, Any]:
     """Admin updates user details"""
 
@@ -94,6 +95,11 @@ def admin_update_user(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
+        )
+    if user.role == "super_admin" and current_user.role != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied to edit super admin",
         )
 
     try:

@@ -1,7 +1,7 @@
 from db.base import Base, BaseMixin
 from sqlalchemy import String, Text, ForeignKey, Boolean, Index, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from services.aadhar.utils import hash_aadhar_number, verify_aadhar_number
+from services.aadhar.utils import hash_aadhar_number, verify_aadhar_number_service
 from datetime import date
 
 
@@ -20,11 +20,11 @@ class Candidate(Base, BaseMixin):
     city: Mapped[str] = mapped_column(String(100), nullable=True)
     division: Mapped[str] = mapped_column(String(555), nullable=True)
 
-    aadhar_number_hashed = mapped_column(String(100), nullable=True)
-    aadhar_number_masked = mapped_column(String(36), nullable=True)
-    aadhar_photo = mapped_column(Text, nullable=True)
+    aadhar_number_hashed: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    aadhar_number_masked: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    aadhar_photo: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    photo: Mapped[str] = mapped_column(Text, nullable=True)
+    photo: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     store_id: Mapped[str] = mapped_column(
         String(40), ForeignKey("stores.id", onupdate="cascade"), nullable=True
@@ -61,7 +61,9 @@ class Candidate(Base, BaseMixin):
         self.aadhar_number_hashed = hash_aadhar_number(plain_aadhar_number)
 
     def verify_aadhar_number(self, plain_aadhar_number: str) -> bool:
-        return verify_aadhar_number(
+        if not self.aadhar_number_hashed:
+            return False
+        return verify_aadhar_number_service(
             plain_aadhar_number=plain_aadhar_number,
             hashed_aadhar_number=self.aadhar_number_hashed,
         )

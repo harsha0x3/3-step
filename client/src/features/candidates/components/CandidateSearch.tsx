@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import type { CandidateItemWithStore } from "../types";
 import { Loader, TicketCheckIcon } from "lucide-react";
+import VoucherIssuanceSupportFooter from "@/features/shared/VoucherIssuanceSupportFooter";
 
 const CandidateSearch: React.FC = () => {
   const [fetchCandidates, { data: candidatesData, isFetching }] =
@@ -37,7 +38,9 @@ const CandidateSearch: React.FC = () => {
       console.log("RESULT OF FETCH", res);
     } catch (err) {
       const errMsg: string =
-        err?.data?.detail?.msg ?? err?.data?.detail ?? JSON.stringify(err);
+        err?.data?.detail?.msg ??
+        err?.data?.detail ??
+        "Error fetching beneficiaries";
 
       const errDesc = err?.data?.detail?.msg
         ? err?.data?.detail?.err_stack

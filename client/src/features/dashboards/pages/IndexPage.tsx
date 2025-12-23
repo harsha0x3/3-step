@@ -19,6 +19,9 @@ export default function IndexPage() {
   const storeStats = useMemo(() => {
     if (!isLoading && !isError) return data.data.store_statistics || [];
   }, [data, isLoading, isError]);
+  const upgradeStats = useMemo(() => {
+    if (!isLoading && !isError) return data.data.upgrade_statistics;
+  }, [data, isLoading, isError]);
 
   const filteredStores = useMemo(() => {
     if (storeStats)
@@ -60,7 +63,7 @@ export default function IndexPage() {
                 variant={"link"}
                 className="text-right"
                 onClick={() =>
-                  navigate("/store/beneficiary/all", {
+                  navigate("/dashboard/store/beneficiary/all", {
                     state: { from: "dashboard" },
                   })
                 }
@@ -96,9 +99,12 @@ export default function IndexPage() {
                   variant={"link"}
                   className="text-right"
                   onClick={() =>
-                    navigate("/store/beneficiary/all?is_verified=true", {
-                      state: { from: "dashboard" },
-                    })
+                    navigate(
+                      "/dashboard/store/beneficiary/all?is_verified=true",
+                      {
+                        state: { from: "dashboard" },
+                      }
+                    )
                   }
                 >
                   View Details
@@ -134,9 +140,102 @@ export default function IndexPage() {
                     variant={"link"}
                     className="text-right"
                     onClick={() =>
-                      navigate("/store/beneficiary/all?is_issued=true", {
+                      navigate(
+                        "/dashboard/store/beneficiary/all?is_issued=true",
+                        {
+                          state: { from: "dashboard" },
+                        }
+                      )
+                    }
+                  >
+                    View Details
+                  </Button>
+                )}
+              </CardFooter>
+            </Card>
+          )}
+        {["super_admin", "admin", "store_agent"].includes(
+          currentUserInfo.role
+        ) &&
+          upgradeStats !== undefined &&
+          upgradeStats !== null && (
+            <Card className="shadow-md flex flex-col">
+              <CardContent className="px-4 py-2">
+                <p className="text-sm text-gray-500">Upgrade Requests</p>
+                <p className="text-2xl font-bold">
+                  {upgradeStats?.upgrade_requests}
+                </p>
+              </CardContent>
+              <CardFooter className="mt-auto flex justify-end">
+                {currentUserInfo.role !== "store_agent" && (
+                  <Button
+                    variant={"link"}
+                    className="text-right"
+                    onClick={() =>
+                      navigate("/beneficiary/all?upgrade_request=false", {
                         state: { from: "dashboard" },
                       })
+                    }
+                  >
+                    View Details
+                  </Button>
+                )}
+                {currentUserInfo.role === "store_agent" && (
+                  <Button
+                    variant={"link"}
+                    className="text-right"
+                    onClick={() =>
+                      navigate(
+                        "/dashboard/store/beneficiary/all?upgrade_request=false",
+                        {
+                          state: { from: "dashboard" },
+                        }
+                      )
+                    }
+                  >
+                    View Details
+                  </Button>
+                )}
+              </CardFooter>
+            </Card>
+          )}
+        {["super_admin", "admin", "store_agent"].includes(
+          currentUserInfo.role
+        ) &&
+          upgradeStats !== undefined &&
+          upgradeStats !== null && (
+            <Card className="shadow-md flex flex-col">
+              <CardContent className="px-4 py-2">
+                <p className="text-sm text-gray-500">Upgrades Completed</p>
+                <p className="text-2xl font-bold">
+                  {upgradeStats?.upgrades_completed}
+                </p>
+              </CardContent>
+              <CardFooter className="mt-auto flex justify-end">
+                {currentUserInfo.role !== "store_agent" && (
+                  <Button
+                    variant={"link"}
+                    className="text-right"
+                    onClick={() =>
+                      navigate("/beneficiary/all?upgrade_request=true", {
+                        state: { from: "dashboard" },
+                      })
+                    }
+                  >
+                    View Details
+                  </Button>
+                )}
+                {currentUserInfo.role === "store_agent" && (
+                  <Button
+                    variant={"link"}
+                    className="text-right"
+                    onClick={() =>
+                      navigate(
+                        "/dashboard/store/beneficiary/all?upgrade_request=true",
+                        {
+                          state: { from: "dashboard" },
+                        }
+                      )
                     }
                   >
                     View Details
@@ -246,14 +345,18 @@ export default function IndexPage() {
                     </div>
                     <p className="text-sm text-gray-500">City: {s.city}</p>
 
-                    <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="grid grid-cols-4 gap-2 text-center">
                       <div>
                         <p className="text-xs text-gray-500">Total</p>
                         <p className="font-bold">{s.total_candidates}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Verified</p>
-                        <p className="font-bold">{s.verified}</p>
+                        <p className="text-xs text-gray-500">Aadhar Failed</p>
+                        <p className="font-bold">{s.aadhar_failed}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Facial Failed</p>
+                        <p className="font-bold">{s.facial_failed}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Issued</p>

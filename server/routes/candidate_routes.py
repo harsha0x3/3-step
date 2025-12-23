@@ -27,6 +27,7 @@ from controllers.candidates_controller import (
     update_candidate_verification_status,
     get_candidate_details_by_id,
     add_aadhar_photo,
+    reset_voucher_issuance,
 )
 
 from controllers.store_controller import get_store_of_user
@@ -126,6 +127,9 @@ async def list_candidates(
     is_issued: Annotated[
         bool | None, Query(title="Filter by laptop issued / not issued")
     ] = None,
+    upgrade_request: Annotated[
+        bool | None, Query(title="Filter by upgrade request pending / completed")
+    ] = None,
 ):
     """
     Retrieve all candidates.
@@ -153,6 +157,7 @@ async def list_candidates(
         page_size=page_size,
         is_verified=is_verified,
         is_issued=is_issued,
+        upgrade_request=upgrade_request,
     )
     return get_all_candidates(db, params, current_user)
 
@@ -288,3 +293,16 @@ async def add_aadhar(
             detail="Unauthorised to add these details",
         )
     return await add_aadhar_photo(candidate_id=candidate_id, photo=photo, db=db)
+
+
+@router.patch("/{candidate_id}/reset/voucher_issuance")
+async def resetting_issunace_of_voucher(
+    candidate_id: Annotated[str, Path(...)],
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+):
+    if current_user.role not in ["super_admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access Denied"
+        )
+    return reset_voucher_issuance(candidate_id=candidate_id, db=db)

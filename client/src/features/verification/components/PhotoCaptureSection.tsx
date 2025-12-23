@@ -16,10 +16,7 @@ interface PhotoCaptureSectionProps {
 }
 
 const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
-  candidateId,
   onSubmit,
-  title,
-  successMessage,
   submitLabel = "Submit Photo",
   onSuccess,
   noCommpression = false,
@@ -30,9 +27,10 @@ const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
   const [selectedCam, setSelectedCam] = useState<
     "front_camera" | "rear_camera"
   >("front_camera");
-  const [videoConstraints, setVideoConstraints] = useState({
-    facingMode: "user",
-  });
+  const [videoConstraints, setVideoConstraints] =
+    useState<MediaTrackConstraints>({
+      facingMode: "user",
+    });
 
   const capturePhoto = useCallback(() => {
     const imgSrc = webcamRef.current?.getScreenshot();
@@ -82,12 +80,12 @@ const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
             ref={webcamRef}
             audio={false}
             screenshotFormat="image/jpeg"
-            className="rounded-lg border max-w-[320px] w-full"
+            className="rounded-lg border max-w-[320px] w-full h-full"
             videoConstraints={videoConstraints}
           />
           <div className="flex justify-between items-center">
             <Button
-              variant={selectedCam === "front_camera" ? "outline" : "secondary"}
+              variant={selectedCam === "front_camera" ? "outline" : "ghost"}
               onClick={() => {
                 setVideoConstraints({ facingMode: "user" });
                 setSelectedCam("front_camera");
@@ -96,7 +94,7 @@ const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
               Front Camera
             </Button>
             <Button
-              variant={selectedCam === "rear_camera" ? "outline" : "secondary"}
+              variant={selectedCam === "rear_camera" ? "outline" : "ghost"}
               onClick={() => {
                 setVideoConstraints({ facingMode: { exact: "environment" } });
                 setSelectedCam("rear_camera");
@@ -112,7 +110,7 @@ const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
           <img
             src={preview}
             alt="Captured"
-            className="rounded-lg border w-[320px] h-60 object-cover"
+            className="rounded-lg border w-[320px] h-72 object-cover"
           />
           <div className="flex gap-2">
             <Button

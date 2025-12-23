@@ -90,7 +90,9 @@ const CandidateDetailsSection: React.FC<Props> = ({ candidate }) => {
             <Label>Candidate Photo</Label>
             {candidate.photo ? (
               <img
-                src={`${baseUrl}/hard_verify/api/v1.0/${candidate.photo}`}
+                src={`${baseUrl}/hard_verify/api/v1.0/secured_file?path=${encodeURIComponent(
+                  candidate.photo
+                )}`}
                 alt="Candidate"
                 className="w-24 h-24 object-cover rounded-md border mt-1"
               />

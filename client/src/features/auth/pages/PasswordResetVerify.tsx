@@ -15,6 +15,7 @@ import { useVerifyPasswordResetMutation } from "@/features/auth/store/usersApiSl
 import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
 import { PasswordInput } from "../components/PasswordInput";
+import LoginSupportFooter from "@/features/shared/LoginSupportFooter";
 
 const PasswordResetVerify: React.FC = () => {
   const [verifyReset, { isLoading }] = useVerifyPasswordResetMutation();
@@ -60,8 +61,8 @@ const PasswordResetVerify: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <Card className="w-full max-w-md">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 overflow-auto">
+      <Card className="w-full max-w-md mt-5">
         <CardHeader>
           <CardTitle>Enter Reset Code</CardTitle>
         </CardHeader>
@@ -153,6 +154,7 @@ const PasswordResetVerify: React.FC = () => {
           </form>
         </CardContent>
       </Card>
+      <LoginSupportFooter />
     </div>
   );
 };

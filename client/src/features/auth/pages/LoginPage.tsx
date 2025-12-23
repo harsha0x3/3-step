@@ -17,6 +17,7 @@ import { selectIsAuthenticated } from "../store/authSlice";
 import { toast } from "sonner";
 import Hint from "@/components/ui/hint";
 import { PasswordInput } from "../components/PasswordInput";
+import LoginSupportFooter from "@/features/shared/LoginSupportFooter";
 
 // import {
 //   InputOTP,
@@ -121,14 +122,14 @@ const LoginPage: React.FC = () => {
   }, [isAuthenticated, navigate, from]);
 
   return (
-    <div className="flex flex-col items-center h-screen gap-10">
+    <div className="flex flex-col items-center h-screen gap-0 overflow-auto">
       {/* Heading */}
-      <h1 className="text-3xl font-bold text-center mt-28">
+      <h1 className="text-3xl font-bold text-center mt-15">
         Laptop Distribution - Login
       </h1>
 
       {/* Card */}
-      <Card className="w-full max-w-md min-w-sm mt-10">
+      <Card className="w-full max-w-md min-w-sm mt-5">
         <CardHeader>
           <CardTitle className="text-center text-lg">
             Enter your credentials below.
@@ -233,6 +234,8 @@ const LoginPage: React.FC = () => {
           </div>
         </CardFooter>
       </Card>
+
+      <LoginSupportFooter />
     </div>
   );
 };

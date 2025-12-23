@@ -30,6 +30,8 @@ import clsx from "clsx";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Hint from "@/components/ui/hint";
 import { Textarea } from "@/components/ui/textarea";
+import { useSelector } from "react-redux";
+import { selectAuth } from "@/features/auth/store/authSlice";
 
 interface IssuanceDetailProps {
   candidate: CandidateItemWithStore;
@@ -57,6 +59,7 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
       skip: !candidate,
       refetchOnMountOrArgChange: true,
     });
+  const currentUserInfo = useSelector(selectAuth);
 
   const candidateIssuanceDetails: IssuanceDetailsItem = useMemo(() => {
     if (issuanceDetails) {
@@ -128,7 +131,9 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
       <CardContent className="flex justify-center">
         {image ? (
           <img
-            src={`${baseUrl}/hard_verify/api/v1.0/${image}?t=${Date.now()}`}
+            src={`${baseUrl}/hard_verify/api/v1.0/secured_file?path=${encodeURIComponent(
+              image
+            )}?t=${Date.now()}`}
             className="w-64 h-64 rounded-md object-cover border"
           />
         ) : (
@@ -146,7 +151,7 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
       {isLoadingIssuanceDetails ? (
         <Loader className="animate-spin w-10 h-10" />
       ) : isError && issueDetailsFetchError ? (
-        <p>Error fetching issuance details {JSON.stringify(candidate)}</p>
+        <p>Error fetching issuance details.</p>
       ) : candidateIssuanceDetails ? (
         <div className="space-y-6">
           <ScrollArea className="overflow-auto">
@@ -182,7 +187,7 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
                 </span>
               </div>
 
-              {!isToConfirm && (
+              {!isToConfirm && currentUserInfo.role !== "store_agent" && (
                 <div className="flex items-center gap-2">
                   <TicketCheck className="w-4 h-4" />
                   <span>
@@ -198,7 +203,7 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
                   <strong>Store:</strong> {candidate.store?.name}
                 </span>
               </div>
-              {!isToConfirm && (
+              {!isToConfirm && currentUserInfo.role !== "store_agent" && (
                 <div className="flex items-center gap-2">
                   <MapPinCheck className="w-4 h-4" />
                   <span>
@@ -248,7 +253,7 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
                       />
                       <span className="px-2">|</span>
                       <StatusItem
-                        label="Aadhar Number"
+                        label="Aadhaar Number"
                         status={verificationStatus.data.is_aadhar_verified}
                       />
                       <span className="px-2">|</span>

@@ -67,4 +67,5 @@ export interface CandidatesSearchParams {
   store_id?: string | null;
   is_verified?: boolean | undefined;
   is_issued?: boolean | undefined;
+  upgrade_request?: boolean | undefined;
 }

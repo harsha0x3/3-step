@@ -35,6 +35,7 @@ export const rootApiSlice = createApi({
     "Issuance",
     "Users",
     "Dashboard",
+    "UtilityFiles",
   ],
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

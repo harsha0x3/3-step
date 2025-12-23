@@ -34,6 +34,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import Hint from "@/components/ui/hint";
 import type { User, UserItem } from "../types";
+import { useSelector } from "react-redux";
+import { selectAuth } from "../store/authSlice";
 
 type Props = {
   users: UserItem[];
@@ -43,6 +45,7 @@ type Props = {
 const UserManagementTable: React.FC<Props> = ({ users, onEdit }) => {
   const [deleteUser] = useDeleteUserMutation();
   const [resetPassword] = useResetUserPasswordMutation();
+  const currentUserInfo = useSelector(selectAuth);
 
   const handleDelete = async (userId: string) => {
     try {
@@ -132,15 +135,20 @@ const UserManagementTable: React.FC<Props> = ({ users, onEdit }) => {
       header: "Actions",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <Hint label="Edit User Info">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onEdit(row.original)}
-            >
-              <Pencil className="w-4 h-4" />
-            </Button>
-          </Hint>
+          {!(
+            row.original.role === "super_admin" &&
+            currentUserInfo.role !== "super_admin"
+          ) && (
+            <Hint label="Edit User Info">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onEdit(row.original)}
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            </Hint>
+          )}
 
           <AlertDialog>
             <Hint label="Reset User's password to default password@123">

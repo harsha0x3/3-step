@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func, and_, case, extract
-from models import Candidate, User
-from models.stores import Store
+from sqlalchemy import select, func, and_, case, not_
+from models import Candidate, User, VerificationStatus, Store
 from models.issued_statuses import IssuedStatus
+from models import UpgradeRequest
 from fastapi import HTTPException, status
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -26,6 +26,17 @@ def get_admin_dashboard_stats(db: Session) -> dict[str, Any]:
             .where(IssuedStatus.issued_status == "issued")
         )
 
+        upgrade_requests_stats = db.execute(
+            select(
+                func.count(UpgradeRequest.candidate_id).label("upgrade_requests"),
+                func.sum(case((UpgradeRequest.is_accepted, 1), else_=0)).label(
+                    "upgrades_completed"
+                ),
+            )
+        ).all()
+
+        # print("UPGRADE STATS", upgrade_requests_stats)
+
         total_stores = db.scalar(select(func.count(Store.id)))
 
         # Pending verifications
@@ -38,18 +49,24 @@ def get_admin_dashboard_stats(db: Session) -> dict[str, Any]:
                 Store.name,
                 Store.city,
                 func.count(Candidate.id).label("total_candidates"),
-                func.sum(case((Candidate.is_candidate_verified, 1), else_=0)).label(
-                    "verified"
-                ),
                 func.sum(
                     case((IssuedStatus.issued_status == "issued", 1), else_=0)
                 ).label("laptops_issued"),
+                func.sum(
+                    case((not_(VerificationStatus.is_aadhar_verified), 1), else_=0)
+                ).label("aadhar_failed"),
+                func.sum(
+                    case((not_(VerificationStatus.is_facial_verified), 1), else_=0)
+                ).label("facial_failed"),
             )
             .outerjoin(Candidate, Store.id == Candidate.store_id)
             .outerjoin(IssuedStatus, Candidate.id == IssuedStatus.candidate_id)
+            .outerjoin(
+                VerificationStatus, Candidate.id == VerificationStatus.candidate_id
+            )
             .group_by(Store.id, Store.name, Store.city)
         ).all()
-
+        # print("store", store_stats)
         return {
             "summary": {
                 "total_candidates": total_candidates,
@@ -76,11 +93,20 @@ def get_admin_dashboard_stats(db: Session) -> dict[str, Any]:
                     "store_name": row.name,
                     "city": row.city,
                     "total_candidates": row.total_candidates or 0,
-                    "verified": row.verified or 0,
+                    "aadhar_failed": row.aadhar_failed or 0,
+                    "facial_failed": row.facial_failed or 0,
                     "laptops_issued": row.laptops_issued or 0,
                 }
                 for row in store_stats
             ],
+            "upgrade_statistics": {
+                "upgrade_requests": upgrade_requests_stats[0].upgrade_requests
+                if upgrade_requests_stats
+                else 0,
+                "upgrades_completed": upgrade_requests_stats[0].upgrades_completed
+                if upgrade_requests_stats
+                else 0,
+            },
         }
     except Exception as e:
         raise HTTPException(
@@ -119,6 +145,17 @@ def get_store_agent_dashboard_stats(db: Session, store_id: str) -> dict[str, Any
             )
         )
 
+        upgrade_requests_stats = db.execute(
+            select(
+                func.count(UpgradeRequest.candidate_id).label("upgrade_requests"),
+                func.sum(case((UpgradeRequest.is_accepted, 1), else_=0)).label(
+                    "upgrades_completed"
+                ),
+            )
+            .join(Candidate, Candidate.id == UpgradeRequest.candidate_id)
+            .where(Candidate.store_id == store_id)
+        ).all()
+
         # Recent issuances (last 10)
         recent_issuances = db.execute(
             select(
@@ -155,6 +192,14 @@ def get_store_agent_dashboard_stats(db: Session, store_id: str) -> dict[str, Any
                 }
                 for row in recent_issuances
             ],
+            "upgrade_statistics": {
+                "upgrade_requests": upgrade_requests_stats[0].upgrade_requests
+                if upgrade_requests_stats
+                else 0,
+                "upgrades_completed": upgrade_requests_stats[0].upgrades_completed
+                if upgrade_requests_stats
+                else 0,
+            },
         }
     except Exception as e:
         raise HTTPException(

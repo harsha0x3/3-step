@@ -114,7 +114,7 @@ async def update_user(
     current_user: Annotated[UserOut, Depends(require_admin)],
 ):
     """Admin updates user details"""
-    return admin_update_user(user_id, payload, db)
+    return admin_update_user(user_id, payload, db, current_user)
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_200_OK)

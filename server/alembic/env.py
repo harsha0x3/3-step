@@ -16,10 +16,11 @@ from models import (
     verification_statuses,
     coupons,
     vendors,
-    PasswordResetOtp,
+    password_reset_otps,
     BulkUploadResult,
     BulkUploadError,
     UpgradeRequest,
+    utilty_files,
 )
 
 load_dotenv()

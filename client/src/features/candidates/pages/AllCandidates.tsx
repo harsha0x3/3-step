@@ -63,6 +63,7 @@ const AllCandidates: React.FC = () => {
   const candSearchTerm = searchParams.get("candSearchTerm") || "";
   const candIsVerified = searchParams.get("is_verified");
   const candIsIssued = searchParams.get("is_issued");
+  const candUpgrade = searchParams.get("upgrade_request");
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -82,6 +83,8 @@ const AllCandidates: React.FC = () => {
       is_verified:
         candIsVerified !== null ? candIsVerified === "true" : undefined,
       is_issued: candIsIssued !== null ? candIsIssued === "true" : undefined,
+      upgrade_request:
+        candUpgrade !== null ? candUpgrade === "true" : undefined,
     }),
     [
       candPage,
@@ -92,6 +95,7 @@ const AllCandidates: React.FC = () => {
       candSearchTerm,
       candIsVerified,
       candIsIssued,
+      candUpgrade,
     ]
   );
 
@@ -427,6 +431,58 @@ const AllCandidates: React.FC = () => {
                                 <Check className="h-4 w-4 mr-2" />
                               )}
                               Not Issued
+                            </DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuPortal>
+                      </DropdownMenuSub>
+                    ))}
+                  {/* Upgrade Filters */}
+                  {currentUserInfo.role === "admin" ||
+                    (currentUserInfo.role === "super_admin" && (
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>
+                          Upgrade Requests
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuPortal>
+                          <DropdownMenuSubContent>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateSearchParams({
+                                  upgrade_request: null,
+                                  candPage: 1,
+                                })
+                              }
+                            >
+                              {candUpgrade === null && (
+                                <Check className="h-4 w-4 mr-2" />
+                              )}
+                              All
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateSearchParams({
+                                  upgrade_request: "true",
+                                  candPage: 1,
+                                })
+                              }
+                            >
+                              {candUpgrade === "true" && (
+                                <Check className="h-4 w-4 mr-2" />
+                              )}
+                              Completed
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateSearchParams({
+                                  upgrade_request: "false",
+                                  candPage: 1,
+                                })
+                              }
+                            >
+                              {candUpgrade === "false" && (
+                                <Check className="h-4 w-4 mr-2" />
+                              )}
+                              Pending
                             </DropdownMenuItem>
                           </DropdownMenuSubContent>
                         </DropdownMenuPortal>

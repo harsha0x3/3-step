@@ -623,7 +623,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
                 <strong>{candidateDetails?.data?.candidate.coupon_code}</strong>
               </div>
               <div className="grid grid-cols-[150px_1fr]">
-                <strong>Aadhar Number</strong>{" "}
+                <strong>Aadhaar Number</strong>{" "}
                 {candidateDetails?.data?.candidate.aadhar_number}
               </div>
               <div className="flex flex-col items-center border px-1 py-2 rounded">

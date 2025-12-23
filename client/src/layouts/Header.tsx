@@ -35,6 +35,7 @@ const Header: React.FC = () => {
       return "Vendors Details";
     if (path.includes("/vendor_spoc")) return "Vendor Contact Persons Details";
     if (path.includes("registration_officer/stores")) return "Store Details";
+    if (path.includes("help")) return "Help";
 
     return "Dashboard";
   }, [location.pathname, currentUserInfo.role]);

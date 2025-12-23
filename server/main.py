@@ -10,6 +10,8 @@ from routes import (
     vendor_routes,
     dashboard_routes,
     user_management_routes,
+    utility_file_routes,
+    secure_file_serving_routes,
 )
 from db.connection import init_db
 from fastapi.staticfiles import StaticFiles
@@ -57,7 +59,7 @@ async def remove_server_header(
     return response
 
 
-app.mount("/uploads", StaticFiles(directory=BASE_UPLOAD_DIR), name="uploads")
+# app.mount("/uploads", StaticFiles(directory=BASE_UPLOAD_DIR), name="uploads")
 
 
 @app.get("/health")
@@ -72,3 +74,5 @@ app.include_router(verification_routes.router)
 app.include_router(vendor_routes.router)
 app.include_router(dashboard_routes.router)
 app.include_router(user_management_routes.router)
+app.include_router(utility_file_routes.router)
+app.include_router(secure_file_serving_routes.router)

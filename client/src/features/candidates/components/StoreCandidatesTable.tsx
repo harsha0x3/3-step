@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import {
   type ColumnDef,
   createColumnHelper,
@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Loader } from "lucide-react";
-import IssuanceDetailsDialog from "./IssuanceDetailsDialog";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   candidates: PartialCandidateItem[];
@@ -30,6 +30,11 @@ const StoreCandidatesTable: React.FC<Props> = ({
   isLoading,
   error,
 }) => {
+  const [openIssuanceDialog, setOpenIssuanceDialog] = React.useState(false);
+  const IssuanceDetailsDialog = lazy(() => import("./IssuanceDetailsDialog"));
+  const [selectedCandidate, setSelectedCandidate] =
+    React.useState<CandidateItemWithStore | null>(null);
+
   const columnHelper = createColumnHelper<PartialCandidateItem>();
   console.log("PARTIAL CANDIDATEs", candidates);
 
@@ -97,10 +102,15 @@ const StoreCandidatesTable: React.FC<Props> = ({
               {status === "issued" ? "Issued" : "Not Issued"}
             </span>
             {status === "issued" && (
-              <div>
-                <p>{JSON.stringify(row.original.id)}</p>
-                <IssuanceDetailsDialog candidateId={row.original.id} />
-              </div>
+              <Button
+                variant={"link"}
+                onClick={() => {
+                  setOpenIssuanceDialog(true);
+                  setSelectedCandidate(row.original);
+                }}
+              >
+                View
+              </Button>
             )}
           </div>
         );
@@ -145,6 +155,18 @@ const StoreCandidatesTable: React.FC<Props> = ({
 
   return (
     <div className="w-full">
+      {openIssuanceDialog && selectedCandidate && (
+        <Suspense fallback={<Loader className="animate-spin h-5 w-5 ml-2" />}>
+          <IssuanceDetailsDialog
+            candidate={selectedCandidate}
+            defOpen={openIssuanceDialog}
+            onOpenChange={() => {
+              setSelectedCandidate(null);
+              setOpenIssuanceDialog(false);
+            }}
+          />
+        </Suspense>
+      )}
       <div className="rounded-md border">
         <Table className="min-w-full">
           <TableCaption>List of Beneficiary Employees</TableCaption>

@@ -18,7 +18,7 @@ class UpdateStorePayload(BaseModel):
     id: str | None = None
     name: str | None = None
     city: str | None = None
-    count: int
+    count: int | None = None
 
     # address: str | None = None
 

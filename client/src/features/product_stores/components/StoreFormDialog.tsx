@@ -7,7 +7,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
@@ -82,7 +81,6 @@ const StoreFormDialog: React.FC<Props> = ({
           toast.info("No changes detected.");
           return;
         }
-
         await updateStore({ storeId: store!.id, payload }).unwrap();
         toast.success("Store updated successfully!");
       } else {
@@ -95,7 +93,7 @@ const StoreFormDialog: React.FC<Props> = ({
       setOpen(false);
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.data?.detail ?? "Failed to save store");
+      toast.error("Failed to save store");
     }
   };
 
@@ -173,7 +171,7 @@ const StoreFormDialog: React.FC<Props> = ({
             <Label htmlFor="count">Total Stock</Label>
             <Input
               id="count"
-              {...register("count", { required: true })}
+              {...register("count", { required: true, valueAsNumber: true })}
               required
             />
             {errors.count && (

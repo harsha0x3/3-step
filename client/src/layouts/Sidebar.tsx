@@ -236,12 +236,12 @@ const Sidebar: React.FC = () => {
       path: "/store/beneficiary",
       roles: ["store_agent"],
     },
-    {
-      label: "Upgrade Laptop",
-      icon: ArrowBigUpDashIcon,
-      path: "/store/upgrade",
-      roles: ["store_agent"],
-    },
+    // {
+    //   label: "Upgrade Laptop",
+    //   icon: ArrowBigUpDashIcon,
+    //   path: "/store/upgrade",
+    //   roles: ["store_agent"],
+    // },
     {
       label: "Help",
       icon: HelpCircleIcon,

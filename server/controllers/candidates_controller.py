@@ -461,7 +461,12 @@ def get_all_candidates(
         )
 
 
-def get_candidates_of_store(db: Session, store_id: str, params: CandidatesSearchParams):
+def get_candidates_of_store(
+    db: Session,
+    store_id: str,
+    params: CandidatesSearchParams,
+    upgrade_info: bool = False,
+):
     try:
         store = db.get(Store, store_id)
         if not store:
@@ -469,7 +474,10 @@ def get_candidates_of_store(db: Session, store_id: str, params: CandidatesSearch
                 status_code=status.HTTP_404_NOT_FOUND, detail="Store not found"
             )
         stmt = select(Candidate).where(
-            and_(Candidate.store_id == store_id, Candidate.is_candidate_verified)
+            and_(
+                Candidate.store_id == store_id,
+                Candidate.is_candidate_verified.is_(True),
+            )
         )
         count_stats = db.execute(
             select(
@@ -483,6 +491,30 @@ def get_candidates_of_store(db: Session, store_id: str, params: CandidatesSearch
             )
             .outerjoin(IssuedStatus, IssuedStatus.candidate_id == Candidate.id)
         ).one()
+
+        if params.upgrade_request is not None:
+            if params.upgrade_request:
+                stmt = stmt.join(
+                    UpgradeRequest, UpgradeRequest.candidate_id == Candidate.id
+                ).where(UpgradeRequest.is_accepted.is_(True))
+            if not params.upgrade_request:
+                stmt = stmt.join(
+                    UpgradeRequest, UpgradeRequest.candidate_id == Candidate.id
+                ).where(UpgradeRequest.is_accepted.is_(False))
+
+        # Filter by issued status
+        if params.is_issued is not None:
+            if params.is_issued:
+                stmt = stmt.join(IssuedStatus).where(
+                    IssuedStatus.issued_status == "issued"
+                )
+            else:
+                stmt = stmt.join(IssuedStatus).where(
+                    or_(
+                        IssuedStatus.issued_status == "not_issued",
+                        Candidate.issued_status.is_(None),
+                    )
+                )
 
         if params.search_by and params.search_term and params.search_term != "null":
             setattr(params, "page", -1)
@@ -514,6 +546,7 @@ def get_candidates_of_store(db: Session, store_id: str, params: CandidatesSearch
                 full_name=candidate.full_name,
                 mobile_number=candidate.mobile_number,
                 is_candidate_verified=candidate.is_candidate_verified,
+                photo=candidate.photo,
                 issued_status=candidate.issued_status.issued_status
                 if candidate.issued_status
                 else "not_issued",
@@ -527,7 +560,18 @@ def get_candidates_of_store(db: Session, store_id: str, params: CandidatesSearch
                 )
                 if store
                 else None,
+                is_requested_for_upgrade=candidate.upgrade is not None,
+                scheduled_at=candidate.upgrade.scheduled_at
+                if candidate.upgrade
+                else None,
+                upgrade_product_info=candidate.upgrade.upgrade_product_info
+                if candidate.upgrade
+                else None,
+                cost_of_upgrade=candidate.upgrade.cost_of_upgrade
+                if candidate.upgrade
+                else None,
             )
+            print("candidate.upgrade", candidate.upgrade)
 
             result.append(data)
 

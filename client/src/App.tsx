@@ -16,8 +16,6 @@ import { lazy, Suspense, useEffect } from "react";
 import { Loader } from "lucide-react";
 import CandidateVoucherDistribution from "./features/candidates/components/CandidateVoucherDistribution";
 import { toast } from "sonner";
-import UpgradeRequestPage from "./features/verification/pages/UpgradeRequestPage";
-import UpgradeSubmitPage from "./features/verification/pages/UpgradeSubmitPage";
 
 function App() {
   const dispatch = useDispatch();
@@ -68,6 +66,9 @@ function App() {
   const LaptopIssuancePage = lazy(
     () => import("./features/verification/pages/LaptopIssuancePage")
   );
+  const UpgradeLaptopPage = lazy(
+    () => import("./features/verification/pages/UpgradeLaptopPage")
+  );
   const LaptopIssuanceSuccessPage = lazy(
     () => import("./features/verification/pages/LaptopIssuanceSuccessPage")
   );
@@ -80,6 +81,14 @@ function App() {
 
   const UtilityFilesPage = lazy(
     () => import("./features/shared/UtilityFilesPage")
+  );
+
+  const UpgradeChoice = lazy(
+    () => import("./features/verification/pages/UpgradeChoice")
+  );
+
+  const UpgradeCandidatesPage = lazy(
+    () => import("./features/verification/pages/UpgradeCandidatesPage")
   );
   const RootLayout = lazy(() => import("@/layouts/RootLayout"));
   const currentAuthState: AuthState = useSelector(selectAuth);
@@ -297,6 +306,21 @@ function App() {
               }
             />
             <Route
+              path="/store/upgrades/all"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col justify-center items-center">
+                      <Loader className="animate-spin w-10 h-10 text-amber-600" />
+                      <p>Loading upgrade requests data page...</p>
+                    </div>
+                  }
+                >
+                  <UpgradeCandidatesPage />
+                </Suspense>
+              }
+            />
+            <Route
               path="store/beneficiary/:candidateId/verify/otp"
               element={
                 <Suspense
@@ -327,7 +351,7 @@ function App() {
               }
             />
             <Route
-              path="store/upgrade"
+              path="store/beneficiary/upgrade/choice/:candidateId"
               element={
                 <Suspense
                   fallback={
@@ -337,25 +361,26 @@ function App() {
                     </div>
                   }
                 >
-                  <UpgradeRequestPage />
+                  <UpgradeChoice />
                 </Suspense>
               }
             />
             <Route
-              path="store/upgrade/beneficiary/:candidateId"
+              path="store/beneficiary/upgrade/issue/:candidateId"
               element={
                 <Suspense
                   fallback={
                     <div className="flex flex-col justify-center items-center">
                       <Loader className="animate-spin w-10 h-10 text-amber-600" />
-                      <p>Loading beneficiaries verification page...</p>
+                      <p>Loading Upgrade laptop page...</p>
                     </div>
                   }
                 >
-                  <UpgradeSubmitPage />
+                  <UpgradeLaptopPage />
                 </Suspense>
               }
             />
+
             <Route
               path="store/beneficiary/:candidateId/issuance/success"
               element={

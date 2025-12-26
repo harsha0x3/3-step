@@ -78,7 +78,13 @@ class PartialCandidateItem(BaseModel):
     mobile_number: str | None = None
     issued_status: str | None = None
     is_candidate_verified: bool
+    is_requested_for_upgrade: bool
+    photo: str | None
     store: StoreItemOut | None = None
+
+    scheduled_at: date | None
+    upgrade_product_info: str | None
+    cost_of_upgrade: int | None
 
 
 class CandidateOut(BaseModel):

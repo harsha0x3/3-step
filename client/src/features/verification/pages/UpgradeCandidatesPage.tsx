@@ -1,10 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
-import { useGetCandidatesOfStoreQuery } from "../store/candidatesApiSlice";
+import { useGetCandidatesOfStoreQuery } from "@/features/candidates/store/candidatesApiSlice";
 // import CandidateFormDialog from "../components/CandidateFormDialog";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import type { CandidatesSearchParams, PartialCandidateItem } from "../types";
+import type {
+  CandidatesSearchParams,
+  PartialCandidateItem,
+} from "@/features/candidates/types";
 import {
   Pagination,
   PaginationContent,
@@ -43,9 +46,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import StoreCandidatesTable from "../components/StoreCandidatesTable";
+import StoreCandidatesTable from "@/features/candidates/components/StoreCandidatesTable";
 
-const StoreCandidates: React.FC = () => {
+const UpgradeCandidatesPage: React.FC = () => {
   const currentUserInfo = useSelector(selectAuth);
   const [searchParams, setSearchParams] = useSearchParams();
   const candPage = parseInt(searchParams.get("candPage") || "1", 10);
@@ -56,7 +59,7 @@ const StoreCandidates: React.FC = () => {
   const candSearchTerm = searchParams.get("candSearchTerm") || "";
   const candIsVerified = searchParams.get("is_verified");
   const candIsIssued = searchParams.get("is_issued");
-  const candUpgrade = searchParams.get("upgrade_request");
+  const candUpgrade = searchParams.get("upgrade_request") || "false";
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -357,55 +360,6 @@ const StoreCandidates: React.FC = () => {
 
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
-                      Laptop Issuance Status
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                      <DropdownMenuSubContent>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            updateSearchParams({
-                              is_issued: null,
-                              candPage: 1,
-                            })
-                          }
-                        >
-                          {candIsIssued === null && (
-                            <Check className="h-4 w-4 mr-2" />
-                          )}
-                          All
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            updateSearchParams({
-                              is_issued: "true",
-                              candPage: 1,
-                            })
-                          }
-                        >
-                          {candIsIssued === "true" && (
-                            <Check className="h-4 w-4 mr-2" />
-                          )}
-                          Issued
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            updateSearchParams({
-                              is_issued: "false",
-                              candPage: 1,
-                            })
-                          }
-                        >
-                          {candIsIssued === "false" && (
-                            <Check className="h-4 w-4 mr-2" />
-                          )}
-                          Not Issued
-                        </DropdownMenuItem>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                  </DropdownMenuSub>
-
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
                       Upgrade Requests
                     </DropdownMenuSubTrigger>
                     <DropdownMenuPortal>
@@ -479,6 +433,7 @@ const StoreCandidates: React.FC = () => {
                 "An Error Occured while fetching beneficiaries"
               : ""
           }
+          isFromUpgrade={true}
         />
       </div>
       <Pagination>
@@ -567,4 +522,4 @@ const StoreCandidates: React.FC = () => {
   );
 };
 
-export default StoreCandidates;
+export default UpgradeCandidatesPage;

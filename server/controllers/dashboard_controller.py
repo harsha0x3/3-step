@@ -23,7 +23,12 @@ def get_admin_dashboard_stats(db: Session) -> dict[str, Any]:
         issued_laptops = db.scalar(
             select(func.count(Candidate.id))
             .join(IssuedStatus)
-            .where(IssuedStatus.issued_status == "issued")
+            .where(
+                and_(
+                    IssuedStatus.issued_status == "issued",
+                    IssuedStatus.is_requested_to_upgrade.is_(False),
+                )
+            )
         )
 
         upgrade_requests_stats = db.execute(
@@ -141,13 +146,16 @@ def get_store_agent_dashboard_stats(db: Session, store_id: str) -> dict[str, Any
                 and_(
                     Candidate.store_id == store_id,
                     IssuedStatus.issued_status == "issued",
+                    IssuedStatus.is_requested_to_upgrade.is_(False),
                 )
             )
         )
 
         upgrade_requests_stats = db.execute(
             select(
-                func.count(UpgradeRequest.candidate_id).label("upgrade_requests"),
+                func.sum(case((~UpgradeRequest.is_accepted, 1), else_=0)).label(
+                    "upgrade_requests"
+                ),
                 func.sum(case((UpgradeRequest.is_accepted, 1), else_=0)).label(
                     "upgrades_completed"
                 ),

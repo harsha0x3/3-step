@@ -12,10 +12,10 @@ from controllers.verification_controller import (
     candidate_verification_consolidate,
     override_verification_process,
     get_latest_issuer_details,
-    request_upgrade,
-    new_request_upgrade,
-    verify_for_upgrade,
-    confirm_upgrade,
+    request_new_upgrade,
+    close_upgrade_request,
+    procees_with_no_upgrade,
+    get_upgrade_details,
 )
 from controllers.store_controller import get_store_of_user
 from utils.helpers import save_image_file
@@ -27,7 +27,7 @@ from services.auth.deps import get_current_user
 from models.schemas.auth_schemas import UserOut
 from models.schemas.otp_schemas import OtpVerifyRequest
 from models.schemas import verification_schemas as v_schemas
-
+from models import Candidate
 from fastapi import (
     APIRouter,
     Depends,
@@ -101,7 +101,7 @@ async def verify_candidate_via_otp(
         if candidate.store_id != store.id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Candidate is not allotted to this store. Please check the candidate allotted store properly.",
+                detail="Beneficiary is not allotted to this store. Please check the beneficiary allotted store properly.",
             )
         otp_verification_result = await verify_otp(
             candidate_id=candidate_id, otp_input=input_otp.otp, db=db
@@ -465,6 +465,12 @@ async def issue_candidate_laptop(
             ),
         )
 
+        if not store_employee_photo_url:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Store employee photo not found.",
+            )
+
         payload = v_schemas.LaptopIssueRequest(
             laptop_serial=laptop_serial,
             evidence_photo=evidence_photo_url,
@@ -585,55 +591,24 @@ async def get_latest_issuer(
         )
 
 
-@router.post("/upgrade-initiate")
-async def new_request_for_upgrade(
+@router.get("/upgrade-details/{candidate_id}")
+def get_candidate_upgrade_details(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
-    payload: Annotated[
-        v_schemas.RequestForUploadPayload, "Payload to request for product"
-    ],
-):
-    try:
-        store = get_store_of_user(db=db, user=current_user)
-        return verify_for_upgrade(payload=payload, db=db, store=store)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error occured during initiating upgrade request.",
-        )
-
-
-@router.post("/upgrade-confirm")
-async def confirm_laptop_upgrade(
-    db: Annotated[Session, Depends(get_db_conn)],
-    current_user: Annotated[UserOut, Depends(get_current_user)],
-    payload: Annotated[
-        v_schemas.RequestForUploadPayload, "Payload to request for product"
-    ],
-):
-    try:
-        store = get_store_of_user(db=db, user=current_user)
-        return confirm_upgrade(payload=payload, db=db, store=store)
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error occured during confirming upgrade request.",
-        )
-
-
-@router.post("/upgrade-product/{candidate_id}")
-async def upgrade_product(
-    db: Annotated[Session, Depends(get_db_conn)],
-    current_user: Annotated[UserOut, Depends(get_current_user)],
-    payload: Annotated[
-        v_schemas.UpgradeRequestPayload, "Payload to request for product"
-    ],
     candidate_id: Annotated[str, Path(title="Candidate ID")],
+):
+    try:
+        return get_upgrade_details(candidate_id=candidate_id, db=db)
+    except HTTPException:
+        raise
+
+
+@router.post("/upgrade/request/{candidate_id}")
+def request_for_upgrade(
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+    candidate_id: Annotated[str, Path(title="Candidate ID")],
+    payload: Annotated[v_schemas.RequestNewUpgradePayload | None, ""],
 ):
     try:
         if current_user.role not in ["super_admin", "store_agent"]:
@@ -645,28 +620,154 @@ async def upgrade_product(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Store not found for user"
             )
-        result = new_request_upgrade(
+        return request_new_upgrade(
             candidate_id=candidate_id, db=db, store=store, payload=payload
         )
-        return result
     except HTTPException:
         raise
-
     except Exception as e:
-        print(e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error requesting for upgrade. Try again.",
+            detail="Error in requesting for laptop upgrade.",
         )
 
 
-@router.post("/upgrade-request/{candidate_id}")
-async def request_for_upgrade(
+@router.post("/upgrade/submit/{candidate_id}")
+async def confirm_and_submit_upgrade(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
-    payload: Annotated[
-        v_schemas.UpgradeRequestPayload, "Payload to request for product"
-    ],
+    candidate_id: Annotated[str, Path(title="Candidate ID")],
+    laptop_serial: Annotated[str, Form(...), ""],
+    upgrade_product_info: Annotated[str, Form(...), ""],
+    cost_of_upgrade: Annotated[int, Form(...), ""],
+    store_employee_name: Annotated[str, Form(...), ""],
+    store_employee_mobile: Annotated[str, Form(...), ""],
+    evidence_photo: Annotated[UploadFile, File(...)],
+    bill_photo: Annotated[UploadFile, File(title="Laptop Bill / Reciept Photo")],
+    store_employee_photo: Annotated[
+        UploadFile | None, File(title="store employee who is issuing the laptop")
+    ] = None,
+):
+    import asyncio
+
+    try:
+        if current_user.role != "store_agent" and current_user.role != "super_admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Unauthorised to view candidate verification status",
+            )
+        store = get_store_of_user(db=db, user=current_user)
+
+        candidate = db.get(Candidate, candidate_id)
+        if not candidate:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Beneficiary not found"
+            )
+        if candidate.store_id != store.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary not assigned to this store",
+            )
+        verification_status = candidate.verification_status
+        if not verification_status:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Beneficiary Employee has not been verified yet",
+            )
+        if not verification_status.is_coupon_verified:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary gift card is not verified",
+            )
+        if not verification_status.is_aadhar_verified:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary aadhaar number is not verified",
+            )
+        if (
+            not verification_status.is_facial_verified
+            and not verification_status.overriding_user
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Beneficiary Employee has not been facially verified yet",
+            )
+        latest_issuer = get_latest_issuer_details(db=db, store_user_id=current_user.id)
+        store_employee_photo_url = None
+        if store_employee_photo:
+            store_employee_photo_url = await save_image_file(
+                store_id=store.id,
+                photo=store_employee_photo,
+                candidate_id=candidate_id,
+                isLaptopIssuance=True,
+                prefix="employee",
+            )
+        elif latest_issuer:
+            store_employee_photo_url = latest_issuer.store_employee_photo
+
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Store employee photo required for first issuance",
+            )
+
+        (
+            bill_photo_url,
+            evidence_photo_url,
+        ) = await asyncio.gather(
+            save_image_file(
+                store_id=store.id,
+                photo=bill_photo,
+                candidate_id=candidate_id,
+                isLaptopIssuance=True,
+                prefix="bill",
+            ),
+            save_image_file(
+                store_id=store.id,
+                photo=evidence_photo,
+                candidate_id=candidate_id,
+                isLaptopIssuance=True,
+                prefix="laptop",
+            ),
+        )
+
+        if not store_employee_photo_url:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Store employee photo not found.",
+            )
+
+        laptop_issue_details = v_schemas.LaptopIssueRequest(
+            laptop_serial=laptop_serial,
+            evidence_photo=evidence_photo_url,
+            bill_reciept=bill_photo_url,
+            store_employee_photo=store_employee_photo_url,
+            store_employee_name=store_employee_name,
+            store_employee_mobile=store_employee_mobile,
+        )
+        upgrade_details = v_schemas.UpgradeRequestPayload(
+            upgrade_product_info=upgrade_product_info, cost_of_upgrade=cost_of_upgrade
+        )
+
+        payload = v_schemas.UpgradeClosurePayload(
+            upgrade_details=upgrade_details, laptop_issue_details=laptop_issue_details
+        )
+        return close_upgrade_request(
+            payload=payload, candidate_id=candidate_id, db=db, current_user=current_user
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error upgrading laptop",
+        )
+
+
+@router.post("/proceed/no-upgrade/{candidate_id}")
+def proceed_without_upgrade(
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
     candidate_id: Annotated[str, Path(title="Candidate ID")],
 ):
     try:
@@ -674,25 +775,128 @@ async def request_for_upgrade(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Access Denied"
             )
+        candidate = get_candidate_by_id(candidate_id=candidate_id, db=db)
         store = get_store_of_user(db=db, user=current_user)
-        if not store:
+        if candidate.store_id != store.id:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Store not found for user"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Beneficiary not assigned to this store",
             )
-        result = request_upgrade(
-            candidate_id=candidate_id, db=db, store=store, payload=payload
-        )
-        return result
-
+        return procees_with_no_upgrade(candidate_id=candidate_id, db=db)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error requesting for upgrade. Try again.",
+            detail="Error proceeding with no upgrrade. Try again",
         )
 
 
 ### ---------------- NOT USING ------------- ###
 
+# @router.post("/upgrade-initiate")
+# async def new_request_for_upgrade(
+#     db: Annotated[Session, Depends(get_db_conn)],
+#     current_user: Annotated[UserOut, Depends(get_current_user)],
+#     payload: Annotated[
+#         v_schemas.RequestForUploadPayload, "Payload to request for product"
+#     ],
+# ):
+#     try:
+#         store = get_store_of_user(db=db, user=current_user)
+#         return verify_for_upgrade(payload=payload, db=db, store=store)
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail="Error occured during initiating upgrade request.",
+#         )
+
+
+# @router.post("/upgrade-confirm")
+# async def confirm_laptop_upgrade(
+#     db: Annotated[Session, Depends(get_db_conn)],
+#     current_user: Annotated[UserOut, Depends(get_current_user)],
+#     payload: Annotated[
+#         v_schemas.RequestForUploadPayload, "Payload to request for product"
+#     ],
+# ):
+#     try:
+#         store = get_store_of_user(db=db, user=current_user)
+#         return confirm_upgrade(payload=payload, db=db, store=store)
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         print(e)
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail="Error occured during confirming upgrade request.",
+#         )
+
+
+# @router.post("/upgrade-product/{candidate_id}")
+# async def upgrade_product(
+# db: Annotated[Session, Depends(get_db_conn)],
+# current_user: Annotated[UserOut, Depends(get_current_user)],
+# payload: Annotated[
+#     v_schemas.UpgradeRequestPayload, "Payload to request for product"
+# ],
+# candidate_id: Annotated[str, Path(title="Candidate ID")],
+# ):
+#     try:
+#         if current_user.role not in ["super_admin", "store_agent"]:
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_FORBIDDEN, detail="Access Denied"
+#             )
+#         store = get_store_of_user(db=db, user=current_user)
+# if not store:
+#     raise HTTPException(
+#         status_code=status.HTTP_403_FORBIDDEN, detail="Store not found for user"
+#     )
+#         result = new_request_upgrade(
+#             candidate_id=candidate_id, db=db, store=store, payload=payload
+#         )
+#         return result
+#     except HTTPException:
+#         raise
+
+#     except Exception as e:
+#         print(e)
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail="Error requesting for upgrade. Try again.",
+#         )
+
+# @router.post("/upgrade-request/{candidate_id}")
+# async def request_for_upgrade(
+#     db: Annotated[Session, Depends(get_db_conn)],
+#     current_user: Annotated[UserOut, Depends(get_current_user)],
+#     payload: Annotated[
+#         v_schemas.UpgradeRequestPayload, "Payload to request for product"
+#     ],
+#     candidate_id: Annotated[str, Path(title="Candidate ID")],
+# ):
+#     try:
+#         if current_user.role not in ["super_admin", "store_agent"]:
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_FORBIDDEN, detail="Access Denied"
+#             )
+#         store = get_store_of_user(db=db, user=current_user)
+#         if not store:
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_FORBIDDEN, detail="Store not found for user"
+#             )
+#         result = request_upgrade(
+#             candidate_id=candidate_id, db=db, store=store, payload=payload
+#         )
+#         return result
+
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail="Error requesting for upgrade. Try again.",
+#         )
 
 # @router.post("/candidate-aadhar/{candidate_id}")
 # async def verify_candidate_aadhar(

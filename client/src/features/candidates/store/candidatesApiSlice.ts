@@ -152,7 +152,7 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
     }),
 
     getCandidateById: builder.query<
-      ApiResponse<CandidateItemWithStore | unknown>,
+      ApiResponse<{ candidate: CandidateItemWithStore }>,
       string
     >({
       query: (candidateId: string) => `/candidates/details/${candidateId}`,

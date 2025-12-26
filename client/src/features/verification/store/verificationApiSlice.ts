@@ -6,7 +6,8 @@ import type {
   OverrideRequest,
   OverrideResult,
   RequestForUploadPayload,
-  UpgradeRequestItem,
+  RequestNewUpgrade,
+  UpgradeRequestOut,
   UpgradeRequestPayload,
   VerificationResult,
   VerificationStatusItem,
@@ -15,7 +16,7 @@ import type { CandidateItemWithStore } from "@/features/candidates/types";
 export const verificationApi = rootApiSlice.injectEndpoints({
   endpoints: (builder) => ({
     verifyFace: builder.mutation<
-      any,
+      unknown,
       { candidateId: string; formData: FormData }
     >({
       query: ({ candidateId, formData }) => ({
@@ -44,8 +45,11 @@ export const verificationApi = rootApiSlice.injectEndpoints({
         method: "POST",
       }),
     }),
-    verifyOtp: builder.mutation({
-      query: ({ candidateId, otp }: { candidateId: string; otp: string }) => ({
+    verifyOtp: builder.mutation<
+      ApiResponse<{ is_requested_for_upgrade: boolean }>,
+      { candidateId: string; otp: string }
+    >({
+      query: ({ candidateId, otp }) => ({
         url: `/verify/otp/candidate/${candidateId}`,
         method: "POST",
         body: { otp },
@@ -174,17 +178,54 @@ export const verificationApi = rootApiSlice.injectEndpoints({
       }),
       invalidatesTags: ["VerificationStatus"],
     }),
-    requestUpgrade: builder.mutation<
-      ApiResponse<UpgradeRequestItem>,
-      { candidateId: string; payload: UpgradeRequestPayload }
+
+    proceedWithNoUpgrade: builder.mutation<
+      ApiResponse<unknown>,
+      { candidateId: string }
+    >({
+      query: ({ candidateId }) => ({
+        url: `/verify/proceed/no-upgrade/${candidateId}`,
+        method: "POST",
+      }),
+    }),
+
+    requestNewUpgrade: builder.mutation<
+      ApiResponse<{
+        is_already_issued: boolean;
+        issuance_info: IssuedStatusWithUpgrade | UpgradeRequestOut;
+      }>,
+      { candidateId: string; payload: RequestNewUpgrade | null }
     >({
       query: ({ candidateId, payload }) => ({
-        url: `/verify/upgrade-request/${candidateId}`,
+        url: `/verify/upgrade/request/${candidateId}`,
+        method: "POST",
+        body: payload,
+      }),
+    }),
+
+    getUpgradeInfo: builder.query<
+      ApiResponse<UpgradeRequestOut>,
+      { candidateId: string }
+    >({
+      query: ({ candidateId }) => `/verify/upgrade-details/${candidateId}`,
+    }),
+
+    submitUpgradeRequest: builder.mutation<
+      ApiResponse<{
+        candidate: CandidateItemWithStore;
+        issuance_details: IssuedStatusWithUpgrade;
+      }>,
+      { candidateId: string; payload: FormData }
+    >({
+      query: ({ candidateId, payload }) => ({
+        url: `/verify/upgrade/submit/${candidateId}`,
         method: "POST",
         body: payload,
       }),
       invalidatesTags: ["Issuance"],
     }),
+
+    // ----------------- OLD --------------
 
     newRequestForUpgrade: builder.mutation<
       ApiResponse<{
@@ -199,6 +240,7 @@ export const verificationApi = rootApiSlice.injectEndpoints({
         body: payload,
       }),
     }),
+
     confirmRequestForUpgrade: builder.mutation<
       ApiResponse<{
         candidate: CandidateItemWithStore;
@@ -245,8 +287,12 @@ export const {
   useSendOtpToAdminMutation,
   useGetLatestLaptopIssuerQuery,
   useLazyGetCandidateIssuanceDetailsQuery,
-  useRequestUpgradeMutation,
   useNewRequestForUpgradeMutation,
   useConfirmUpgradeMutation,
   useConfirmRequestForUpgradeMutation,
+
+  useRequestNewUpgradeMutation,
+  useSubmitUpgradeRequestMutation,
+  useProceedWithNoUpgradeMutation,
+  useGetUpgradeInfoQuery,
 } = verificationApi;

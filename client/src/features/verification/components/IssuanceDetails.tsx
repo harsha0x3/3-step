@@ -133,7 +133,7 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
           <img
             src={`${baseUrl}/hard_verify/api/v1.0/secured_file?path=${encodeURIComponent(
               image
-            )}?t=${Date.now()}`}
+            )}`}
             className="w-64 h-64 rounded-md object-cover border"
           />
         ) : (
@@ -248,7 +248,7 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
                     </strong>
                     <div className="flex justify-between items-center text-sm py-1">
                       <StatusItem
-                        label="Voucher Code"
+                        label="Gift Card Code"
                         status={verificationStatus.data.is_coupon_verified}
                       />
                       <span className="px-2">|</span>
@@ -336,7 +336,7 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
                   title="Laptop Issued By"
                   icon={UserIcon}
                   image={candidateIssuanceDetails.store_employee_photo}
-                  fallback="No Receipt Uploaded"
+                  fallback="No Photo Uploaded"
                 />
               </div>
             )}

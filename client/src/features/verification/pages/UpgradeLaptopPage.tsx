@@ -1,13 +1,13 @@
-// src/features/verification/pages/LaptopIssuancePage.tsx
+// src\features\verification\pages\UpgradeLaptopPage.tsx
 
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import LaptopIssuanceForm from "../components/LaptopIssuanceForm";
 import { useParams } from "react-router-dom";
 import SuccessDialog from "../components/SuccessDialog";
 import LaptopDistSupportFooter from "@/features/shared/LaptopDistSupportFooter";
+import UpgradeLaptopForm from "../components/UpgradeLaptopForm";
 
-const LaptopIssuancePage: React.FC = () => {
+const UpgradeLaptopPage: React.FC = () => {
   const { candidateId } = useParams<{ candidateId: string }>();
   const [openSuccess, setOpenSuccess] = useState<boolean>(false);
 
@@ -17,13 +17,13 @@ const LaptopIssuancePage: React.FC = () => {
         <Card className="w-full max-w-3xl shadow-md">
           <CardHeader>
             <CardTitle className="text-center text-2xl">
-              Details of Laptop
+              Details of Upgraded Laptop
             </CardTitle>
           </CardHeader>
 
           <CardContent>
             {candidateId ? (
-              <LaptopIssuanceForm
+              <UpgradeLaptopForm
                 candidateId={candidateId}
                 onSuccess={() => {
                   setOpenSuccess(true);
@@ -43,4 +43,4 @@ const LaptopIssuancePage: React.FC = () => {
   );
 };
 
-export default LaptopIssuancePage;
+export default UpgradeLaptopPage;

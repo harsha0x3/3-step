@@ -88,7 +88,7 @@ const UpgradeRequestPage: React.FC = () => {
             )}
             <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr]">
               <Label className="font-medium">
-                Voucher Code<span className="text-red-600"> *</span>
+                Gift Card Code<span className="text-red-600"> *</span>
               </Label>
               <Input
                 id="coupon_code"
@@ -160,12 +160,15 @@ const UpgradeRequestPage: React.FC = () => {
                   onClick={async () => {
                     try {
                       await confirmRequestForUpgrade(upgradeRequestData);
-                      navigate(`/store/upgrade/beneficiary/${candidate.id}`, {
-                        state: {
-                          existing_laptop_serial:
-                            upgradeRequestData.existing_laptop_serial,
-                        },
-                      });
+                      navigate(
+                        `/store/beneficiary/upgrade/beneficiary/${candidate.id}`,
+                        {
+                          state: {
+                            existing_laptop_serial:
+                              upgradeRequestData.existing_laptop_serial,
+                          },
+                        }
+                      );
                     } catch (err) {
                       const errMsg =
                         err?.data?.detail?.msg ??

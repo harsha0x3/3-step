@@ -55,7 +55,7 @@ class Candidate(Base, BaseMixin):
         "IssuedStatus", back_populates="candidate", uselist=False
     )
     vendor_spoc = relationship("VendorSpoc", back_populates="candidates")
-    upgrade = relationship("UpgradeRequest", back_populates="candidate")
+    upgrade = relationship("UpgradeRequest", back_populates="candidate", uselist=False)
 
     def set_aadhar_number(self, plain_aadhar_number: str) -> None:
         self.aadhar_number_hashed = hash_aadhar_number(plain_aadhar_number)

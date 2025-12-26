@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from .auth_schemas import UserOut
-from datetime import datetime
+from datetime import datetime, date
 
 
 class IsuedStatusItem(BaseModel):
@@ -26,11 +26,30 @@ class UpgradeRequestItem(BaseModel):
     cost_of_upgrade: int
     upgrade_product_info: str
     new_laptop_serial: str | None = None
+    scheduled_at: date | None
 
     upgrade_reason: str | None = None
     upgrade_product_type: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UpgradeRequestOut(BaseModel):
+    candidate_id: str
+    cost_of_upgrade: int | None = None
+    upgrade_product_info: str | None = None
+    new_laptop_serial: str | None = None
+    scheduled_at: date | None
+
+    is_accepted: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RequestNewUpgradePayload(BaseModel):
+    upgrade_product_info: str
+    cost_of_upgrade: int = 0
+    scheduled_at: date | None
 
 
 class IssuedStatusWithUpgrade(BaseModel):
@@ -96,7 +115,6 @@ class UpgradeRequestPayload(BaseModel):
     upgrade_product_info: str
     cost_of_upgrade: int
     new_laptop_serial: str | None = None
-    existing_laptop_serial: str
 
     upgrade_product_type: str | None = None
     upgrade_reason: str | None = None
@@ -105,3 +123,8 @@ class UpgradeRequestPayload(BaseModel):
 class RequestForUploadPayload(BaseModel):
     coupon_code: str
     existing_laptop_serial: str
+
+
+class UpgradeClosurePayload(BaseModel):
+    upgrade_details: UpgradeRequestPayload
+    laptop_issue_details: LaptopIssueRequest

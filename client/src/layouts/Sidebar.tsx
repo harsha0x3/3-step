@@ -14,9 +14,8 @@ import {
   Menu,
   X,
   CopyPlusIcon,
-  WifiOff,
-  ArrowBigUpDashIcon,
   HelpCircleIcon,
+  ArrowBigUpDashIcon,
 } from "lucide-react";
 import {
   Collapsible,
@@ -236,12 +235,12 @@ const Sidebar: React.FC = () => {
       path: "/store/beneficiary",
       roles: ["store_agent"],
     },
-    // {
-    //   label: "Upgrade Laptop",
-    //   icon: ArrowBigUpDashIcon,
-    //   path: "/store/upgrade",
-    //   roles: ["store_agent"],
-    // },
+    {
+      label: "Upgrade Requests",
+      icon: ArrowBigUpDashIcon,
+      path: "/store/upgrades/all",
+      roles: ["store_agent"],
+    },
     {
       label: "Help",
       icon: HelpCircleIcon,

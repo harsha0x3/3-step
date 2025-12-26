@@ -116,7 +116,7 @@ const CandidateFormDialog: React.FC<Props> = ({
     reset,
     watch,
     control,
-    formState: { errors, dirtyFields },
+    formState: { errors },
   } = useForm<NewCandidatePayload>({
     defaultValues: candidate
       ? {
@@ -160,23 +160,9 @@ const CandidateFormDialog: React.FC<Props> = ({
         // Never allow verified flag to change in edit mode
         delete data.is_candidate_verified;
 
-        const dirty = Object.keys(dirtyFields);
-        const payload: UpdateCandidatePayload = {};
-
-        for (const key of dirty) {
-          if (key === "is_candidate_verified") continue; // safety guard
-          payload[key] = data[key];
-        }
-
-        if (Object.keys(payload).length === 0) {
-          toast.info("No changes detected to save.");
-          setIsEditMode(false);
-          return;
-        }
-
         await updateCandidate({
           candidateId: candidate.id,
-          payload,
+          payload: data,
         }).unwrap();
 
         toast.success("Beneficiary details updated successfully!");
@@ -307,7 +293,7 @@ const CandidateFormDialog: React.FC<Props> = ({
     name: keyof NewCandidatePayload,
     label: string,
     type: string = "text",
-    required = true,
+    required = currentUserInfo.role !== "super_admin",
     isReadOnly = false
   ) => (
     <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
@@ -469,7 +455,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                       : toVerify && !!candidate?.mobile_number)
                   }
                   {...register("mobile_number", {
-                    required: `Mobile number is required`,
+                    required: currentUserInfo.role !== "super_admin",
                     pattern: {
                       value: /^\d{10}$/,
                       message: "Mobile number must be 10 digits",
@@ -506,7 +492,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                       : toVerify && !!candidate?.aadhar_number)
                   }
                   {...register("aadhar_number", {
-                    required: `Aadhaar number is required`,
+                    required: currentUserInfo.role !== "super_admin",
                   })}
                 />
                 {errors.aadhar_number && (
@@ -521,7 +507,7 @@ const CandidateFormDialog: React.FC<Props> = ({
               <Controller
                 name="store_id"
                 control={control}
-                rules={{ required: "Assign a store" }}
+                rules={{ required: currentUserInfo.role !== "super_admin" }}
                 render={({ field, fieldState }) => (
                   <div>
                     <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
@@ -607,14 +593,14 @@ const CandidateFormDialog: React.FC<Props> = ({
 
             {!!candidate && (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
+                {/* <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
                   <Label className="font-semibold text-md">Voucher Code</Label>
                   <Input
                     type="text"
                     readOnly
                     value={candidate?.coupon_code ?? "Error getting"}
                   />
-                </div>
+                </div> */}
                 <div
                   className={`border-t mt-4 pt-4 space-y-4 flex w-full ${
                     !!candidate && toVerify
@@ -843,10 +829,6 @@ const CandidateFormDialog: React.FC<Props> = ({
                 <span className="font-semibold">Employee ID</span>
                 <span>{watch("id")}</span>
 
-                <span className="font-semibold">Coupon Code</span>
-                <span className="text-lg font-bold">
-                  {candidate?.coupon_code ?? "-"}
-                </span>
                 <span className="font-semibold">Gift Card Code</span>
                 <span className="text-lg font-bold">
                   {candidate?.gift_card_code ?? "-"}

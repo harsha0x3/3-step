@@ -43,7 +43,7 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
   const handleProceed = () => {
     if (data.result.verification_status.is_all_verified) {
       navigate(
-        `/store/beneficiary/${data.result.candidate.candidate_id}/verify/otp`
+        `/store/beneficiary/upgrade/choice/${data.result.candidate.candidate_id}`
       );
     }
   };
@@ -102,7 +102,8 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
 
       if (res.data.can_proceed_to_otp) {
         navigate(
-          `/store/beneficiary/${data.result.candidate.candidate_id}/verify/otp`
+          `/store/beneficiary/upgrade/choice/${data.result.candidate.candidate_id}`,
+          { state: { candidate: data.result.candidate } }
         );
       }
     } catch (err: any) {
@@ -169,7 +170,7 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
             </h3>
             <ul>
               <StatusItem
-                label="Voucher Code"
+                label="Gift Card Code"
                 status={data.result.verification_status.is_coupon_verified}
               />
               <StatusItem
@@ -239,7 +240,7 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
           {data.result.verification_status.is_all_verified ? (
             <>
               <p className="text-sm text-gray-600">
-                All verifications passed. Proceed to OTP verification.
+                All verifications passed. Proceed to next step.
               </p>
               <Button onClick={handleProceed}>Proceed</Button>
               <AlertDialogCancel>Cancel</AlertDialogCancel>

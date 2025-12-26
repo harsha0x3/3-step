@@ -63,7 +63,7 @@ const VendorSpocTable: React.FC<Props> = ({
           <img
             src={`${import.meta.env.VITE_API_BASE_API_URL}${
               import.meta.env.VITE_RELATIVE_API_URL
-            }/${photo}`}
+            }/secured_file?path=${encodeURIComponent(photo)}`}
             alt="Vendor Spoc"
             className="w-16 h-16 object-cover rounded border"
           />

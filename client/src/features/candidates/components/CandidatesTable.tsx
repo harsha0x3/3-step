@@ -59,18 +59,7 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
       header: "Mobile",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("coupon_code", {
-      id: "coupon",
-      header: "Voucher Code",
-      cell: ({ row }) => {
-        const coupon = row.original.coupon_code;
-        return coupon ? (
-          <span className="font-medium">{coupon}</span>
-        ) : (
-          <span className="text-muted-foreground">No Coupon</span>
-        );
-      },
-    }),
+
     columnHelper.accessor("city", {
       header: "City",
       cell: (info) => info.getValue(),
@@ -224,6 +213,23 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
       },
     }),
   ];
+
+  if (["super_admin", "admin"].includes(currentUserInfo.role)) {
+    columns.push(
+      columnHelper.accessor("gift_card_code", {
+        id: "gift_card_code",
+        header: "Gift Card Code",
+        cell: ({ row }) => {
+          const code = row.original.gift_card_code;
+          return code ? (
+            <span className="font-medium">{code}</span>
+          ) : (
+            <span className="text-muted-foreground">No Gift Card</span>
+          );
+        },
+      })
+    );
+  }
 
   const table = useReactTable({
     data: candidates,

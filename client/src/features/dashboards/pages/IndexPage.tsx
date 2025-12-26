@@ -163,7 +163,7 @@ export default function IndexPage() {
               <CardContent className="px-4 py-2">
                 <p className="text-sm text-gray-500">Upgrade Requests</p>
                 <p className="text-2xl font-bold">
-                  {upgradeStats?.upgrade_requests}
+                  {upgradeStats?.upgrade_requests ?? 0}
                 </p>
               </CardContent>
               <CardFooter className="mt-auto flex justify-end">
@@ -185,12 +185,9 @@ export default function IndexPage() {
                     variant={"link"}
                     className="text-right"
                     onClick={() =>
-                      navigate(
-                        "/dashboard/store/beneficiary/all?upgrade_request=false",
-                        {
-                          state: { from: "dashboard" },
-                        }
-                      )
+                      navigate("/store/upgrades/all", {
+                        state: { from: "dashboard" },
+                      })
                     }
                   >
                     View Details
@@ -208,7 +205,7 @@ export default function IndexPage() {
               <CardContent className="px-4 py-2">
                 <p className="text-sm text-gray-500">Upgrades Completed</p>
                 <p className="text-2xl font-bold">
-                  {upgradeStats?.upgrades_completed}
+                  {upgradeStats?.upgrades_completed ?? 0}
                 </p>
               </CardContent>
               <CardFooter className="mt-auto flex justify-end">

@@ -39,12 +39,7 @@ const OtpVerification = () => {
 
   const [
     sendOtp,
-    {
-      isLoading: isSending,
-      isSuccess: isOtpSent,
-      isError: isOtpSendError,
-      error: otpSendError,
-    },
+    { isLoading: isSending, isSuccess: isOtpSent, isError: isOtpSendError },
   ] = useSendOtpMutation();
   const [cooldown, setCooldown] = useState<number>(0);
   const [isRequestedFromAdmin, setIsRequestedFromAdmin] =
@@ -118,28 +113,8 @@ const OtpVerification = () => {
         navigate("/store/beneficiary");
         return;
       }
-      if (
-        (!v?.is_facial_verified || !v?.is_aadhar_verified) &&
-        v?.overriding_user &&
-        v?.is_otp_verified
-      ) {
-        toast.info("OTP verification of the beneficiary completed.");
-        navigate(`/store/beneficiary/${candidateId}/issuance`);
-        return;
-      }
 
-      if (
-        v.is_coupon_verified &&
-        v.is_facial_verified &&
-        v.is_aadhar_verified &&
-        v.is_otp_verified
-      ) {
-        toast.info("OTP verification of the beneficiary completed.");
-        navigate(`/store/beneficiary/${candidateId}/issuance`);
-        return;
-      }
-
-      if (!v.is_otp_verified && !hasSentOtp.current) {
+      if (!hasSentOtp.current) {
         hasSentOtp.current = true;
 
         toast.promise(handleSendOtp(), {
@@ -162,6 +137,9 @@ const OtpVerification = () => {
       const response = !to_admin
         ? await sendOtp(candidateId).unwrap()
         : await sendOtpToAdmin(candidateId).unwrap();
+      if (to_admin) {
+        setIsRequestedFromAdmin(true);
+      }
 
       // ✅ Store expiry time from server
       if (response?.data?.expires_at) {
@@ -214,9 +192,16 @@ const OtpVerification = () => {
     }
 
     try {
-      await verifyOtp({ candidateId, otp }).unwrap();
+      const res = await verifyOtp({ candidateId, otp }).unwrap();
       setError("");
+      if (res.data.is_requested_for_upgrade) {
+        navigate(`/store/beneficiary/upgrade/issue/${candidateId}`);
+        toast.info("OTP Verified. Processing upgrade");
+        return;
+      }
       navigate(`/store/beneficiary/${candidateId}/issuance`);
+      toast.info("OTP Verified. Processing issuance");
+      return;
     } catch (err: any) {
       const msg = err?.data?.detail?.msg ?? err?.data?.detail ?? "Invalid OTP";
       setError(msg);
@@ -250,11 +235,11 @@ const OtpVerification = () => {
                 <p>OTP has been sent to admin. Contact for details</p>
                 <p className="flex items-center gap-1">
                   <PhoneCallIcon className="w-4 h-4" />
-                  Phone: 9988998899
+                  Phone: 9573525695
                 </p>
                 <p className="flex items-center gap-1">
                   <MailIcon className="w-4 h-4" />
-                  Email: admin@titan.co.in
+                  Email: harshavardhancg@titan.co.in
                 </p>
               </div>
             )}
@@ -337,10 +322,10 @@ const OtpVerification = () => {
                             error: (err) => err.message || "Failed to send OTP",
                           });
                         }}
-                        disabled={isSending || cooldown > 0}
+                        disabled={isSendingToAdmin || cooldown > 0}
                         variant={"secondary"}
                       >
-                        {isSending ? (
+                        {isSendingToAdmin ? (
                           <>
                             <Loader2Icon className="animate-spin w-3 h-3" />
                             <span>Sending...</span>

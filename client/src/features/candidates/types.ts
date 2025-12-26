@@ -55,6 +55,12 @@ export interface PartialCandidateItem {
   issued_status?: string | null;
   is_candidate_verified: boolean;
   store?: StoreItemWithUser | null;
+  is_requested_for_upgrade: boolean;
+  photo: string;
+
+  scheduled_at?: string;
+  upgrade_product_info?: string;
+  cost_of_upgrade?: number;
 }
 
 export interface CandidatesSearchParams {

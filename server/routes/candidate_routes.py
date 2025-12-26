@@ -181,6 +181,12 @@ async def list_candidates_of_store(
     ] = "desc",
     page: Annotated[int, Query(title="The page no.")] = 1,
     page_size: Annotated[int, Query(title="No. of items to be fetched")] = 15,
+    is_issued: Annotated[
+        bool | None, Query(title="Filter by laptop issued / not issued")
+    ] = None,
+    upgrade_request: Annotated[
+        bool | None, Query(title="Filter by upgrade request pending / completed")
+    ] = None,
 ):
     """
     Retrieve all candidates associated with a specific store.
@@ -200,6 +206,8 @@ async def list_candidates_of_store(
         sort_order=sort_order,
         page=page,
         page_size=page_size,
+        is_issued=is_issued,
+        upgrade_request=upgrade_request,
     )
 
     candidates = get_candidates_of_store(db, store.id, params)

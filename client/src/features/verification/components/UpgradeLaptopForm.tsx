@@ -1,12 +1,18 @@
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { compressImage } from "@/utils/imgCompressor";
 import React, { useEffect, useState } from "react";
+import EvidenceCaptures from "./EvidenceCaptures";
+import { toast } from "sonner";
 import {
   useGetLatestLaptopIssuerQuery,
-  useIssueLaptopMutation,
+  useGetUpgradeInfoQuery,
+  useSubmitUpgradeRequestMutation,
 } from "../store/verificationApiSlice";
-import { toast } from "sonner";
+import { useSelector } from "react-redux";
+import { selectAuth } from "@/features/auth/store/authSlice";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,29 +23,27 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-import EvidenceCaptures from "./EvidenceCaptures";
 import { useGetCandidateByIdQuery } from "@/features/candidates/store/candidatesApiSlice";
-import { useSelector } from "react-redux";
-import { selectAuth } from "@/features/auth/store/authSlice";
-import { compressImage } from "@/utils/imgCompressor";
-// import SuccessDialog from "./SuccessDialog";
 
-interface LaptopIssuanceFormProps {
+interface UpgradeFormProps {
   candidateId: string;
   onSuccess?: () => void;
 }
 
-const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
+const UpgradeLaptopForm: React.FC<UpgradeFormProps> = ({
   candidateId,
   onSuccess,
 }) => {
-  // const [openSuccess, setOpenSuccess] = useState<boolean>(false);
+  const { data: upgradeInfo, isLoading: isFetchingUpgradeInfo } =
+    useGetUpgradeInfoQuery({ candidateId }, { skip: !candidateId });
 
-  const [laptopSerial, setLaptopSerial] = useState("");
-  const [storeEmployeeName, setStoreEmployeeName] = useState("");
-  const [storeEmployeeMobile, setStoreEmployeeMobile] = useState("");
-  const [issueLaptop, { isLoading }] = useIssueLaptopMutation();
+  const [laptopSerial, setLaptopSerial] = useState<string>("");
+  const [storeEmployeeName, setStoreEmployeeName] = useState<string>("");
+  const [storeEmployeeMobile, setStoreEmployeeMobile] = useState<string>("");
+  const [upgradeProductInfo, setUpgradeProductInfo] = useState<string>("");
+  const [costOfUpgrade, setCostOfUpgrade] = useState<number>(0);
+
+  const [openConfirm, setOpenConfirm] = useState(false);
   const [evidencePhoto, setEvidencePhoto] = useState<File | null>(null);
   const [billPhoto, setBillPhoto] = useState<File | null>(null);
   const [employeePhoto, setEmployeePhoto] = useState<File | null>(null);
@@ -50,12 +54,21 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
   const [employeePhotoPreview, setEmployeePhotoPreview] = useState<
     string | null
   >(null);
-  const [openConfirm, setOpenConfirm] = useState(false);
+
+  useEffect(() => {
+    if (upgradeInfo && !isFetchingUpgradeInfo) {
+      setUpgradeProductInfo(upgradeInfo.data.upgrade_product_info);
+      setCostOfUpgrade(upgradeInfo.data.cost_of_upgrade);
+    }
+  }, [upgradeInfo, isFetchingUpgradeInfo]);
 
   const currentUserInfo = useSelector(selectAuth);
 
   const { data: latestLaptopIssuer, isLoading: isLoadingLatestLaptopIssuer } =
     useGetLatestLaptopIssuerQuery(undefined, { skip: !candidateId });
+
+  const [submitUpgradeRequest, { isLoading: isSubmittingUpgrade }] =
+    useSubmitUpgradeRequestMutation();
 
   const { data: candidateDetails } = useGetCandidateByIdQuery(candidateId, {
     skip: !candidateId,
@@ -108,42 +121,6 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
     }
   };
 
-  const submitIssuance = async () => {
-    const formData = new FormData();
-    formData.append("laptop_serial", laptopSerial);
-    formData.append("store_employee_name", storeEmployeeName);
-    formData.append("store_employee_mobile", storeEmployeeMobile);
-    if (employeePhoto) formData.append("store_employee_photo", employeePhoto);
-    else {
-      toast.error("Store employee Photo is not added");
-      return;
-    }
-    if (evidencePhoto) formData.append("evidence_photo", evidencePhoto);
-    else {
-      toast.error("Beneficiary Photo with Laptop is not added");
-      return;
-    }
-    if (billPhoto) formData.append("bill_photo", billPhoto);
-    else {
-      toast.error("Beneficiary Photo with Laptop is not added");
-      return;
-    }
-
-    try {
-      await issueLaptop({ candidateId, formData }).unwrap();
-      toast.success("Laptop issuance recorded successfully!");
-      setLaptopSerial("");
-      onSuccess?.();
-    } catch (err) {
-      console.log("ERR in issuance rec", err);
-      const errMsg: string =
-        err?.data?.detail?.msg ??
-        err?.data?.detail ??
-        "Error in Issuance of laptop. Try again";
-      toast.error(errMsg);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!evidencePhoto) {
@@ -162,6 +139,44 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
     setOpenConfirm(true);
   };
 
+  const submitUpgrade = async () => {
+    const formData = new FormData();
+    formData.append("laptop_serial", laptopSerial);
+    formData.append("store_employee_name", storeEmployeeName);
+    formData.append("store_employee_mobile", storeEmployeeMobile);
+    formData.append("upgrade_product_info", upgradeProductInfo);
+    formData.append("cost_of_upgrade", String(costOfUpgrade));
+    if (employeePhoto) formData.append("store_employee_photo", employeePhoto);
+    else {
+      toast.error("Store employee Photo is not added");
+      return;
+    }
+    if (evidencePhoto) formData.append("evidence_photo", evidencePhoto);
+    else {
+      toast.error("Beneficiary Photo with Laptop is not added");
+      return;
+    }
+    if (billPhoto) formData.append("bill_photo", billPhoto);
+    else {
+      toast.error("Beneficiary Photo with Laptop is not added");
+      return;
+    }
+    try {
+      await submitUpgradeRequest({
+        candidateId: candidateId,
+        payload: formData,
+      });
+      toast.success("Laptop issuance recorded successfully!");
+      onSuccess?.();
+    } catch (err) {
+      const errMsg: string =
+        err?.data?.detail?.msg ??
+        err?.data?.detail ??
+        "Error in upgrading laptop.  Try again";
+      toast.error(errMsg);
+    }
+  };
+
   return (
     <div>
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -175,6 +190,32 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
             placeholder="Enter laptop serial number"
             value={laptopSerial}
             onChange={(e) => setLaptopSerial(e.target.value)}
+            className="w-74"
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr]">
+          <Label className="font-medium">
+            Upgrade Details<span className="text-red-600"> *</span>
+          </Label>
+          <Textarea
+            placeholder="Enter details of upgraded laptop"
+            value={upgradeProductInfo}
+            onChange={(e) => setUpgradeProductInfo(e.target.value)}
+            className="w-80"
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr]">
+          <Label className="font-medium">
+            Additional Cost<span className="text-red-600"> *</span>
+          </Label>
+          <Input
+            value={costOfUpgrade}
+            type="number"
+            onChange={(e) => setCostOfUpgrade(Number(e.target.value))}
             className="w-74"
             required
           />
@@ -390,8 +431,13 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
 
         {/* SUBMIT */}
         <div className="pt-4 flex justify-center">
-          <Button type="submit" size="lg" className="w-36" disabled={isLoading}>
-            {isLoading ? "Issuing..." : "Issue Laptop"}
+          <Button
+            type="submit"
+            size="lg"
+            className="w-36"
+            disabled={isSubmittingUpgrade}
+          >
+            {isSubmittingUpgrade ? "Issuing..." : "Issue Laptop"}
           </Button>
         </div>
       </form>
@@ -417,9 +463,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
               </div>
               <div className="grid grid-cols-[150px_1fr]">
                 <strong>Gift Card Code</strong>{" "}
-                <strong>
-                  {candidateDetails?.data?.candidate.gift_card_code}
-                </strong>
+                <strong>{candidateDetails?.data?.candidate.coupon_code}</strong>
               </div>
               <div className="grid grid-cols-[150px_1fr]">
                 <strong>Aadhaar Number</strong>{" "}
@@ -505,8 +549,11 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
               Are you sure everything is correct and you want to proceed?
             </p>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={isLoading} onClick={submitIssuance}>
-              {isLoading ? "Confirming..." : "Confirm"}
+            <AlertDialogAction
+              disabled={isSubmittingUpgrade}
+              onClick={submitUpgrade}
+            >
+              {isSubmittingUpgrade ? "Confirming..." : "Confirm"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -515,4 +562,4 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
   );
 };
 
-export default LaptopIssuanceForm;
+export default UpgradeLaptopForm;

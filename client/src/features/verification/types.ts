@@ -50,12 +50,7 @@ export interface UpgradeRequestItem {
   upgrade_product_type: string;
   cost_of_upgrade: number;
   upgrade_product_info: string;
-}
-
-export interface IssuedStatusWithUpgrade {
-  issuance_details: IssuanceDetailsItem;
-  is_upgrade_request: boolean;
-  upgrade_request_details?: UpgradeRequestItem | null;
+  scheduled_at?: string; // ISO date
 }
 
 export interface UpgradeRequestPayload {
@@ -66,6 +61,12 @@ export interface UpgradeRequestPayload {
 
   upgrade_reason?: string;
   upgrade_product_type?: string;
+}
+
+export interface RequestNewUpgrade {
+  upgrade_product_info: string;
+  cost_of_upgrade: number;
+  scheduled_at?: string; // ISO date
 }
 
 export interface LatestIssuer {
@@ -90,6 +91,22 @@ export interface VerificationStatusItem {
   updated_at: string;
   overriding_user?: string;
   overriding_reason?: string;
+}
+
+export interface UpgradeRequestOut {
+  candidate_id: string;
+  is_accepted: boolean;
+  cost_of_upgrade?: number;
+  upgrade_product_info?: string;
+
+  upgrade_product_type?: string;
+  scheduled_at?: string; // ISO date
+}
+
+export interface IssuedStatusWithUpgrade {
+  issuance_details?: IssuanceDetailsItem;
+  is_upgrade_request: boolean;
+  upgrade_request_details?: UpgradeRequestOut | null;
 }
 
 export interface RequestForUploadPayload {

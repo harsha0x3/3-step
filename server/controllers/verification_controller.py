@@ -8,7 +8,7 @@ from services.verification_service.mobile_notification_service import (
 
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, exists
 from models.candidates import Candidate
 from models.otps import Otp
 from datetime import datetime, timezone
@@ -23,12 +23,10 @@ import os
 from utils.helpers import (
     normalize_path,
     ensure_utc,
-    get_relative_upload_path,
     save_image_file,
 )
 from dotenv import load_dotenv
-from datetime import datetime, timezone
-from .candidates_controller import get_candidate_details_by_id
+from datetime import date
 
 load_dotenv()
 
@@ -110,7 +108,7 @@ async def otp_resend(candidate_id: str, db: Session, to_admin: bool = False):
             db.commit()
 
             otp = Otp(candidate_id=candidate.id)
-            otp_val = otp.generate_otp()
+            _otp_val = otp.generate_otp()
 
             db.add(otp)
             db.commit()
@@ -298,12 +296,21 @@ async def verify_otp(candidate_id: str, otp_input: str, db: Session):
                 detail="Beneficiary's aadhar is not verified yet",
             )
 
+        is_requested_for_upgrade: bool = bool(
+            db.scalar(
+                select(exists().where(UpgradeRequest.candidate_id == candidate_id))
+            )
+        )
+
         verification_status.is_otp_verified = True
         db.add(verification_status)
         db.commit()
         db.refresh(verification_status)
 
-        return {"msg": "OTP verified successfully"}
+        return {
+            "msg": "OTP verified successfully",
+            "data": {"is_requested_for_upgrade": is_requested_for_upgrade},
+        }
 
     except HTTPException:
         raise
@@ -430,6 +437,10 @@ async def candidate_verification_consolidate(
     else:
         verification_issues.append("aadhar")
         msg.append("Aadhaar number does not match.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Aadhar number doesn't match",
+        )
 
     if not candidate.photo:
         raise HTTPException(
@@ -906,32 +917,22 @@ async def upload_laptop_issuance_bill_reciept(
         )
 
 
-# -------------OLD------------
-
-
-def request_upgrade(
+def request_new_upgrade(
     candidate_id: str,
     db: Session,
     store: StoreItemOut,
-    payload: v_schemas.UpgradeRequestPayload,
+    payload: v_schemas.RequestNewUpgradePayload | None,
 ):
     try:
         candidate = db.get(Candidate, candidate_id)
-
         if not candidate:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Beneficicary not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Beneficiary Not found"
             )
-        if candidate.store_id != store.id:
+        if candidate.store and candidate.store.id != store.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Benficairy is not alloted to your store.",
-            )
-
-        if candidate.issued_status == "issued":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Beneficiary already recieved the product, cannot upgrade now.",
             )
 
         verification_status = db.scalar(
@@ -960,27 +961,148 @@ def request_upgrade(
         ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Beneficiary's verfication process is failed, please re-verify and override.",
+                detail="Beneficiary's verfication process is failed, please re-verify.",
             )
+        candidate_issued_status = candidate.issued_status
+        if (
+            candidate_issued_status
+            and candidate_issued_status.issued_status == "issued"
+        ):
+            return {
+                "msg": "Beneficiary already recieved the laptop.",
+                "data": {
+                    "issuance_info": v_schemas.IssuedStatusWithUpgrade(
+                        issuance_details=v_schemas.IsuedStatusItem.model_validate(
+                            candidate_issued_status
+                        ),
+                        is_upgrade_request=candidate_issued_status.is_requested_to_upgrade,
+                    ),
+                    "is_already_issued": True,
+                },
+            }
+        existing_upgrade = db.scalar(
+            select(UpgradeRequest).where(UpgradeRequest.candidate_id == candidate.id)
+        )
 
-        new_upgrade = db.scalar(
+        if existing_upgrade and not existing_upgrade.is_accepted:
+            return {
+                "msg": "Already requested for upgrade",
+                "data": {
+                    "issuance_info": v_schemas.UpgradeRequestOut.model_validate(
+                        existing_upgrade
+                    ),
+                    "is_already_issued": False,
+                },
+            }
+        new_upgrade = UpgradeRequest(
+            candidate_id=candidate_id,
+            is_accepted=False,
+            cost_of_upgrade=payload.cost_of_upgrade if payload else None,
+            upgrade_product_info=payload.upgrade_product_info if payload else None,
+            scheduled_at=payload.scheduled_at if payload else date.today(),
+        )
+        db.add(new_upgrade)
+        db.commit()
+        db.refresh(new_upgrade)
+        return {
+            "msg": "Upgrade for laptop requested successfully.",
+            "data": {
+                "issuance_info": v_schemas.UpgradeRequestOut.model_validate(
+                    new_upgrade
+                ),
+                "is_already_issued": False,
+            },
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("UPGRADE REQUEST ERR", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error requesting for upgrade",
+        )
+
+
+def close_upgrade_request(
+    candidate_id: str,
+    db: Session,
+    payload: v_schemas.UpgradeClosurePayload,
+    current_user: UserOut,
+):
+    try:
+        existing_upgrade_request = db.scalar(
             select(UpgradeRequest).where(UpgradeRequest.candidate_id == candidate_id)
         )
-        if not new_upgrade:
-            new_upgrade = UpgradeRequest(
-                candidate_id=candidate_id, **payload.model_dump()
+
+        issued_status = db.scalar(
+            select(IssuedStatus).where(IssuedStatus.candidate_id == candidate_id)
+        )
+        if issued_status and issued_status.issued_status == "issued":
+            return {
+                "msg": "Beneficiary already recieved laptop",
+                "data": {
+                    "issuance_info": v_schemas.IssuedStatusWithUpgrade(
+                        issuance_details=v_schemas.IsuedStatusItem.model_validate(
+                            issued_status
+                        ),
+                        is_upgrade_request=issued_status.is_requested_to_upgrade,
+                        upgrade_request_details=v_schemas.UpgradeRequestItem.model_validate(
+                            existing_upgrade_request
+                        )
+                        if existing_upgrade_request
+                        else None,
+                    ),
+                    "is_already_issued": True,
+                },
+            }
+
+        if not existing_upgrade_request:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Upgrade for request not found",
             )
-            db.add(new_upgrade)
+        new_issued_status = IssuedStatus(
+            candidate_id=candidate_id,
+            issued_status="issued",
+            issued_at=datetime.now(timezone.utc),
+            issued_laptop_serial=payload.laptop_issue_details.laptop_serial,
+            issued_by=current_user.id,
+            is_requested_to_upgrade=True,
+            evidence_photo=payload.laptop_issue_details.evidence_photo,
+            bill_reciept=payload.laptop_issue_details.bill_reciept,
+            store_employee_name=payload.laptop_issue_details.store_employee_name,
+            store_employee_mobile=payload.laptop_issue_details.store_employee_mobile,
+            store_employee_photo=payload.laptop_issue_details.store_employee_photo,
+        )
 
-        else:
-            for key, val in payload.model_dump().items():
-                if hasattr(new_upgrade, key):
-                    setattr(new_upgrade, key, val)
-
+        existing_upgrade_request.is_accepted = True
+        existing_upgrade_request.cost_of_upgrade = (
+            payload.upgrade_details.cost_of_upgrade
+        )
+        existing_upgrade_request.upgrade_product_info = (
+            payload.upgrade_details.upgrade_product_info
+        )
+        existing_upgrade_request.new_laptop_serial = (
+            payload.laptop_issue_details.laptop_serial
+        )
+        db.add(new_issued_status)
         db.commit()
+        db.refresh(new_issued_status)
+        db.refresh(existing_upgrade_request)
         return {
-            "msg": "Upgrade request has been raised.",
-            "data": v_schemas.UpgradeRequestItem.model_validate(new_upgrade),
+            "msg": "Beneficiary already recieved laptop",
+            "data": v_schemas.IssuedStatusWithUpgrade(
+                issuance_details=v_schemas.IsuedStatusItem.model_validate(
+                    new_issued_status
+                ),
+                is_upgrade_request=new_issued_status.is_requested_to_upgrade,
+                upgrade_request_details=v_schemas.UpgradeRequestItem.model_validate(
+                    existing_upgrade_request
+                )
+                if existing_upgrade_request
+                else None,
+            ),
         }
 
     except HTTPException:
@@ -988,8 +1110,47 @@ def request_upgrade(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error in requesting fot upgrade",
+            detail="Error in upgrading the laptop",
         )
+
+
+def procees_with_no_upgrade(candidate_id: str, db: Session):
+    try:
+        existing_upgrade = db.scalar(
+            select(UpgradeRequest).where(UpgradeRequest.candidate_id == candidate_id)
+        )
+        if existing_upgrade:
+            db.delete(existing_upgrade)
+            db.commit()
+        return {"msg": "Proceed with no upgrade"}
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error proceeding with no upgrade. Try again",
+        )
+
+
+def get_upgrade_details(candidate_id: str, db: Session):
+    try:
+        upgrade_details = db.scalar(
+            select(UpgradeRequest).where(UpgradeRequest.candidate_id == candidate_id)
+        )
+
+        if not upgrade_details:
+            return None
+        return {
+            "msg": "Fetched upgrade details",
+            "data": v_schemas.UpgradeRequestOut.model_validate(upgrade_details),
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error fetching upgrade details",
+        )
+
+
+# -------------OLD------------
 
 
 def new_request_upgrade(

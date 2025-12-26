@@ -1,6 +1,7 @@
 from db.base import Base
-from sqlalchemy import ForeignKey, String, Integer, Boolean, text, Text
+from sqlalchemy import ForeignKey, String, Integer, Boolean, text, Text, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from datetime import date
 
 
 class UpgradeRequest(Base):
@@ -18,6 +19,7 @@ class UpgradeRequest(Base):
     is_accepted: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=text("false")
     )
+    scheduled_at: Mapped[date] = mapped_column(Date, nullable=True)
 
     upgrade_reason: Mapped[str] = mapped_column(String(500), nullable=True)
     upgrade_product_type: Mapped[str] = mapped_column(String(122), nullable=True)

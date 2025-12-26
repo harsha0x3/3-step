@@ -128,11 +128,11 @@ const ConsolidateVerification: React.FC = () => {
               onSubmit={handleSubmit(onSubmit)}
             >
               <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-2 items-center">
-                <Label htmlFor="coupon_code">Voucher Code</Label>
+                <Label htmlFor="coupon_code">Gift Card Code</Label>
                 <Input
                   id="coupon_code"
                   {...register("coupon_code", {
-                    required: "Voucher Code is required field",
+                    required: "Gift Card Code is required field",
                   })}
                   className={`w-full sm:w-72 ${
                     errors.coupon_code ? "border-red-400" : ""

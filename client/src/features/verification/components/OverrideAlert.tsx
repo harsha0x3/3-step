@@ -55,7 +55,7 @@ const OverrideAlert: React.FC<OverrideAlertProps> = ({
       "Manual document verified",
     ],
     facial: [
-      "Camera quality too poor",
+      "Camera not working",
       "Lighting conditions not suitable",
       "Face partially covered",
       "Temporary facial change (injury, swelling)",

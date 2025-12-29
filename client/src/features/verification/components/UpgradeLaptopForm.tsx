@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useGetCandidateByIdQuery } from "@/features/candidates/store/candidatesApiSlice";
+import { IndianRupee } from "lucide-react";
 
 interface UpgradeFormProps {
   candidateId: string;
@@ -41,7 +42,7 @@ const UpgradeLaptopForm: React.FC<UpgradeFormProps> = ({
   const [storeEmployeeName, setStoreEmployeeName] = useState<string>("");
   const [storeEmployeeMobile, setStoreEmployeeMobile] = useState<string>("");
   const [upgradeProductInfo, setUpgradeProductInfo] = useState<string>("");
-  const [costOfUpgrade, setCostOfUpgrade] = useState<number>(0);
+  const [costOfUpgrade, setCostOfUpgrade] = useState<number>();
 
   const [openConfirm, setOpenConfirm] = useState(false);
   const [evidencePhoto, setEvidencePhoto] = useState<File | null>(null);
@@ -73,6 +74,11 @@ const UpgradeLaptopForm: React.FC<UpgradeFormProps> = ({
   const { data: candidateDetails } = useGetCandidateByIdQuery(candidateId, {
     skip: !candidateId,
   });
+
+  const formatIndianNumber = (value: number | string) => {
+    if (value === "" || value === null || value === undefined) return "";
+    return new Intl.NumberFormat("en-IN").format(Number(value));
+  };
 
   useEffect(() => {
     if (!isLoadingLatestLaptopIssuer && latestLaptopIssuer) {
@@ -197,7 +203,7 @@ const UpgradeLaptopForm: React.FC<UpgradeFormProps> = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr]">
           <Label className="font-medium">
-            Upgrade Details<span className="text-red-600"> *</span>
+            Details of Upgrade<span className="text-red-600"> *</span>
           </Label>
           <Textarea
             placeholder="Enter details of upgraded laptop"
@@ -210,15 +216,27 @@ const UpgradeLaptopForm: React.FC<UpgradeFormProps> = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr]">
           <Label className="font-medium">
-            Additional Cost<span className="text-red-600"> *</span>
+            Additional Cost (INR)<span className="text-red-600"> *</span>
           </Label>
-          <Input
-            value={costOfUpgrade}
-            type="number"
-            onChange={(e) => setCostOfUpgrade(Number(e.target.value))}
-            className="w-74"
-            required
-          />
+          <div className="relative">
+            <IndianRupee className="absolute w-4 h-4 text-muted-foreground left-2 top-1/2 -translate-y-1/2" />
+
+            <Input
+              placeholder="Payable amount in rupees"
+              type="text"
+              value={formatIndianNumber(costOfUpgrade)}
+              onChange={(e) => {
+                const rawValue = e.target.value.replace(/[^\d]/g, "");
+                const numericValue = Number(rawValue);
+
+                if (numericValue <= 999999) {
+                  setCostOfUpgrade(numericValue);
+                }
+              }}
+              className="w-74 pl-8"
+              required
+            />
+          </div>
         </div>
 
         {/* EVIDENCE PHOTO */}

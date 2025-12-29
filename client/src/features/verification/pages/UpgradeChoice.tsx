@@ -20,10 +20,11 @@ import React, { useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   useProceedWithNoUpgradeMutation,
-  useRequestNewUpgradeMutation,
+  useRequestNewUpgradeLaterMutation,
+  useRequestNewUpgradeNowMutation,
 } from "../store/verificationApiSlice";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { IndianRupee, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -43,8 +44,10 @@ const UpgradeChoice: React.FC = () => {
   // });
   const [proceedWithNoUpgrade, { isLoading: isProceedingWithNoUpgrade }] =
     useProceedWithNoUpgradeMutation();
-  const [requestNewUpgrade, { isLoading: isRequestingUpgrade }] =
-    useRequestNewUpgradeMutation();
+  const [requestNewUpgradeNow, { isLoading: isRequestingUpgradeNow }] =
+    useRequestNewUpgradeNowMutation();
+  const [requestNewUpgradeLater, { isLoading: isRequestingUpgradeLater }] =
+    useRequestNewUpgradeLaterMutation();
   // const candidate = useMemo(() => {
   //   if (candidateData) {
   //     return candidateData;
@@ -59,6 +62,20 @@ const UpgradeChoice: React.FC = () => {
   const [openLaterDialog, setOpenLaterDialog] = useState<boolean>(false);
   const [opensuccessDialog, setOpenSuccessDialog] = useState<boolean>(false);
 
+  const today = new Date();
+  const formatDate = (date) => date.toISOString().split("T")[0];
+
+  const minDate = formatDate(today);
+
+  const formatIndianNumber = (value: number | string) => {
+    if (value === "" || value === null || value === undefined) return "";
+    return new Intl.NumberFormat("en-IN").format(Number(value));
+  };
+
+  const maxDateObj = new Date();
+  maxDateObj.setDate(today.getDate() + 60);
+  const maxDate = formatDate(maxDateObj);
+
   const requestUpgradeLater = async () => {
     if (!upgradeProductInfo.trim()) {
       toast.error("Upgrade product info is required");
@@ -72,7 +89,7 @@ const UpgradeChoice: React.FC = () => {
     };
 
     try {
-      const res = await requestNewUpgrade({
+      const res = await requestNewUpgradeLater({
         candidateId,
         payload,
       }).unwrap();
@@ -145,7 +162,7 @@ const UpgradeChoice: React.FC = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Are you going to issue now or later?
+              Are you going to issue upgraded laptop now or later?
             </AlertDialogTitle>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -156,13 +173,12 @@ const UpgradeChoice: React.FC = () => {
                 <AlertDialogAction asChild>
                   <Button
                     variant="secondary"
-                    disabled={isRequestingUpgrade}
+                    disabled={isRequestingUpgradeNow}
                     onClick={async () => {
                       try {
                         console.log("YES UPGRADE");
-                        const res = await requestNewUpgrade({
+                        const res = await requestNewUpgradeNow({
                           candidateId,
-                          payload: null,
                         }).unwrap();
                         navigate(
                           `/store/beneficiary/${candidateId}/verify/otp`
@@ -177,7 +193,7 @@ const UpgradeChoice: React.FC = () => {
                       }
                     }}
                   >
-                    {isRequestingUpgrade ? (
+                    {isRequestingUpgradeNow ? (
                       <span>
                         <Loader2 className="animate-spin" /> Loading..
                       </span>
@@ -188,10 +204,10 @@ const UpgradeChoice: React.FC = () => {
                 </AlertDialogAction>
                 <AlertDialogAction asChild>
                   <Button
-                    disabled={isRequestingUpgrade}
+                    disabled={isRequestingUpgradeLater}
                     onClick={() => setOpenLaterDialog(true)}
                   >
-                    {isRequestingUpgrade ? (
+                    {isRequestingUpgradeLater ? (
                       <span>
                         <Loader2 className="animate-spin" /> Loading..
                       </span>
@@ -223,12 +239,12 @@ const UpgradeChoice: React.FC = () => {
             </AlertDialogHeader>
 
             {/* Upgrade Product Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr]">
+            <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr]">
               <Label>
                 Upgrade Details <span className="text-red-600">*</span>
               </Label>
               <Textarea
-                placeholder=""
+                placeholder="Descride the details of upgrade in brief"
                 value={upgradeProductInfo}
                 onChange={(e) => setUpgradeProductInfo(e.target.value)}
                 required
@@ -236,26 +252,42 @@ const UpgradeChoice: React.FC = () => {
             </div>
 
             {/* Cost */}
-            <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr]">
+            <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr]">
               <Label>
-                Additional Cost <span className="text-red-600">*</span>
+                Additional Cost (INR) <span className="text-red-600">*</span>
               </Label>
-              <Input
-                type="number"
-                value={costOfUpgrade}
-                onChange={(e) => setCostOfUpgrade(Number(e.target.value))}
-                required
-              />
+              <div className="relative">
+                <IndianRupee className="absolute w-4 h-4 text-muted-foreground left-2 top-1/2 -translate-y-1/2" />
+
+                <Input
+                  placeholder="Payable amount in rupees"
+                  type="text"
+                  value={formatIndianNumber(costOfUpgrade)}
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/[^\d]/g, "");
+                    const numericValue = Number(rawValue);
+
+                    if (numericValue <= 999999) {
+                      setCostOfUpgrade(numericValue);
+                    }
+                  }}
+                  className="w-74 pl-8"
+                  required
+                />
+              </div>
             </div>
 
             {/* Available Date */}
-            <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr]">
+            <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr]">
               <Label>
-                Available Date <span className="text-red-600">*</span>
+                Tentative date for issuing{" "}
+                <span className="text-red-600">*</span>
               </Label>
               <Input
                 type="date"
                 value={availableDate}
+                min={minDate}
+                max={maxDate}
                 onChange={(e) => setAvailableDate(e.target.value)}
                 required
               />
@@ -264,8 +296,8 @@ const UpgradeChoice: React.FC = () => {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
 
-              <Button type="submit" disabled={isRequestingUpgrade}>
-                {isRequestingUpgrade ? "Submitting..." : "Submit"}
+              <Button type="submit" disabled={isRequestingUpgradeLater}>
+                {isRequestingUpgradeLater ? "Submitting..." : "Submit"}
               </Button>
             </AlertDialogFooter>
           </form>

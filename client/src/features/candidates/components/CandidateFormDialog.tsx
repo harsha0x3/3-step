@@ -149,6 +149,8 @@ const CandidateFormDialog: React.FC<Props> = ({
     navigate("/registration_officer/beneficiary/verify");
   };
 
+  const isMaskedAadhar = (value: string) => value.toLowerCase().includes("x");
+
   // ---------- FORM SUBMIT HANDLERS ----------
   const onSubmit = async (data: NewCandidatePayload) => {
     console.log("IMN SIDE ON SUBMI");
@@ -158,6 +160,10 @@ const CandidateFormDialog: React.FC<Props> = ({
       // ===== EDIT MODE =====
       if (isEditMode) {
         // Never allow verified flag to change in edit mode
+        if (candidate && isMaskedAadhar(data.aadhar_number)) {
+          console.log("YES IT IS MASKED");
+          delete data.aadhar_number;
+        }
         delete data.is_candidate_verified;
 
         await updateCandidate({

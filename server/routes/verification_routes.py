@@ -603,12 +603,12 @@ def get_candidate_upgrade_details(
         raise
 
 
-@router.post("/upgrade/request/{candidate_id}")
-def request_for_upgrade(
+@router.post("/upgrade/request/{candidate_id}/later")
+def request_for_upgrade_later(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
     candidate_id: Annotated[str, Path(title="Candidate ID")],
-    payload: Annotated[v_schemas.RequestNewUpgradePayload | None, ""],
+    payload: Annotated[v_schemas.RequestNewUpgradePayload, ""],
 ):
     try:
         if current_user.role not in ["super_admin", "store_agent"]:
@@ -622,6 +622,34 @@ def request_for_upgrade(
             )
         return request_new_upgrade(
             candidate_id=candidate_id, db=db, store=store, payload=payload
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error in requesting for laptop upgrade.",
+        )
+
+
+@router.post("/upgrade/request/{candidate_id}/now")
+def request_for_upgrade_now(
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+    candidate_id: Annotated[str, Path(title="Candidate ID")],
+):
+    try:
+        if current_user.role not in ["super_admin", "store_agent"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access Denied"
+            )
+        store = get_store_of_user(db=db, user=current_user)
+        if not store:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Store not found for user"
+            )
+        return request_new_upgrade(
+            candidate_id=candidate_id, db=db, store=store, payload=None
         )
     except HTTPException:
         raise

@@ -8,6 +8,7 @@ from services.auth.deps import get_current_user  # authentication
 router = APIRouter(prefix="/secured_file", tags=["secured files"])
 
 BASE_DIR = Path(os.getenv("BASE_SERVER_DIR", ""))
+UPLOADS_DIR = (BASE_DIR / "uploads").resolve()
 
 
 @router.get("")
@@ -19,6 +20,9 @@ def serve_secure_file(
     safe_path = (BASE_DIR / path).resolve()
     if BASE_DIR not in safe_path.parents:
         raise HTTPException(400, "Invalid file path")
+
+    if UPLOADS_DIR not in safe_path.parents:
+        raise HTTPException(status_code=400, detail="Invalid file path")
 
     if not safe_path.exists():
         print("safe_path", safe_path)

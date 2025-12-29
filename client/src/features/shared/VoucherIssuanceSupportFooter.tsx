@@ -36,7 +36,7 @@ const VoucherIssuanceSupportFooter = () => {
             className="underline hover:text-primary"
             onClick={async () => {
               try {
-                const file = await getFile("login_sop").unwrap();
+                const file = await getFile("voucher_distribution_sop").unwrap();
 
                 const blobUrl = URL.createObjectURL(
                   new Blob([file], { type: "application/pdf" })

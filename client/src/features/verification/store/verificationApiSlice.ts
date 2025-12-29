@@ -189,17 +189,29 @@ export const verificationApi = rootApiSlice.injectEndpoints({
       }),
     }),
 
-    requestNewUpgrade: builder.mutation<
+    requestNewUpgradeLater: builder.mutation<
       ApiResponse<{
         is_already_issued: boolean;
         issuance_info: IssuedStatusWithUpgrade | UpgradeRequestOut;
       }>,
-      { candidateId: string; payload: RequestNewUpgrade | null }
+      { candidateId: string; payload: RequestNewUpgrade }
     >({
       query: ({ candidateId, payload }) => ({
-        url: `/verify/upgrade/request/${candidateId}`,
+        url: `/verify/upgrade/request/${candidateId}/later`,
         method: "POST",
         body: payload,
+      }),
+    }),
+    requestNewUpgradeNow: builder.mutation<
+      ApiResponse<{
+        is_already_issued: boolean;
+        issuance_info: IssuedStatusWithUpgrade | UpgradeRequestOut;
+      }>,
+      { candidateId: string; payload?: RequestNewUpgrade }
+    >({
+      query: ({ candidateId }) => ({
+        url: `/verify/upgrade/request/${candidateId}/now`,
+        method: "POST",
       }),
     }),
 
@@ -291,7 +303,8 @@ export const {
   useConfirmUpgradeMutation,
   useConfirmRequestForUpgradeMutation,
 
-  useRequestNewUpgradeMutation,
+  useRequestNewUpgradeLaterMutation,
+  useRequestNewUpgradeNowMutation,
   useSubmitUpgradeRequestMutation,
   useProceedWithNoUpgradeMutation,
   useGetUpgradeInfoQuery,

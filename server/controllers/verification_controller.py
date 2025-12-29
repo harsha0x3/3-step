@@ -997,7 +997,7 @@ def request_new_upgrade(
         new_upgrade = UpgradeRequest(
             candidate_id=candidate_id,
             is_accepted=False,
-            cost_of_upgrade=payload.cost_of_upgrade if payload else None,
+            cost_of_upgrade=payload.cost_of_upgrade if payload else 0,
             upgrade_product_info=payload.upgrade_product_info if payload else None,
             scheduled_at=payload.scheduled_at if payload else date.today(),
         )

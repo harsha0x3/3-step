@@ -353,3 +353,32 @@ def get_registration_office_locations(db: Session):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error fetching registration office locations",
         )
+
+
+# INSERT INTO
+# (type, path, id, created_at, updated_at, is_active)
+# VALUES
+# (
+#   'login_sop',
+#   'uploads/utilities/Login Procedure.pdf',
+#   '2e84a5e2-eca6-45c1-8b23-35917e5cb2fe',
+#   '2025-12-26 11:09:02',
+#   '2025-12-26 11:09:02',
+#   1
+# ),
+# (
+#   'voucher_distribution_sop',
+#   'uploads/utilities/Voucher Distribution Module SOP.pdf',
+#   '61c7a56d-2fb7-4df1-b753-37e2fc237fb4',
+#   '2025-12-26 11:08:23',
+#   '2025-12-26 11:08:23',
+#   1
+# ),
+# (
+#   'laptop_distribution_sop',
+#   'uploads/utilities/Laptop Distribution Process.pdf',
+#   'c76881f9-6614-40e5-ac0c-3b38b472fcab',
+#   '2025-12-26 11:08:43',
+#   '2025-12-26 11:08:43',
+#   1
+# );

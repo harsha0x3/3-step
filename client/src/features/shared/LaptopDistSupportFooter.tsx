@@ -22,7 +22,7 @@ const LaptopDistSupportFooter = ({ trouble }: { trouble: string }) => {
           </a>{" "}
           |{" "}
           <a
-            href="mailto:support@company.com"
+            href="mailto:sminu@titan.co.in"
             className="underline hover:text-primary"
           >
             helpdesk@titan.co.in
@@ -37,7 +37,7 @@ const LaptopDistSupportFooter = ({ trouble }: { trouble: string }) => {
           </a>{" "}
           |{" "}
           <a
-            href="mailto:support@company.com"
+            href="mailto:sminu@titan.co.in"
             className="underline hover:text-primary"
           >
             sminu@titan.co.in

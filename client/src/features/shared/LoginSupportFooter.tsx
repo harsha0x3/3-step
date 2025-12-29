@@ -20,7 +20,7 @@ const LoginSupportFooter = () => {
           </a>{" "}
           |{" "}
           <a
-            href="mailto:support@company.com"
+            href="mailto:sminu@titan.co.in"
             className="underline hover:text-primary"
           >
             sminu@titan.co.in

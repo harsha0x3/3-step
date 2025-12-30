@@ -114,10 +114,6 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
     formData.append("store_employee_name", storeEmployeeName);
     formData.append("store_employee_mobile", storeEmployeeMobile);
     if (employeePhoto) formData.append("store_employee_photo", employeePhoto);
-    else {
-      toast.error("Store employee Photo is not added");
-      return;
-    }
     if (evidencePhoto) formData.append("evidence_photo", evidencePhoto);
     else {
       toast.error("Beneficiary Photo with Laptop is not added");

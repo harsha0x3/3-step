@@ -5,6 +5,7 @@ from services.verification_service.email_service import (
 from services.verification_service.mobile_notification_service import (
     send_beneficiary_sms_otp,
 )
+from sqlalchemy.exc import IntegrityError
 
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy.orm import Session, joinedload
@@ -719,6 +720,20 @@ async def upload_laptop_issuance_details(
     except HTTPException:
         raise
 
+    except IntegrityError as e:
+        db.rollback()
+        error_message = str(e.orig)
+
+        if "Duplicate entry" in error_message:
+            if (
+                ".issued_laptop_serial" in error_message
+                or "key 'issued_laptop_serial'" in error_message
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Laptop serail number already exists.",
+                )
+
     except Exception as e:
         logger.error(f"Error in uploading issuance details - {e}")
         raise HTTPException(
@@ -897,6 +912,19 @@ def confirm_upgrade(
         db.refresh(issued_status)
     except HTTPException:
         raise
+    except IntegrityError as e:
+        db.rollback()
+        error_message = str(e.orig)
+
+        if "Duplicate entry" in error_message:
+            if (
+                ".issued_laptop_serial" in error_message
+                or "key 'issued_laptop_serial'" in error_message
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Laptop serail number already exists.",
+                )
     except Exception as e:
         print(e)
         logger.error(f"Error in confirming for upgrade - {e}")
@@ -1188,6 +1216,19 @@ def close_upgrade_request(
 
     except HTTPException:
         raise
+    except IntegrityError as e:
+        db.rollback()
+        error_message = str(e.orig)
+
+        if "Duplicate entry" in error_message:
+            if (
+                ".issued_laptop_serial" in error_message
+                or "key 'issued_laptop_serial'" in error_message
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Laptop serail number already exists.",
+                )
     except Exception as e:
         logger.error(f"Error in closing upgrade - {e}")
 

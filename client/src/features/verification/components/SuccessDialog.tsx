@@ -16,7 +16,13 @@ interface SuccessDialogProps {
 const SuccessDialog: React.FC<SuccessDialogProps> = ({ open, setOpen }) => {
   const navigate = useNavigate();
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={() => {
+        setOpen((prev) => !prev);
+        navigate("/store/beneficiary");
+      }}
+    >
       <DialogContent
         onInteractOutside={(e) => {
           e.preventDefault();

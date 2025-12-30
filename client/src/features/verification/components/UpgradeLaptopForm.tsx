@@ -153,10 +153,6 @@ const UpgradeLaptopForm: React.FC<UpgradeFormProps> = ({
     formData.append("upgrade_product_info", upgradeProductInfo);
     formData.append("cost_of_upgrade", String(costOfUpgrade));
     if (employeePhoto) formData.append("store_employee_photo", employeePhoto);
-    else {
-      toast.error("Store employee Photo is not added");
-      return;
-    }
     if (evidencePhoto) formData.append("evidence_photo", evidencePhoto);
     else {
       toast.error("Beneficiary Photo with Laptop is not added");
@@ -171,7 +167,7 @@ const UpgradeLaptopForm: React.FC<UpgradeFormProps> = ({
       await submitUpgradeRequest({
         candidateId: candidateId,
         payload: formData,
-      });
+      }).unwrap();
       toast.success("Laptop issuance recorded successfully!");
       onSuccess?.();
     } catch (err) {
@@ -481,7 +477,9 @@ const UpgradeLaptopForm: React.FC<UpgradeFormProps> = ({
               </div>
               <div className="grid grid-cols-[150px_1fr]">
                 <strong>Gift Card Code</strong>{" "}
-                <strong>{candidateDetails?.data?.candidate.coupon_code}</strong>
+                <strong>
+                  {candidateDetails?.data?.candidate.gift_card_code}
+                </strong>
               </div>
               <div className="grid grid-cols-[150px_1fr]">
                 <strong>Aadhaar Number</strong>{" "}

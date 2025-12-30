@@ -18,10 +18,9 @@ LOGGING_CONFIG = {
         "default": {
             "format": (
                 "%(asctime)s | %(levelname)s | %(name)s | "
-                "%(message)s | method=%(method)s "
-                "status=%(status_code)s detail=%(detail)s | %(pathname)s:%(lineno)d"
+                "%(message)s | %(pathname)s:%(lineno)d"
             )
-        },
+        }
     },
     "handlers": {
         "console": {

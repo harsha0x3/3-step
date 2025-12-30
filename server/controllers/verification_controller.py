@@ -29,11 +29,14 @@ from dotenv import load_dotenv
 from datetime import date
 
 from concurrent.futures import ThreadPoolExecutor
+from threading import Lock
+
 import asyncio
 
 from utils.log_config import logger
 
-executor = ThreadPoolExecutor(max_workers=3)
+max_workers = min(2, os.cpu_count() - 1)
+executor = ThreadPoolExecutor(max_workers=max_workers)
 
 load_dotenv()
 
@@ -44,6 +47,19 @@ BASE_STORE_CANDIDATE_UPLOADS = os.path.join(
 )
 os.makedirs(BASE_CANDIDATE_IMG_PATH, exist_ok=True)
 os.makedirs(BASE_STORE_CANDIDATE_UPLOADS, exist_ok=True)
+
+
+_model = None
+_model_lock = Lock()
+
+
+def get_model():
+    global _model
+    if _model is None:
+        with _model_lock:
+            if _model is None:
+                _model = DeepFace.build_model("VGG-Face")
+    return _model
 
 
 async def generate_otp(candidate_id: str, db: Session):
@@ -264,22 +280,24 @@ async def facial_recognition_old(img_path: str, original_img: str):
         )
 
 
+# model = DeepFace.build_model("VGG-Face")
+
+
 def deepface_verify_sync(img1, img2):
     try:
-        return DeepFace.verify(img1_path=img1, img2_path=img2)
+        model = get_model()
+        return DeepFace.verify(img1_path=img1, img2_path=img2, model_name="VGG-Face")
     except Exception as e:
         logger.error(f"Error in deepface verify - {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed in facial recognition. Try again",
-        )
+        return {"verified": False}
 
 
-face_semaphore = asyncio.Semaphore(3)
+face_semaphore = asyncio.Semaphore(2)
 
 
 async def facial_recognition(img_path, original_img):
     try:
+        print("CPU count", os.cpu_count())
         async with face_semaphore:
             loop = asyncio.get_running_loop()
             result = await loop.run_in_executor(

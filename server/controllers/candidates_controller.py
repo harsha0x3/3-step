@@ -626,13 +626,11 @@ def update_candidate_details(
     try:
         # Dynamically update provided fields
         for field, value in payload.model_dump(exclude_unset=True).items():
-            # print(f"field - {field} , value - {value}")
-            if payload.aadhar_number:
-                candidate.set_aadhar_number(payload.aadhar_number)
-                candidate.set_mask_aadhar_number(payload.aadhar_number)
-                continue
-            if hasattr(candidate, field) and field != "aadhar_number":
-                print(f"ATTR FOUND {field}")
+            print(f"field - {field} , value - {value}")
+            if field == "aadhar_number" and value:
+                candidate.set_aadhar_number(value)
+                candidate.set_mask_aadhar_number(value)
+            elif hasattr(candidate, field):
                 setattr(candidate, field, value)
 
         store = candidate.store

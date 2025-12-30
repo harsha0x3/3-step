@@ -583,9 +583,9 @@ async def candidate_verification_consolidate(
 
         verification_status_in.is_all_verified = all(
             [
-                new_verification_status.is_facial_verified,
-                new_verification_status.is_coupon_verified,
-                new_verification_status.is_aadhar_verified,
+                verification_status_in.is_facial_verified,
+                verification_status_in.is_coupon_verified,
+                verification_status_in.is_aadhar_verified,
             ]
         )
 

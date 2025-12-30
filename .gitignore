@@ -14,6 +14,9 @@ dist
 dist-ssr
 *.env
 *.local
+mdl_tests/
+**/mdl_tests
+mdl_tests
 
 # Editor directories and files
 .vscode/*

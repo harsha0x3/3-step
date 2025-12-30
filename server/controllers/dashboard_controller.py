@@ -32,7 +32,9 @@ def get_admin_dashboard_stats(db: Session) -> dict[str, Any]:
 
         upgrade_requests_stats = db.execute(
             select(
-                func.count(UpgradeRequest.candidate_id).label("upgrade_requests"),
+                func.sum(case((~UpgradeRequest.is_accepted, 1), else_=0)).label(
+                    "upgrade_requests"
+                ),
                 func.sum(case((UpgradeRequest.is_accepted, 1), else_=0)).label(
                     "upgrades_completed"
                 ),

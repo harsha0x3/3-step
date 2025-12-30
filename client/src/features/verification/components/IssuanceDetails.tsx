@@ -177,16 +177,6 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Ticket className="w-4 h-4" />
-                <span>
-                  <strong>Voucher:</strong>{" "}
-                  <span className="text-[15px] font-semibold text-black">
-                    {candidate.coupon_code}
-                  </span>
-                </span>
-              </div>
-
               {!isToConfirm && currentUserInfo.role !== "store_agent" && (
                 <div className="flex items-center gap-2">
                   <TicketCheck className="w-4 h-4" />

@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import type {
   VerificationResult,
   ConsolidateVerificationRequest,
@@ -29,6 +29,7 @@ const ConsolidateVerification: React.FC = () => {
     handleSubmit,
     reset,
     formState: { errors },
+    control,
   } = useForm<ConsolidateVerificationRequest>();
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -101,6 +102,21 @@ const ConsolidateVerification: React.FC = () => {
       console.log("verificationResult", verificationResult);
   }, [verificationResult]);
 
+  const formatGiftCard = (value) => {
+    return value
+      .replace(/\D/g, "") // remove non-digits
+      .slice(0, 16) // max 16 digits
+      .replace(/(.{4})/g, "$1 ") // add space every 4 digits
+      .trim();
+  };
+  const formatAadhar = (value) => {
+    return value
+      .replace(/\D/g, "") // remove non-digits
+      .slice(0, 12) // max 16 digits
+      .replace(/(.{4})/g, "$1 ") // add space every 4 digits
+      .trim();
+  };
+
   return (
     <div className="w-full h-[calc(100vh-71px)] overflow-auto pr-0 flex flex-col">
       <div className="container mx-auto py-6 px-4 sm:px-6 md:px-8 max-w-full md:max-w-2xl flex-1">
@@ -127,30 +143,73 @@ const ConsolidateVerification: React.FC = () => {
               id="consolidate-verification-form"
               onSubmit={handleSubmit(onSubmit)}
             >
-              <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-2 items-center">
-                <Label htmlFor="coupon_code">Gift Card Code</Label>
-                <Input
-                  id="coupon_code"
-                  {...register("coupon_code", {
-                    required: "Gift Card Code is required field",
-                  })}
-                  className={`w-full sm:w-72 ${
-                    errors.coupon_code ? "border-red-400" : ""
-                  }`}
-                  maxLength={16}
-                  minLength={8}
-                />
+              <div>
+                <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-2 items-center">
+                  <Label htmlFor="coupon_code">Gift Card Code</Label>
+
+                  <Controller
+                    name="coupon_code"
+                    control={control}
+                    rules={{
+                      required: "Gift Card Code is required field",
+                      validate: (value) =>
+                        value.replace(/\s/g, "").length === 16 ||
+                        "Gift Card Code must be exactly 16 digits",
+                    }}
+                    render={({ field }) => (
+                      <Input
+                        {...field}
+                        id="coupon_code"
+                        value={formatGiftCard(field.value || "")}
+                        onChange={(e) =>
+                          field.onChange(e.target.value.replace(/\s/g, ""))
+                        }
+                        className={`w-full sm:w-72 ${
+                          errors.coupon_code ? "border-red-400" : ""
+                        }`}
+                        inputMode="numeric"
+                        autoComplete="off"
+                      />
+                    )}
+                  />
+                </div>
+
+                {errors.coupon_code && (
+                  <span className="text-sm text-red-500">
+                    {errors.coupon_code.message}
+                  </span>
+                )}
               </div>
-              {errors.coupon_code && (
-                <span className="text-sm text-red-500">
-                  {errors.coupon_code.message}
-                </span>
-              )}
 
               <div>
                 <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-2 items-center">
                   <Label htmlFor="aadhar_number">Aadhaar Number</Label>
-                  <Input
+                  <Controller
+                    name="aadhar_number"
+                    control={control}
+                    rules={{
+                      required: "Aadhaar number is required field",
+                      validate: (value) =>
+                        value.replace(/\s/g, "").length === 12 ||
+                        "Aadhar Number must be exactly 12 digits",
+                    }}
+                    render={({ field }) => (
+                      <Input
+                        {...field}
+                        id="aadhar_number"
+                        value={formatAadhar(field.value || "")}
+                        onChange={(e) =>
+                          field.onChange(e.target.value.replace(/\s/g, ""))
+                        }
+                        className={`w-full sm:w-72 ${
+                          errors.coupon_code ? "border-red-400" : ""
+                        }`}
+                        inputMode="numeric"
+                        autoComplete="off"
+                      />
+                    )}
+                  />
+                  {/* <Input
                     id="aadhar_number"
                     inputMode="numeric"
                     maxLength={12}
@@ -168,7 +227,7 @@ const ConsolidateVerification: React.FC = () => {
                     className={`w-full sm:w-72 ${
                       errors.aadhar_number ? "border-red-400" : ""
                     }`}
-                  />
+                  /> */}
                 </div>
                 {errors.aadhar_number && (
                   <span className="text-sm text-red-500">

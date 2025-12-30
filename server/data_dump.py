@@ -95,7 +95,10 @@ def dump_candidate_data():
                             "Failed to generate unique Coupon after several attempts. Try again",
                         )
 
-                    elif ".mobile_number" in error_message:
+                    elif (
+                        ".mobile_number" in error_message
+                        or "key 'mobile_number'" in error_message
+                    ):
                         print(error_message)
 
                         new_candidate = Candidate(

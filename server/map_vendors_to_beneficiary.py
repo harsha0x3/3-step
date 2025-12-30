@@ -3,7 +3,7 @@ from db.connection import get_db_conn
 from sqlalchemy import select
 from models import Candidate, VendorSpoc
 
-csv_path = r"C:\Users\harshavardhancg\Titan\hard_verify\server\notebooks\final_no_e_no_dups2.csv"
+csv_path = r"C:\Users\harshavardhancg\Downloads\Final Sheet - 1378 Nos(FINAL 8YRS ABOVE - 1378 Nos)(Final Sheet - 1378 Nos(FINAL 8Y).csv"
 
 
 def read_data(path: str) -> pd.DataFrame:

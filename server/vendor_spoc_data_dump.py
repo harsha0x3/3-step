@@ -6,7 +6,7 @@ from sqlalchemy import select
 from models import Vendor
 import asyncio
 
-csv_path = r"C:\Users\harshavardhancg\Titan\hard_verify\server\notebooks\vendors_with_spoc_table.csv"
+csv_path = r"C:\Users\harshavardhancg\CodeBase\hard_verify\server\notebooks\FINAL_VENDOR_SPOC_DATA.csv"
 
 
 def read_data(path: str) -> pd.DataFrame:

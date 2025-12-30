@@ -14,6 +14,7 @@ from models.stores import Store
 from models.users import User
 from models import Candidate
 from models.schemas.auth_schemas import UserOut, RegisterRequest
+from utils.log_config import logger
 
 MAX_RETRIES = 3
 
@@ -28,6 +29,7 @@ def add_new_store(payload: AddNewStore, db: Session):
         return new_store
 
     except Exception as e:
+        logger.error(f"Error adding new store - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"msg": "Error Adding store", "err_stack": str(e)},
@@ -134,6 +136,7 @@ async def get_all_stores(db: Session, params: StoreSearchParams):
         }
 
     except Exception as e:
+        logger.error(f"Error in getting all stores - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"msg": "Error retrieving stores", "err_stack": str(e)},
@@ -152,6 +155,7 @@ def get_store_of_user(db: Session, user: UserOut):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error("Error in getting store of user")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"msg": "Error getting candidates for store", "err_stack": str(e)},
@@ -196,6 +200,7 @@ def update_store_details(store_id: str, payload: UpdateStorePayload, db: Session
     except HTTPException:
         raise
     except Exception as e:
+        logger.error("Error in updating store details")
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -242,6 +247,7 @@ def add_store_agent(store_id: str, payload: RegisterRequest, db: Session):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error  adding store agent - {e}")
         print(f"AGENT ADD ERR - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

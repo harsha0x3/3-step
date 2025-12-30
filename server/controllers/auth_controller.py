@@ -12,6 +12,7 @@ from models.schemas.auth_schemas import LoginRequest, RegisterRequest, UserDetai
 from models.users import User
 import asyncio
 from services.auth.captcha import verify_turnstile_token
+from utils.log_config import logger
 
 
 def register_user(
@@ -27,6 +28,9 @@ def register_user(
     )
     if existing_user:
         if existing_user.mobile_number == reg_user.mobile_number:
+            logger.warning(
+                f"Mobile number already registered - {existing_user.mobile_number}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Mobile number already registered",
@@ -68,6 +72,7 @@ def register_user(
 
     except Exception as e:
         db.rollback()
+        logger.error(f"User registration failed - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Registration Failed {str(e)}",

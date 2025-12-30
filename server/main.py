@@ -14,11 +14,18 @@ from routes import (
     secure_file_serving_routes,
 )
 from db.connection import init_db
-from fastapi.staticfiles import StaticFiles
+from utils.log_config import LOGGING_CONFIG
+import logging
+import logging.config
 import os
 from dotenv import load_dotenv
+from fastapi.exceptions import HTTPException
+from fastapi.responses import JSONResponse
 
 load_dotenv()
+
+logging.config.dictConfig(LOGGING_CONFIG)
+logger = logging.getLogger("app.errors")
 
 BASE_SERVER_DIR = os.getenv("BASE_SERVER_DIR", "")
 BASE_UPLOAD_DIR = os.path.join(BASE_SERVER_DIR, "uploads")
@@ -44,6 +51,39 @@ app.add_middleware(
     allow_headers=["*"],
     allow_credentials=True,
 )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    logger.warning(
+        "HTTP Exception",
+        extra={
+            "path": request.url.path,
+            "method": request.method,
+            "status_code": exc.status_code,
+            "detail": exc.detail,
+        },
+    )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.error(
+        "Unhandled Exception",
+        extra={
+            "path": request.url.path,
+            "method": request.method,
+        },
+        exc_info=True,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
 
 
 @app.middleware("http")

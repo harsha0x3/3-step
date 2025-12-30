@@ -3,6 +3,7 @@ import time
 import os
 from models.schemas.otp_schemas import SmsOtpPayload
 from fastapi import HTTPException, status
+from utils.log_config import logger
 
 auth_url = os.getenv("SMS_AUTH_URL", "")
 auth_payload = {
@@ -62,6 +63,7 @@ async def send_beneficiary_sms_otp(payload: SmsOtpPayload):
 
     except Exception as e:
         # optionally wrap into your custom error
+        logger.error(f"Error in sending beneficicary otp - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"msg": "OTP sending failed", "err_stack": str(e)},
@@ -116,6 +118,8 @@ async def send_login_sms_otp(payload: SmsOtpPayload):
 
     except Exception as e:
         # optionally wrap into your custom error
+        logger.error(f"Error in sending login otp - {e}")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"msg": "OTP sending failed", "err_stack": str(e)},

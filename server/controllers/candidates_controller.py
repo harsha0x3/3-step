@@ -24,6 +24,7 @@ from utils.helpers import (
     save_aadhar_photo,
     normalize_path,
 )
+from utils.log_config import logger
 
 MAX_RETRIES = 3
 
@@ -64,6 +65,7 @@ def add_new_candidate(payload: NewCandidatePayload, db: Session):
                 return {"candidate": new_candidate, "store": store}
 
             except IntegrityError as e:
+                logger.error(f"Failed to create new beneficiary - Duplicate - {e}")
                 db.rollback()
                 error_message = str(e.orig)
 
@@ -114,6 +116,7 @@ def add_new_candidate(payload: NewCandidatePayload, db: Session):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in creating new beneficiary - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}",
@@ -164,6 +167,7 @@ def get_candidate_by_id(candidate_id: str, db: Session):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in getting beneficiary by id - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"msg": "Error getting Employee by ID", "err_stack": str(e)},
@@ -212,8 +216,7 @@ def get_candidate_details_by_id(candidate_id: str, db: Session):
     except HTTPException:
         raise
     except Exception as e:
-        print("ERROR")
-        print(e)
+        logger.error(f"Error in getting beneficiary details by id - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"msg": "Error getting employee by ID", "err_stack": str(e)},
@@ -270,6 +273,7 @@ def get_candidate_details_by_coupon_code(coupon_code: str, db: Session):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in getting beneficiary details by coupon - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"msg": "Error getting employee by ID", "err_stack": str(e)},
@@ -323,6 +327,8 @@ def get_candidate_by_photo_url(photo_url, db: Session):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in getting beneficiary details by photo - {e}")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"msg": "Error getting employee by photo", "err_stack": str(e)},
@@ -455,6 +461,7 @@ def get_all_candidates(
         }
 
     except Exception as e:
+        logger.error(f"Error in getting all beneficiaries - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"msg": "Error getting Employees", "err_stack": str(e)},
@@ -588,6 +595,7 @@ def get_candidates_of_store(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in getting store beneficiaries - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"msg": "Error getting Employees for store", "err_stack": str(e)},
@@ -694,6 +702,7 @@ def update_candidate_details(
         )
 
     except IntegrityError as e:
+        logger.error(f"Error in updating beneficiary - Dupllicate - {e}")
         db.rollback()
         error_message = str(e.orig)
 
@@ -743,6 +752,8 @@ def update_candidate_details(
         raise
 
     except Exception as e:
+        logger.error(f"Error in updating beneficiary - {e}")
+
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -800,8 +811,8 @@ async def upload_candidate_img(photo: UploadFile, candidate_id: str, db: Session
         raise
 
     except Exception as e:
-        print("PHOTO ERR")
-        print(e)
+        logger.error(f"Error in checking beneficiary readiness - {e}")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"msg": "Error adding employee image to db", "err_stack": str(e)},
@@ -869,6 +880,8 @@ def reset_voucher_issuance(candidate_id: str, db: Session):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in resetting voucher issuance - {e}")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error resetting the voucher issuance.",
@@ -939,6 +952,7 @@ async def update_candidate_verification_status(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in updating candidate verification status. - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
@@ -973,6 +987,7 @@ async def add_aadhar_photo(photo: UploadFile, candidate_id: str, db: Session):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in adding aadhar photo - {e}")
         print(f"AADHAR PGOTO ERR - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

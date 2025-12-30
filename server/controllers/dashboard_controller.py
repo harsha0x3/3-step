@@ -4,7 +4,6 @@ from models import Candidate, User, VerificationStatus, Store
 from models.issued_statuses import IssuedStatus
 from models import UpgradeRequest
 from fastapi import HTTPException, status
-from datetime import datetime, timedelta, timezone
 from typing import Any
 
 

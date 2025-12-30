@@ -28,6 +28,13 @@ from utils.helpers import (
 from dotenv import load_dotenv
 from datetime import date
 
+from concurrent.futures import ThreadPoolExecutor
+import asyncio
+
+from utils.log_config import logger
+
+executor = ThreadPoolExecutor(max_workers=3)
+
 load_dotenv()
 
 BASE_SERVER_DIR = os.getenv("BASE_SERVER_DIR", "")
@@ -87,6 +94,7 @@ async def generate_otp(candidate_id: str, db: Session):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error generating and sending OTP - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error generating OTP: {str(e)}",
@@ -183,6 +191,7 @@ async def otp_resend(candidate_id: str, db: Session, to_admin: bool = False):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error generating and sending OTP - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error resending OTP: {str(e)}",
@@ -202,7 +211,7 @@ def check_spoof(image_path):
         return False
 
 
-async def facial_recognition(img_path: str, original_img: str):
+async def facial_recognition_old(img_path: str, original_img: str):
     try:
         norm_input_img_path = normalize_path(img_path)
         norm_org_cand_path = normalize_path(original_img)
@@ -250,6 +259,40 @@ async def facial_recognition(img_path: str, original_img: str):
         return False
     except Exception as e:
         print("Facial verification err", e)
+        raise HTTPException(
+            status_code=500, detail=f"Face verification failed: {str(e)}"
+        )
+
+
+def deepface_verify_sync(img1, img2):
+    try:
+        return DeepFace.verify(img1_path=img1, img2_path=img2)
+    except Exception as e:
+        logger.error(f"Error in deepface verify - {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed in facial recognition. Try again",
+        )
+
+
+face_semaphore = asyncio.Semaphore(3)
+
+
+async def facial_recognition(img_path, original_img):
+    try:
+        async with face_semaphore:
+            loop = asyncio.get_running_loop()
+            result = await loop.run_in_executor(
+                executor, deepface_verify_sync, img_path, original_img
+            )
+            return result["verified"]
+    except ValueError as e:
+        print("Value error in facial verificaion", e)
+        err = str(e).lower()
+        return False
+    except Exception as e:
+        print("Facial verification err", e)
+        logger.error(f"Error in facial recog - {e}")
         raise HTTPException(
             status_code=500, detail=f"Face verification failed: {str(e)}"
         )
@@ -315,6 +358,7 @@ async def verify_otp(candidate_id: str, otp_input: str, db: Session):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in otp verification - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error verifying OTP: {str(e)}",
@@ -361,6 +405,7 @@ def get_issuance_details(candidate_id: str, db: Session):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in getting issuance details - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error fetching issuance details.",
@@ -383,6 +428,7 @@ async def candidate_verification_consolidate(
             )
         )
     except Exception as e:
+        logger.error(f"Error in getting candidate in consolidate verif - {e}")
         raise
     if not candidate:
         raise HTTPException(
@@ -428,6 +474,7 @@ async def candidate_verification_consolidate(
                 "data": result,
             }
     except Exception as e:
+        logger.error(f"Error in getting issuance etials in consolidate - {e}")
         pass
 
     # Aadhaar verification
@@ -452,15 +499,16 @@ async def candidate_verification_consolidate(
     try:
         norm_input_img_path = normalize_path(payload.candidate_photo)
         norm_org_cand_path = normalize_path(candidate.photo)
-        is_spoof = check_spoof(norm_input_img_path)
-        if is_spoof:
-            print(is_spoof)
-            msg.append("Spoof detectected with beneficiary photo.")
+        # is_spoof = check_spoof(norm_input_img_path)
+        # if is_spoof:
+        #     print(is_spoof)
+        #     msg.append("Spoof detectected with beneficiary photo.")
 
     except HTTPException:
         raise
 
     except Exception as e:
+        logger.error(f"Final Error in consolidate - {e}")
         raise
 
     try:
@@ -470,13 +518,13 @@ async def candidate_verification_consolidate(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in facial verification in consolidate verification - {e}")
         raise HTTPException(
-            status_code=500, detail=f"Face verification failed: {str(e)}"
+            status_code=500, detail="Unexpected error in facial verification. Try again"
         )
 
     print(f"Candidate face in db: - {candidate.photo}")
-    if is_candidate_face_verified and not is_spoof:
-        print("is_spoof", is_spoof)
+    if is_candidate_face_verified:
         verification_status_in.is_facial_verified = True
     else:
         verification_issues.append("facial")
@@ -549,6 +597,9 @@ async def candidate_verification_consolidate(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(
+            f"Unexpected error while verifying the beneficiary, Try again - {e}"
+        )
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -589,6 +640,7 @@ def override_verification_process(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in overriding verification process - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unexpected error while overriding verification process. Try again",
@@ -650,6 +702,7 @@ async def upload_laptop_issuance_details(
         raise
 
     except Exception as e:
+        logger.error(f"Error in uploading issuance details - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
@@ -671,6 +724,7 @@ def get_latest_issuer_details(db: Session, store_user_id: str):
             return
         return v_schemas.LatestIssuer.model_validate(latest_issued_status)
     except Exception as e:
+        logger.error(f"Error in getting latest issuer details - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error fetching latest Issuer details.",
@@ -769,6 +823,7 @@ def verify_for_upgrade(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in verifying for upgrade - {e}")
         print(e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -826,6 +881,8 @@ def confirm_upgrade(
         raise
     except Exception as e:
         print(e)
+        logger.error(f"Error in confirming for upgrade - {e}")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error confirming upgrade request",
@@ -869,6 +926,8 @@ async def upload_laptop_issuance_evidence(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in uploading laptop evidence - {e}")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error adding evidence photo. Try again.",
@@ -911,6 +970,8 @@ async def upload_laptop_issuance_bill_reciept(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in uploading bill - {e}")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error adding reciept photo. Try again.",
@@ -1017,6 +1078,8 @@ def request_new_upgrade(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in requesting new for upgrade - {e}")
+
         print("UPGRADE REQUEST ERR", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1108,6 +1171,8 @@ def close_upgrade_request(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error in closing upgrade - {e}")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error in upgrading the laptop",
@@ -1125,6 +1190,8 @@ def procees_with_no_upgrade(candidate_id: str, db: Session):
         return {"msg": "Proceed with no upgrade"}
 
     except Exception as e:
+        logger.error(f"Error in processig with no upgrade - {e}")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error proceeding with no upgrade. Try again",
@@ -1144,6 +1211,7 @@ def get_upgrade_details(candidate_id: str, db: Session):
             "data": v_schemas.UpgradeRequestOut.model_validate(upgrade_details),
         }
     except Exception as e:
+        logger.error(f"Error in getting upgrade details - {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error fetching upgrade details",

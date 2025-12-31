@@ -370,7 +370,7 @@ const OtpVerification = () => {
           </CardContent>
         </Card>
       </div>
-      <LaptopDistSupportFooter trouble="in OTP Verification." />
+      <LaptopDistSupportFooter trouble="in OTP Verification" />
     </div>
   );
 };

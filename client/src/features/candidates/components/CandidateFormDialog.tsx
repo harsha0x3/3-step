@@ -479,7 +479,10 @@ const CandidateFormDialog: React.FC<Props> = ({
                       : toVerify && !!candidate?.mobile_number)
                   }
                   {...register("mobile_number", {
-                    required: currentUserInfo.role !== "super_admin",
+                    required:
+                      currentUserInfo.role !== "super_admin"
+                        ? "Mobile number is missing, enter it."
+                        : false,
                     pattern: {
                       value: /^\d{10}$/,
                       message: "Mobile number must be 10 digits",
@@ -505,7 +508,12 @@ const CandidateFormDialog: React.FC<Props> = ({
                 <Controller
                   name="aadhar_number"
                   control={control}
-                  rules={{ required: currentUserInfo.role !== "super_admin" }}
+                  rules={{
+                    required:
+                      currentUserInfo.role !== "super_admin"
+                        ? "Aadhaar number is missing, enter it"
+                        : false,
+                  }}
                   render={({ field, fieldState }) => {
                     // Format for display with dashes
                     const formatWithDashes = (val: string) =>
@@ -598,7 +606,12 @@ const CandidateFormDialog: React.FC<Props> = ({
               <Controller
                 name="store_id"
                 control={control}
-                rules={{ required: currentUserInfo.role !== "super_admin" }}
+                rules={{
+                  required:
+                    currentUserInfo.role !== "super_admin"
+                      ? "Allot a store."
+                      : false,
+                }}
                 render={({ field, fieldState }) => (
                   <div>
                     <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
@@ -656,7 +669,10 @@ const CandidateFormDialog: React.FC<Props> = ({
                         name="vendor_spoc_id"
                         control={control}
                         rules={{
-                          required: "Vendor Contact Person is required",
+                          required:
+                            currentUserInfo.role !== "super_admin"
+                              ? "Vendor contact person is required"
+                              : false,
                         }}
                         render={({ field, fieldState }) => (
                           <div>

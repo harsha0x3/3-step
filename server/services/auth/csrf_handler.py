@@ -26,6 +26,7 @@ def set_csrf_cookie(response: Response):
         secure=not is_insecure,  # Changed: secure in prod, not secure in dev
         samesite="lax" if is_insecure else "none",
         path="/",
+        max_age=30 * 60,
     )
     return csrf_token
 

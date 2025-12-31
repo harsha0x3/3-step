@@ -91,13 +91,6 @@ def set_jwt_cookies(
     response: Response, access_token: str, refresh_token: str | None = None
 ):
     try:
-        access_exp = datetime.now(timezone.utc) + timedelta(
-            minutes=JWTConfig.ACCESS_TOKEN_EXPIRE_MINUTES
-        )
-        refresh_exp = datetime.now(timezone.utc) + timedelta(
-            hours=JWTConfig.REFRESH_TOKEN_EXPIRE_HOURS
-        )
-
         response.set_cookie(
             key="lt_access_token",
             value=access_token,

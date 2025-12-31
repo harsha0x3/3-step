@@ -9,7 +9,7 @@ from .jwt_handler import (
     set_jwt_cookies,
 )
 from models.schemas.auth_schemas import UserOut
-
+from .csrf_handler import set_csrf_cookie
 
 # def get_current_user(
 #     access_token: str | None = Cookie(default=None),
@@ -80,6 +80,7 @@ def get_current_user(
                 user_id=user.id, role=user.role, mfa_verified=user.mfa_enabled
             )
             set_jwt_cookies(response, access)
+            set_csrf_cookie(response=response)
 
             # print("Access token refreshed successfully")
 

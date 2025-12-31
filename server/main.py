@@ -102,7 +102,16 @@ async def lifespan(app: FastAPI):
 
 
 print(">>> [20] creating FastAPI app")
-app = FastAPI(lifespan=lifespan, root_path="/hard_verify/api/v1.0")
+
+ENV = os.getenv("ENV", "development")
+
+app = FastAPI(
+    lifespan=lifespan,
+    root_path="/hard_verify/api/v1.0",
+    docs_url=None if ENV == "production" else "/docs",
+    redoc_url=None if ENV == "production" else "/redoc",
+    openapi_url=None if ENV == "production" else "/openapi.json",
+)
 print(">>> [21] FastAPI app created")
 
 print(">>> [22] adding CORS middleware")

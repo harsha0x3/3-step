@@ -1,3 +1,4 @@
+import type { RegionOut } from "@/store/rootTypes";
 import type { UserItem } from "../auth/types";
 import type { StoreItemWithUser } from "../product_stores/types";
 
@@ -14,6 +15,7 @@ export interface NewCandidatePayload {
   store_id?: string;
   vendor_spoc_id?: string;
   is_candidate_verified?: boolean;
+  region?: RegionOut;
 }
 export interface UpdateCandidatePayload {
   id?: string;
@@ -28,6 +30,7 @@ export interface UpdateCandidatePayload {
   store_id?: string;
   vendor_spoc_id?: string;
   is_candidate_verified?: boolean;
+  region_id?: string;
 }
 
 export interface CandidateItemWithStore extends NewCandidatePayload {

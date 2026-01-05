@@ -64,6 +64,7 @@ const AllCandidates: React.FC = () => {
   const candIsVerified = searchParams.get("is_verified");
   const candIsIssued = searchParams.get("is_issued");
   const candUpgrade = searchParams.get("upgrade_request");
+  const candStoreId = searchParams.get("beneficiaryStoreId");
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -85,6 +86,7 @@ const AllCandidates: React.FC = () => {
       is_issued: candIsIssued !== null ? candIsIssued === "true" : undefined,
       upgrade_request:
         candUpgrade !== null ? candUpgrade === "true" : undefined,
+      store_id: candStoreId ?? undefined,
     }),
     [
       candPage,
@@ -96,6 +98,7 @@ const AllCandidates: React.FC = () => {
       candIsVerified,
       candIsIssued,
       candUpgrade,
+      candStoreId,
     ]
   );
 
@@ -113,6 +116,7 @@ const AllCandidates: React.FC = () => {
       link.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
+      const errMsg = err?.data?.detail?.msg ?? "Failed to fetch beneficiaries";
       const errDesc = err?.data?.detail?.msg
         ? err?.data?.detail?.err_stack
         : "Failed to download beneficiary data";
@@ -541,7 +545,7 @@ const AllCandidates: React.FC = () => {
           isLoading={isFetchingCandidates}
           error={
             candidatesFetchError
-              ? candidatesFetchError?.data?.detail ??
+              ? candidatesFetchError?.data?.detail?.msg ??
                 "An Error Occured while fetching candidates"
               : ""
           }

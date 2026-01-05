@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useGetAllStoresQuery } from "../store/productStoresApiSlice";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
-import type { StoreItemWithUser } from "../types";
+import type { StoreItemWithUser, StoreSearchParams } from "../types";
 import {
   Popover,
   PopoverContent,
@@ -39,7 +39,7 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
 
   const currentUserInfo = useSelector(selectAuth);
 
-  const storeQueryParams = useMemo(
+  const storeQueryParams = useMemo<StoreSearchParams>(
     () => ({
       page: -1,
       page_size: 0,
@@ -97,7 +97,7 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
               <div className="flex flex-col text-left overflow-hidden">
                 <p className="text-md truncate">{selectedStore.name}</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {selectedStore.city}
+                  {[selectedStore.city.map((c) => c.name)].join(", ")}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   Available Slots:{" "}
@@ -129,10 +129,9 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
                   data?.data?.stores.map((store: StoreItemWithUser) => {
                     return (
                       <CommandItem
-                        disabled={
-                          isDisabled ||
-                          store.count <= (store?.total_assigned_candidates ?? 0)
-                        }
+                        disabled={isDisabled}
+                        // ||
+                        //   store.count <= (store?.total_assigned_candidates ?? 0)
                         key={store.id}
                         value={store.id}
                         onSelect={() => {
@@ -145,7 +144,7 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
                         <div className="felx flex-col gap-1">
                           <p className="text-md">{store.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {store.city}
+                            {[store.city.map((c) => c.name)].join(", ")}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             Available Slots:{" "}

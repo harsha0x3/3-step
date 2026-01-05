@@ -1,5 +1,6 @@
 import { rootApiSlice } from "@/store/rootApiSlice";
 import type {
+  City,
   NewStorePayload,
   StoreItem,
   StoreItemWithUser,
@@ -33,12 +34,15 @@ export const productStoresApiSlice = rootApiSlice.injectEndpoints({
       invalidatesTags: ["Stores"],
     }),
 
+    getAllCities: builder.query<ApiResponse<City[]>, void>({
+      query: () => `/stores/cities`,
+    }),
+
     getAllStores: builder.query<
       ApiResponse<{
         stores: StoreItemWithUser[];
         total_stock: number;
         count: number;
-        cities: string[];
       }>,
       StoreSearchParams
     >({
@@ -106,4 +110,5 @@ export const {
   useGetOfflineUploadDetailsQuery,
   useGetOfflineUploadHistoryQuery,
   useUploadOfflineReportMutation,
+  useGetAllCitiesQuery,
 } = productStoresApiSlice;

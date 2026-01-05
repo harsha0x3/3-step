@@ -20,6 +20,7 @@ from controllers.store_controller import (
     update_store_details,
     get_store_of_user,
     add_store_agent,
+    get_all_cities,
 )
 from models.schemas.auth_schemas import RegisterRequest
 from typing import Annotated, Literal
@@ -100,6 +101,15 @@ async def list_stores(
             "cities": result.get("cities", []),
         },
     }
+
+
+@router.get("/cities", status_code=status.HTTP_200_OK)
+def get_cities(
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+):
+    data = get_all_cities(db)
+    return {"msg": "", "data": data}
 
 
 @router.get("/my-store", status_code=status.HTTP_200_OK)

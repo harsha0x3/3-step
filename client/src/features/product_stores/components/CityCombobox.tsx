@@ -16,15 +16,19 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
+import { useGetAllCitiesQuery } from "../store/productStoresApiSlice";
 
 interface Props {
-  cities: string[];
   value: string;
   onChange: (value: string) => void;
 }
 
-export const CityCombobox: React.FC<Props> = ({ cities, value, onChange }) => {
+export const CityCombobox: React.FC<Props> = ({ value, onChange }) => {
   const [open, setOpen] = React.useState(false);
+  const { data: citiesData } = useGetAllCitiesQuery();
+  const cities = React.useMemo(() => {
+    return citiesData?.data ?? [];
+  }, [citiesData]);
 
   return (
     <div className="w-full max-w-xs space-y-2">
@@ -63,15 +67,17 @@ export const CityCombobox: React.FC<Props> = ({ cities, value, onChange }) => {
 
                 {cities.map((city) => (
                   <CommandItem
-                    key={city}
-                    value={city}
+                    key={city.id}
+                    value={city.name}
                     onSelect={() => {
-                      onChange(city);
+                      onChange(city.name);
                       setOpen(false);
                     }}
                   >
-                    {city}
-                    {value === city && <Check className="ml-auto h-4 w-4" />}
+                    {city.name}
+                    {value === city.name && (
+                      <Check className="ml-auto h-4 w-4" />
+                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>

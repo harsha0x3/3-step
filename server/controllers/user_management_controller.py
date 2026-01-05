@@ -3,6 +3,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select, or_, func, asc, desc, case
 from models.users import User
+from models import RegionUserAssociation
 from models.password_reset_otps import PasswordResetOtp
 from models.schemas.auth_schemas import (
     AdminCreateUserRequest,
@@ -62,11 +63,17 @@ def admin_create_user(
         new_user.set_password(DEFAULT_PASSWORD)
 
         db.add(new_user)
+        db.flush()
+
+        for region_id in payload.region_ids or []:
+            association = RegionUserAssociation(
+                region_id=region_id,
+                user_id=new_user.id,
+            )
+            db.add(association)
+
         db.commit()
         db.refresh(new_user)
-
-        # Send welcome email with credentials
-        # TODO: Implement send_welcome_email function
 
         return {
             "msg": "User created successfully",
@@ -145,6 +152,28 @@ def admin_update_user(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="store_id is required for store_agent role",
                 )
+
+            if payload.role == "registration_officer":
+                user.store_id = None
+
+                if payload.region_ids is None or len(payload.region_ids) < 1:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="At least one region is required for registration_officer role",
+                    )
+
+                if payload.region_ids is not None:
+                    # Remove existing associations
+                    db.query(RegionUserAssociation).filter(
+                        RegionUserAssociation.user_id == user.id
+                    ).delete()
+                    # Add new associations
+                    for region_id in payload.region_ids:
+                        association = RegionUserAssociation(
+                            region_id=region_id,
+                            user_id=user.id,
+                        )
+                        db.add(association)
 
         if payload.store_id is not None:
             user.store_id = payload.store_id

@@ -304,24 +304,24 @@ export default function IndexPage() {
       </div>
 
       {/* Store Stats (Only Admin) */}
-      {filteredStores.length > 0 && (
-        <div className="border rounded-lg h-[500px] p-2 overflow-hidden flex flex-col bg-card shadow-sm ">
-          <div className="border-b">
-            <h2 className="text-xl font-semibold mb-2">Store Wise Issuance</h2>
-            <div className="flex items-center gap-2 py-3">
-              <Label>Search By City:</Label>
-              <Input
-                value={selectedCity}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setSelectedCity(e.target.value)
-                }
-                type="text"
-                className="w-64"
-                placeholder="Enter a city name"
-              />
-            </div>
+      <div className="border rounded-lg h-[500px] p-2 overflow-hidden flex flex-col bg-card shadow-sm ">
+        <div className="border-b">
+          <h2 className="text-xl font-semibold mb-2">Store Wise Issuance</h2>
+          <div className="flex items-center gap-2 py-3">
+            <Label>Search By City:</Label>
+            <Input
+              value={selectedCity}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setSelectedCity(e.target.value)
+              }
+              type="text"
+              className="w-64"
+              placeholder="Enter a city name"
+            />
           </div>
-          <div className="h-full flex-1 overflow-auto py-2">
+        </div>
+        <div className="h-full flex-1 overflow-auto py-2">
+          {filteredStores.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredStores.map((s) => (
                 <Card key={s.store_id} className="shadow-md">
@@ -331,9 +331,12 @@ export default function IndexPage() {
                       <Button
                         variant={"link"}
                         onClick={() =>
-                          navigate(`/stores?storeSearchTerm=${s.city}`, {
-                            state: { from: "dashboard" },
-                          })
+                          navigate(
+                            `/beneficiary/all?beneficiaryStoreId=${s.store_id}`,
+                            {
+                              state: { from: "dashboard" },
+                            }
+                          )
                         }
                         size={"sm"}
                       >
@@ -364,9 +367,9 @@ export default function IndexPage() {
                 </Card>
               ))}
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Bulk Upload (Store Agent) */}
       {data.data.recent_issuances && (

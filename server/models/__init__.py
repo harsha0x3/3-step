@@ -10,3 +10,5 @@ from .password_reset_otps import PasswordResetOtp
 from .offline_upload_results import BulkUploadResult, BulkUploadError
 from .upgrade_reqests import UpgradeRequest
 from .utilty_files import UtilityFile
+from .regions import Region, RegionUserAssociation
+from .cities import City, StoreCityAssociation

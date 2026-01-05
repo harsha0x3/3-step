@@ -42,10 +42,16 @@ class User(Base, BaseMixin):
 
     location: Mapped[str] = mapped_column(String(122), nullable=True)
 
-    store_id: Mapped[str] = mapped_column(
+    store_id: Mapped[str | None] = mapped_column(
         String(40),
         ForeignKey("stores.id", ondelete="set null", onupdate="cascade"),
         nullable=True,
+    )
+
+    regions = relationship(
+        "Region",
+        secondary="region_user_associations",
+        back_populates="users",
     )
 
     store = relationship("Store", back_populates="store_agents")

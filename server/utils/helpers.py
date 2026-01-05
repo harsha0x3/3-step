@@ -42,7 +42,7 @@ def normalize_path(path: str) -> str:
     return normalized
 
 
-def norm_to_uploads_dir(path: str) -> str:
+def norm_to_uploads_dir(path: str):
     if "uploads" not in path:
         dir_path = os.path.join("uploads", path)
         return normalize_path(dir_path)

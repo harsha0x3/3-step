@@ -1,6 +1,6 @@
 // src/features/product_stores/components/StoreFormDialog.tsx
 import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,6 +19,7 @@ import {
 import type { NewStorePayload, StoreItemWithUser } from "../types";
 import { toast } from "sonner";
 import { flushSync } from "react-dom";
+import MultiCityCombobox from "./MultiCityCombobox";
 
 type Props = {
   store?: StoreItemWithUser;
@@ -45,13 +46,14 @@ const StoreFormDialog: React.FC<Props> = ({
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, dirtyFields },
   } = useForm<NewStorePayload>({
     defaultValues: store
       ? {
           id: store.id ?? "",
           name: store.name,
-          city: store.city ?? "",
+          city_ids: store.city ? store.city.map((c) => c.id) : [],
           count: store.count ?? 0,
           email: store.email ?? "",
           mobile_number: store.mobile_number ?? "",
@@ -134,22 +136,29 @@ const StoreFormDialog: React.FC<Props> = ({
               <span className="text-sm text-red-500">{errors.id.message}</span>
             )}
           </div>
-          {/* Store City */}
+          {/* Store Cities */}
           <div className="grid grid-cols-[130px_1fr] gap-2">
-            <Label htmlFor="store_city">City</Label>
-            <Input
-              id="store_city"
-              {...register("city", {
-                required: "City name is required",
-              })}
-              required
+            <Label>Cities</Label>
+
+            <Controller
+              name="city_ids"
+              control={control}
+              rules={{ required: "At least one city is required" }}
+              render={({ field }) => (
+                <MultiCityCombobox
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
             />
-            {errors.city && (
+
+            {errors.city_ids && (
               <span className="text-sm text-red-500">
-                {errors.city.message}
+                {errors.city_ids.message}
               </span>
             )}
           </div>
+
           {/* Store Name */}
           <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-3">
             <Label htmlFor="name">Store Name</Label>

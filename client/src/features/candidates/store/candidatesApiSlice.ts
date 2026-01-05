@@ -83,6 +83,13 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
             "upgrade_request",
             String(params.upgrade_request)
           );
+        if (
+          params?.store_id &&
+          params.store_id !== undefined &&
+          params.store_id !== null &&
+          params.store_id.trim() !== ""
+        )
+          searchParams.append("store_id", params.store_id);
 
         const queryString = searchParams.toString();
         return `/candidates${queryString ? `?${queryString}` : ""}`;

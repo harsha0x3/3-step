@@ -2,6 +2,7 @@ from enum import Enum
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 from typing import Literal
+from .region_schemas import RegionAssociationSchema
 
 
 class RoleEnum(str, Enum):
@@ -63,6 +64,8 @@ class UserOut(BaseModel):
 
     created_at: datetime | None = None
     updated_at: datetime | None = None
+
+    regions: list[RegionAssociationSchema] | None = None
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -76,6 +79,7 @@ class AdminCreateUserRequest(BaseModel):
     role: RoleEnum
     location: str | None = None
     store_id: str | None = None  # Required for store_agent role
+    region_ids: list[str] | None = None  # Optional list of region IDs
 
 
 class AdminUpdateUserRequest(BaseModel):
@@ -86,6 +90,7 @@ class AdminUpdateUserRequest(BaseModel):
     is_active: bool | None = None
     location: str | None = None
     mobile_number: str | None = None
+    region_ids: list[str] | None = None  # Optional list of region IDs
 
 
 class PasswordResetRequestSchema(BaseModel):
@@ -119,6 +124,8 @@ class UserDetailOut(BaseModel):
     mfa_enabled: bool
     created_at: datetime
     updated_at: datetime
+
+    regions: list[RegionAssociationSchema] | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

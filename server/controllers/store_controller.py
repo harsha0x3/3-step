@@ -4,6 +4,7 @@ from models.schemas.store_schemas import (
     StoreItemWithUser,
     StoreItemOut,
     UpdateStorePayload,
+    CityOut,
 )
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -12,7 +13,7 @@ from sqlalchemy import select, func, and_, asc, desc
 from models import IssuedStatus
 from models.stores import Store
 from models.users import User
-from models import Candidate
+from models import Candidate, StoreCityAssociation, City
 from models.schemas.auth_schemas import UserOut, RegisterRequest
 from utils.log_config import logger
 
@@ -21,10 +22,25 @@ MAX_RETRIES = 3
 
 def add_new_store(payload: AddNewStore, db: Session):
     try:
-        new_store = Store(**payload.model_dump(exclude_none=True))
+        new_store = Store(
+            id=payload.id,
+            name=payload.name,
+            count=payload.count,
+            address=payload.address,
+            email=payload.email,
+            mobile_number=payload.mobile_number,
+        )
+
         db.add(new_store)
         db.commit()
         db.refresh(new_store)
+
+        for city_id in payload.city_ids:
+            association = StoreCityAssociation(
+                store_id=new_store.id,
+                city_id=city_id,
+            )
+            db.add(association)
 
         return new_store
 
@@ -45,7 +61,14 @@ async def get_all_stores(db: Session, params: StoreSearchParams):
             setattr(params, "page", -1)
 
             if params.search_by.lower() == "city":
-                query = query.where(Store.city.ilike(f"%{params.search_term}%"))
+                query = (
+                    query.join(
+                        StoreCityAssociation, Store.id == StoreCityAssociation.store_id
+                    )
+                    .join(City, City.id == StoreCityAssociation.city_id)
+                    .where(City.name.ilike(f"%{params.search_term}%"))
+                    .distinct(Store.id)
+                )
             elif params.search_by.lower() == "name":
                 query = query.where(Store.name.ilike(f"%{params.search_term}%"))
             else:
@@ -82,12 +105,7 @@ async def get_all_stores(db: Session, params: StoreSearchParams):
         stores = db.scalars(query).all()
 
         # ✅ DISTINCT CITIES (unchanged)
-        cities = db.scalars(
-            select(Store.city)
-            .distinct()
-            .where(Store.city.is_not(None))
-            .order_by(Store.city.asc())
-        ).all()
+        cities = db.scalars(select(City).distinct()).all()
 
         result = []
 
@@ -118,6 +136,7 @@ async def get_all_stores(db: Session, params: StoreSearchParams):
                 StoreItemWithUser(
                     id=store.id,
                     name=store.name,
+                    address=store.address,
                     city=store.city,
                     mobile_number=store.mobile_number,
                     count=store.count,
@@ -140,6 +159,19 @@ async def get_all_stores(db: Session, params: StoreSearchParams):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"msg": "Error retrieving stores", "err_stack": str(e)},
+        )
+
+
+def get_all_cities(db: Session):
+    try:
+        cities = db.scalars(select(City).order_by(asc(City.name))).all()
+        result = [CityOut.model_validate(city) for city in cities]
+        return result
+    except Exception as e:
+        logger.error(f"Error retrieving cities - {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving cities",
         )
 
 
@@ -190,6 +222,24 @@ def update_store_details(store_id: str, payload: UpdateStorePayload, db: Session
                         store_agent.store_id = payload.id if payload.id else store.id
                         db.add(store_agent)
                 setattr(store, field, value)
+
+            elif field == "city_ids" and payload.city_ids:
+                for city_id in payload.city_ids:
+                    existing = db.scalar(
+                        select(StoreCityAssociation).where(
+                            and_(
+                                StoreCityAssociation.store_id == store.id,
+                                StoreCityAssociation.city_id == city_id,
+                            )
+                        )
+                    )
+                    if existing:
+                        continue
+                    else:
+                        new_association = StoreCityAssociation(
+                            store_id=store.id, city_id=city_id
+                        )
+                        db.add(new_association)
 
         db.add(store)
         db.commit()

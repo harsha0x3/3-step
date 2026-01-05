@@ -53,6 +53,7 @@ print(">>> utility_file_routes OK")
 
 print(">>> importing secure_file_serving_routes")
 from routes import secure_file_serving_routes
+from routes import region_routes
 
 print(">>> secure_file_serving_routes OK")
 
@@ -166,5 +167,6 @@ app.include_router(utility_file_routes.router)
 print(">>> [36] utility_file_routes included")
 app.include_router(secure_file_serving_routes.router)
 print(">>> [37] secure_file_serving_routes included")
+app.include_router(region_routes.router)
 
 print(">>> [38] main.py import completed")

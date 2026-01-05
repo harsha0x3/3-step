@@ -6,6 +6,8 @@ from models import Candidate, VendorSpoc
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from utils.helpers import generate_coupon
+from models import Region
+from controllers.region_controller import create_new_region
 
 excel_path = r"C:\Users\harshavardhancg\Downloads\List of off-roll associates for LT project_More than 8 years.xlsx"
 
@@ -214,3 +216,23 @@ dump_candidate_data()
 #     except Exception as e:
 #         print(e)
 #         continue
+
+
+def add_regions():
+    df = pd.read_csv(csv_path, dtype={"Mobile Number": str})
+
+    unique_regions = (
+        df["Distrubution location"].dropna().str.lower().str.strip().unique()
+    )
+
+    for region_name in unique_regions:
+        print(f"Adding region: {region_name}")
+        for db in get_db_conn():
+            try:
+                create_new_region(db=db, name=region_name)
+            except Exception as e:
+                print(f"Failed to add region {region_name}: {str(e)}")
+                continue
+
+
+# add_regions()

@@ -3,7 +3,7 @@ import type { UserItem } from "../auth/types";
 export interface NewStorePayload {
   id: string;
   name: string;
-  city: string;
+  city_ids: string[];
   count: number;
 
   email?: string;
@@ -12,10 +12,15 @@ export interface NewStorePayload {
   // address: string;
 }
 
+export interface City {
+  id: string;
+  name: string;
+}
+
 export interface StoreItem {
   id: string;
   name: string;
-  city: string;
+  city: City[];
   count: number;
 
   email?: string;

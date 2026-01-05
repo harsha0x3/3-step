@@ -57,34 +57,41 @@ const StoreTable: React.FC<Props> = ({ stores, isLoading, error }) => {
     }),
     columnHelper.accessor("city", {
       header: "City",
-      cell: (info) => info.getValue(),
-    }),
-    columnHelper.accessor("count", {
-      header: "Total Stock",
-      size: 80,
-      maxSize: 150,
-      minSize: 80,
-      cell: (info) => (
-        <span className="whitespace-normal wrap-break w-full text-center">
-          {info.getValue()}
-        </span>
-      ),
-    }),
-    columnHelper.display({
-      id: "available_slots",
-      header: "Slots Available",
-      size: 80,
-      maxSize: 150,
-      minSize: 80,
-      cell: ({ row }) => {
+      cell: (info) => {
+        const cities = info.getValue();
         return (
-          <span className="text-center whitespace-normal wrap-break w-full">
-            {row.original.count -
-              (row.original?.total_assigned_candidates ?? 0)}
-          </span>
+          <p className="whitespace-normal wrap-break-word">
+            {[cities.map((c) => c.name)].join(", ")}
+          </p>
         );
       },
     }),
+    // columnHelper.accessor("count", {
+    //   header: "Total Stock",
+    //   size: 80,
+    //   maxSize: 150,
+    //   minSize: 80,
+    //   cell: (info) => (
+    //     <span className="whitespace-normal wrap-break w-full text-center">
+    //       {info.getValue()}
+    //     </span>
+    //   ),
+    // }),
+    // columnHelper.display({
+    //   id: "available_slots",
+    //   header: "Slots Available",
+    //   size: 80,
+    //   maxSize: 150,
+    //   minSize: 80,
+    //   cell: ({ row }) => {
+    //     return (
+    //       <span className="text-center whitespace-normal wrap-break w-full">
+    //         {row.original.count -
+    //           (row.original?.total_assigned_candidates ?? 0)}
+    //       </span>
+    //     );
+    //   },
+    // }),
     columnHelper.accessor("total_assigned_candidates", {
       header: () => (
         <div className="flex flex-col items-center">
@@ -174,7 +181,10 @@ const StoreTable: React.FC<Props> = ({ stores, isLoading, error }) => {
           <StoreFormDialog
             store={selectedStore}
             defOpen={editOpen}
-            onOpenChange={() => setEditOpen(false)}
+            onOpenChange={() => {
+              setEditOpen(false);
+              setSelectedStore(null);
+            }}
           />
         )}
         {/* Use a table element provided by shadcn components */}

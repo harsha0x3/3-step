@@ -1,3 +1,4 @@
+# models\candidates.py
 from db.base import Base, BaseMixin
 from sqlalchemy import String, Text, ForeignKey, Boolean, Index, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -19,6 +20,9 @@ class Candidate(Base, BaseMixin):
     state: Mapped[str] = mapped_column(String(64), nullable=True)
     city: Mapped[str] = mapped_column(String(100), nullable=True)
     division: Mapped[str] = mapped_column(String(555), nullable=True)
+    region_id: Mapped[str] = mapped_column(
+        String(40), ForeignKey("regions.id", onupdate="cascade"), nullable=True
+    )
 
     aadhar_number_hashed: Mapped[str | None] = mapped_column(String(100), nullable=True)
     aadhar_number_masked: Mapped[str | None] = mapped_column(String(36), nullable=True)
@@ -48,6 +52,7 @@ class Candidate(Base, BaseMixin):
     # ------Relationships ------
 
     store = relationship("Store", back_populates="candidates")
+    region = relationship("Region", back_populates="candidates")
     verification_status = relationship(
         "VerificationStatus", back_populates="candidate", uselist=False
     )

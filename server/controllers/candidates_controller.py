@@ -8,6 +8,7 @@ from models.schemas.candidate_schemas import (
     CandidateOut,
     PartialCandidateItem,
 )
+from models.schemas.region_schemas import RegionOutSchema
 from sqlalchemy.exc import IntegrityError
 from utils.helpers import generate_readable_id
 from models.verification_statuses import VerificationStatus
@@ -52,6 +53,7 @@ def add_new_candidate(payload: NewCandidatePayload, db: Session):
                     store_id=payload.store_id if payload.store_id else None,
                     division=payload.division,
                     coupon_code=generate_coupon(),
+                    region_id=payload.region_id,
                 )
                 if payload.aadhar_number:
                     new_candidate.set_aadhar_number(payload.aadhar_number)
@@ -159,8 +161,12 @@ def get_candidate_by_id(candidate_id: str, db: Session):
                 email=store.email,
                 mobile_number=store.mobile_number,
                 count=store.count,
+                address=store.address,
             )
             if store
+            else None,
+            region=RegionOutSchema.model_validate(candidate.region)
+            if candidate.region
             else None,
         )
 
@@ -208,8 +214,12 @@ def get_candidate_details_by_id(candidate_id: str, db: Session):
                 email=store.email,
                 mobile_number=store.mobile_number,
                 count=store.count,
+                address=store.address,
             )
             if store
+            else None,
+            region=RegionOutSchema.model_validate(candidate.region)
+            if candidate.region
             else None,
         )
 
@@ -265,8 +275,12 @@ def get_candidate_details_by_coupon_code(coupon_code: str, db: Session):
                 count=store.count,
                 email=store.email,
                 mobile_number=store.mobile_number,
+                address=store.address,
             )
             if store
+            else None,
+            region=RegionOutSchema.model_validate(candidate.region)
+            if candidate.region
             else None,
         )
 
@@ -319,8 +333,12 @@ def get_candidate_by_photo_url(photo_url, db: Session):
                 count=store.count,
                 email=store.email,
                 mobile_number=store.mobile_number,
+                address=store.address,
             )
             if store
+            else None,
+            region=RegionOutSchema.model_validate(candidate.region)
+            if candidate.region
             else None,
         )
 
@@ -351,6 +369,13 @@ def get_all_candidates(
         ).outerjoin(IssuedStatus, IssuedStatus.candidate_id == Candidate.id)
 
         count_stats = db.execute(stmt_count).one()
+
+        if (
+            params.store_id is not None
+            and params.store_id != "null"
+            and params.store_id.strip() != ""
+        ):
+            stmt = stmt.where(Candidate.store_id == params.store_id)
 
         # Filter by verification
         if params.is_verified is not None:
@@ -442,9 +467,13 @@ def get_all_candidates(
                     city=store.city,
                     count=store.count,
                     email=store.email,
+                    address=store.address,
                     mobile_number=store.mobile_number,
                 )
                 if store
+                else None,
+                region=RegionOutSchema.model_validate(candidate.region)
+                if candidate.region
                 else None,
             )
 
@@ -563,6 +592,7 @@ def get_candidates_of_store(
                     city=store.city,
                     count=store.count,
                     email=store.email,
+                    address=store.address,
                     mobile_number=store.mobile_number,
                 )
                 if store
@@ -655,6 +685,9 @@ def update_candidate_details(
                 is_candidate_verified=candidate.is_candidate_verified,
                 coupon_code=candidate.coupon_code,
                 gift_card_code=candidate.gift_card_code,
+                region=RegionOutSchema.model_validate(candidate.region)
+                if candidate.region
+                else None,
             )
             is_cand_ready = is_candidate_ready_to_verify(cand_out.model_dump())
             if not is_cand_ready.get("status"):
@@ -694,8 +727,12 @@ def update_candidate_details(
                 count=store.count,
                 email=store.email,
                 mobile_number=store.mobile_number,
+                address=store.address,
             )
             if store
+            else None,
+            region=RegionOutSchema.model_validate(candidate.region)
+            if candidate.region
             else None,
         )
 
@@ -767,6 +804,7 @@ def is_candidate_ready_to_verify(payload):
             "dob",
             "coupon_code",
             "gift_card_code",
+            "region_id",
         ]:
             null_vals.append(key)
     if len(null_vals) > 0:
@@ -870,8 +908,12 @@ def reset_voucher_issuance(candidate_id: str, db: Session):
                 count=store.count,
                 email=store.email,
                 mobile_number=store.mobile_number,
+                address=store.address,
             )
             if store
+            else None,
+            region=RegionOutSchema.model_validate(candidate.region)
+            if candidate.region
             else None,
         )
 

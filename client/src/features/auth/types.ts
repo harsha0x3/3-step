@@ -1,3 +1,5 @@
+import type { RegionOut } from "@/store/rootTypes";
+
 export interface LoginPayload {
   email_or_mobile_number?: string;
   password: string;
@@ -57,6 +59,8 @@ export interface UserItem {
   updated_at: string;
   must_change_password?: boolean;
   is_active?: boolean;
+
+  regions: RegionOut[];
 }
 
 export type User = Partial<UserItem>;

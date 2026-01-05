@@ -3,12 +3,19 @@ from .auth_schemas import UserOut
 from typing import Literal
 
 
+class CityOut(BaseModel):
+    id: str
+    name: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class AddNewStore(BaseModel):
     id: str
     name: str
-    city: str
+    city_ids: list[str]
     count: int
-    # address: str
+    address: str | None = None
 
     email: str | None = None
     mobile_number: str | None = None
@@ -17,10 +24,10 @@ class AddNewStore(BaseModel):
 class UpdateStorePayload(BaseModel):
     id: str | None = None
     name: str | None = None
-    city: str | None = None
+    city_ids: list[str] | None = None
     count: int | None = None
 
-    # address: str | None = None
+    address: str | None = None
 
     email: str | None = None
     mobile_number: str | None = None
@@ -38,9 +45,9 @@ class StoreSearchParams(BaseModel):
 class StoreItemOut(BaseModel):
     id: str
     name: str
-    city: str
+    city: list[CityOut] | None = None
     count: int
-    # address: str
+    address: str | None
 
     email: str | None = None
     mobile_number: str | None = None

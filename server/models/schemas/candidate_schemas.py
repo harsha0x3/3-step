@@ -3,6 +3,7 @@ from typing import Literal
 from .store_schemas import StoreItemOut
 from datetime import date
 from .auth_schemas import UserOut
+from .region_schemas import RegionOutSchema
 
 
 class NewCandidatePayload(BaseModel):
@@ -14,6 +15,8 @@ class NewCandidatePayload(BaseModel):
     state: str
     division: str
     aadhar_number: str | None = None
+
+    region_id: str | None = None
 
     store_id: str | None = None
 
@@ -27,6 +30,7 @@ class UpdatedCandidatePayload(BaseModel):
     state: str | None = None
     division: str | None = None
     aadhar_number: str | None = None
+    region_id: str
 
     is_candidate_verified: bool | None = None
     store_id: str | None = None
@@ -59,6 +63,7 @@ class CandidateItemWithStore(BaseModel):
     issued_status: str | None = None
     division: str | None = None
     vendor_spoc_id: str | None = None
+    region: RegionOutSchema | None
 
     aadhar_number: str | None = None
     aadhar_photo: str | None = None
@@ -98,6 +103,7 @@ class CandidateOut(BaseModel):
     photo: str | None = None
     issued_status: str | None = None
     division: str | None = None
+    region: RegionOutSchema | None
 
     aadhar_number: str | None = None
     aadhar_photo: str | None = None

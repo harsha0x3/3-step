@@ -25,6 +25,8 @@ import { toast } from "sonner";
 import StoresCombobox from "@/features/product_stores/components/StoresCombobox";
 import { useSelector } from "react-redux";
 import { selectAuth } from "../store/authSlice";
+import MultiRegionCombobox from "@/features/regions/components/MultiRegionCombobox";
+import type { UserItem } from "../types";
 
 type UserFormData = {
   mobile_number: string;
@@ -33,10 +35,11 @@ type UserFormData = {
   role: string;
   store_id?: string;
   location?: string;
+  region_ids?: string[];
 };
 
 type Props = {
-  user?: any; // User to edit (undefined for new user)
+  user?: UserItem; // User to edit (undefined for new user)
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
@@ -54,7 +57,16 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
     setValue,
     formState: { errors },
   } = useForm<UserFormData>({
-    defaultValues: user || {},
+    defaultValues: user
+      ? {
+          mobile_number: user?.mobile_number,
+          full_name: user.full_name,
+          role: user.role,
+          store_id: user.store_id,
+          location: user.location,
+          region_ids: [...user.regions.map((r) => r.id)],
+        }
+      : {},
   });
 
   const selectedRole = watch("role");
@@ -69,6 +81,7 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
         role: "",
         store_id: "",
         location: "",
+        region_ids: [],
       });
     }
   }, [user, reset]);
@@ -169,6 +182,28 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
               </span>
             )}
           </div>
+
+          {selectedRole === "registration_officer" && (
+            <div className="space-y-2">
+              <Label>Assigned Regions</Label>
+
+              <MultiRegionCombobox
+                values={watch("region_ids") || []}
+                onChange={(ids) =>
+                  setValue("region_ids", ids, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+              />
+
+              {errors.region_ids && (
+                <span className="text-sm text-red-500">
+                  {errors.region_ids.message}
+                </span>
+              )}
+            </div>
+          )}
 
           {selectedRole === "registration_officer" && (
             <div className="space-y-2">

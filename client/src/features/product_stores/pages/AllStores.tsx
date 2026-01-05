@@ -126,10 +126,6 @@ const AllStores: React.FC = () => {
     updateSearchParams({ storePage: page });
   };
 
-  const cities: string[] = useMemo(() => {
-    return allStoresData?.data?.cities ?? [];
-  }, [allStoresData]);
-
   const totalStores = allStoresData?.data?.count ?? 0;
   const totalStock = allStoresData?.data?.total_stock ?? 0;
 
@@ -151,7 +147,6 @@ const AllStores: React.FC = () => {
         {" "}
         <div className="flex items-center gap-2">
           <CityCombobox
-            cities={cities}
             value={selectedCity}
             onChange={(val) => setSelectedCity(val)}
           />
@@ -291,7 +286,7 @@ const AllStores: React.FC = () => {
             </Button>
           </Hint>
           <div className="flex gap-2 items-center">
-            <p className="">Total Stroes: {totalStores}</p>
+            <p className="">Total Stores: {totalStores}</p>
             <p>|</p>
             <p>Total Stock: {totalStock}</p>
             <p>|</p>

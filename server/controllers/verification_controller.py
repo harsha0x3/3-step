@@ -6,6 +6,7 @@ from services.verification_service.mobile_notification_service import (
     send_beneficiary_sms_otp,
 )
 from sqlalchemy.exc import IntegrityError
+from models.schemas.region_schemas import RegionOutSchema
 
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy.orm import Session, joinedload
@@ -848,6 +849,9 @@ def verify_for_upgrade(
                         mobile_number=store.mobile_number,
                     )
                     if store
+                    else None,
+                    region=RegionOutSchema.model_validate(candidate_data.region)
+                    if candidate_data.region
                     else None,
                 ),
             },

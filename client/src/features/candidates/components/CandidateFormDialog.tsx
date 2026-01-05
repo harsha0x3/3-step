@@ -1124,10 +1124,6 @@ const CandidateFormDialog: React.FC<Props> = ({
                     <span className="font-semibold">Employee ID</span>
                     <span>{watch("id")}</span>
 
-                    <span className="font-semibold">Coupon Code</span>
-                    <span className="text-lg font-bold">
-                      {candidate?.coupon_code ?? "-"}
-                    </span>
                     <span className="font-semibold">Gift Card Code</span>
                     <span className="text-lg font-bold">
                       {candidate?.gift_card_code ?? "-"}

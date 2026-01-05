@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import Hint from "@/components/ui/hint";
 import { PasswordInput } from "../components/PasswordInput";
 import LoginSupportFooter from "@/features/shared/LoginSupportFooter";
+import { RefreshCcw } from "lucide-react";
 
 // import {
 //   InputOTP,
@@ -55,25 +56,54 @@ const LoginPage: React.FC = () => {
   const fromPath = location.state?.from?.pathname || "/dashboard";
   const fromSearch = location.state?.from?.search || "";
   const from = `${fromPath}${fromSearch}`;
+  const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
 
   useEffect(() => {
     let widgetId: string | null = null;
+    let cancelled = false;
 
-    if (window.turnstile) {
+    const renderTurnstile = () => {
+      if (
+        cancelled ||
+        !window.turnstile ||
+        typeof TURNSTILE_SITE_KEY !== "string"
+      ) {
+        return;
+      }
+
       setCaptchaStatus("loading");
-      widgetId = window.turnstile.render("#turnstile-widget", {
-        sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
-        callback: (token: string) => {
-          setCredentials((prev) => ({ ...prev, captcha_token: token }));
-          setCaptchaStatus("solved");
-        },
-        "error-callback": () => {
-          setCaptchaStatus("error");
-        },
-      });
-    }
+
+      try {
+        widgetId = window.turnstile.render("#turnstile-widget", {
+          sitekey: TURNSTILE_SITE_KEY,
+          callback: (token: string) => {
+            setCredentials((prev) => ({
+              ...prev,
+              captcha_token: token,
+            }));
+            setCaptchaStatus("solved");
+          },
+          "error-callback": () => {
+            setCaptchaStatus("error");
+          },
+        });
+      } catch (err) {
+        console.error("Turnstile render failed", err);
+        setCaptchaStatus("error");
+      }
+    };
+
+    // Turnstile may not be ready on first load
+    const interval = setInterval(() => {
+      if (window.turnstile) {
+        clearInterval(interval);
+        renderTurnstile();
+      }
+    }, 100);
 
     return () => {
+      cancelled = true;
+      clearInterval(interval);
       if (widgetId) {
         window.turnstile.remove(widgetId);
       }
@@ -156,7 +186,7 @@ const LoginPage: React.FC = () => {
               </div>
 
               {/* Password */}
-              <div className="grid grid-cols-[100px_1fr]">
+              <div className="grid grid-cols-[100px_1fr] py-2">
                 <Label htmlFor="password" className="text-right">
                   Password
                 </Label>
@@ -170,15 +200,26 @@ const LoginPage: React.FC = () => {
             </div>
             <div id="turnstile-widget" className="cf-turnstile"></div>
           </form>
+          {captchaStatus === "error" && (
+            <p className="text-red-500 text-sm">
+              Captcha failed to load.{" "}
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => window.location.reload()}
+              >
+                Refresh the page
+                <RefreshCcw />
+              </Button>
+            </p>
+          )}
         </CardContent>
 
         <CardFooter className="flex flex-col gap-2">
           <p className="text-accent-foreground">
             Contact admin for password related issues.
           </p>
-          {captchaStatus === "error" && (
-            <p>Captcha Failed to fetch refresh the page and try again.</p>
-          )}
+
           <div className="flex items-center justify-center gap-2">
             <div>
               <Hint label="Reset the credentials" side="left">

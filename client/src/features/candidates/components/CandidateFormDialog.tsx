@@ -150,7 +150,10 @@ const CandidateFormDialog: React.FC<Props> = ({
     navigate("/registration_officer/beneficiary/verify");
   };
 
-  const isMaskedAadhar = (value: string) => value.toLowerCase().includes("x");
+  const isMaskedAadhar = (value: string) => {
+    if (value) return value.toLowerCase().includes("x");
+    return false;
+  };
 
   // ---------- FORM SUBMIT HANDLERS ----------
   const onSubmit = async (data: NewCandidatePayload) => {
@@ -206,6 +209,8 @@ const CandidateFormDialog: React.FC<Props> = ({
 
       reset();
     } catch (err: unknown) {
+      console.error("Error in ben sub", err);
+
       const errMsg =
         err?.data?.detail?.msg ?? err?.data?.detail ?? "Something went wrong";
 

@@ -1144,7 +1144,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                           </span>
 
                           <span className="text-xs text-muted-foreground">
-                            {selectedStore.city}
+                            {[selectedStore.city.map((c) => c.name)].join(", ")}
                           </span>
                         </>
                       ) : (

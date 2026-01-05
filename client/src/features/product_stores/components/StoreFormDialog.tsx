@@ -57,6 +57,7 @@ const StoreFormDialog: React.FC<Props> = ({
           count: store.count ?? 0,
           email: store.email ?? "",
           mobile_number: store.mobile_number ?? "",
+          address: store.address ?? "",
         }
       : {},
   });
@@ -155,6 +156,22 @@ const StoreFormDialog: React.FC<Props> = ({
             {errors.city_ids && (
               <span className="text-sm text-red-500">
                 {errors.city_ids.message}
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-3">
+            <Label htmlFor="address">Address</Label>
+            <Input
+              id="address"
+              {...register("address", {
+                required: "Store address is required",
+              })}
+              required
+            />
+            {errors.address && (
+              <span className="text-sm text-red-500">
+                {errors.address.message}
               </span>
             )}
           </div>

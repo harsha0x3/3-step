@@ -805,6 +805,7 @@ def is_candidate_ready_to_verify(payload):
             "coupon_code",
             "gift_card_code",
             "region_id",
+            "region",
         ]:
             null_vals.append(key)
     if len(null_vals) > 0:

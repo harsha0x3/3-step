@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func, and_, case, not_
+from sqlalchemy import select, func, and_, case
 from models import Candidate, User, VerificationStatus, Store
 from models.issued_statuses import IssuedStatus
-from models import UpgradeRequest
+from models import UpgradeRequest, City, StoreCityAssociation
 from fastapi import HTTPException, status
 from typing import Any
 
@@ -49,29 +49,63 @@ def get_admin_dashboard_stats(db: Session) -> dict[str, Any]:
         pending_verifications = (total_candidates or 0) - (verified_candidates or 0)
 
         # Store-wise statistics
+        # Store-wise statistics (safe for many-to-many cities and multiple issued statuses)
         store_stats = db.execute(
             select(
                 Store.id,
                 Store.name,
-                Store.city,
-                func.count(Candidate.id).label("total_candidates"),
-                func.sum(
-                    case((IssuedStatus.issued_status == "issued", 1), else_=0)
+                func.group_concat(func.distinct(City.name).op("SEPARATOR")(", ")).label(
+                    "cities"
+                ),
+                # Total candidates (distinct!)
+                func.count(func.distinct(Candidate.id)).label("total_candidates"),
+                # Laptops issued (distinct candidates who were issued laptops)
+                func.count(
+                    func.distinct(
+                        case((IssuedStatus.issued_status == "issued", Candidate.id))
+                    )
                 ).label("laptops_issued"),
+                # Verification failures (verification table is 1-to-1 per candidate, so sum is safe)
                 func.sum(
-                    case((not_(VerificationStatus.is_aadhar_verified), 1), else_=0)
+                    case((~VerificationStatus.is_aadhar_verified, 1), else_=0)
                 ).label("aadhar_failed"),
                 func.sum(
-                    case((not_(VerificationStatus.is_facial_verified), 1), else_=0)
+                    case((~VerificationStatus.is_facial_verified, 1), else_=0)
                 ).label("facial_failed"),
             )
+            .outerjoin(StoreCityAssociation, Store.id == StoreCityAssociation.store_id)
+            .outerjoin(City, City.id == StoreCityAssociation.city_id)
             .outerjoin(Candidate, Store.id == Candidate.store_id)
             .outerjoin(IssuedStatus, Candidate.id == IssuedStatus.candidate_id)
             .outerjoin(
                 VerificationStatus, Candidate.id == VerificationStatus.candidate_id
             )
-            .group_by(Store.id, Store.name, Store.city)
+            .group_by(Store.id, Store.name)
         ).all()
+
+        # store_stats = db.execute(
+        #     select(
+        #         Store.id,
+        #         Store.name,
+        #         Store.city,
+        #         func.count(Candidate.id).label("total_candidates"),
+        #         func.sum(
+        #             case((IssuedStatus.issued_status == "issued", 1), else_=0)
+        #         ).label("laptops_issued"),
+        #         func.sum(
+        #             case((not_(VerificationStatus.is_aadhar_verified), 1), else_=0)
+        #         ).label("aadhar_failed"),
+        #         func.sum(
+        #             case((not_(VerificationStatus.is_facial_verified), 1), else_=0)
+        #         ).label("facial_failed"),
+        #     )
+        #     .outerjoin(Candidate, Store.id == Candidate.store_id)
+        #     .outerjoin(IssuedStatus, Candidate.id == IssuedStatus.candidate_id)
+        #     .outerjoin(
+        #         VerificationStatus, Candidate.id == VerificationStatus.candidate_id
+        #     )
+        #     .group_by(Store.id, Store.name, Store.city)
+        # ).all()
         # print("store", store_stats)
         return {
             "summary": {
@@ -97,7 +131,7 @@ def get_admin_dashboard_stats(db: Session) -> dict[str, Any]:
                 {
                     "store_id": row.id,
                     "store_name": row.name,
-                    "city": row.city,
+                    "city": row.cities,
                     "total_candidates": row.total_candidates or 0,
                     "aadhar_failed": row.aadhar_failed or 0,
                     "facial_failed": row.facial_failed or 0,

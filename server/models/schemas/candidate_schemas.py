@@ -30,7 +30,7 @@ class UpdatedCandidatePayload(BaseModel):
     state: str | None = None
     division: str | None = None
     aadhar_number: str | None = None
-    region_id: str
+    region_id: str | None = None
 
     is_candidate_verified: bool | None = None
     store_id: str | None = None

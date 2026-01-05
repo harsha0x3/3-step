@@ -26,7 +26,7 @@ export default function IndexPage() {
   const filteredStores = useMemo(() => {
     if (storeStats)
       return storeStats.filter((s) =>
-        s.city.toLowerCase().includes(selectedCity.toLowerCase())
+        (s.city ?? "").toLowerCase().includes(selectedCity.toLowerCase())
       );
   }, [selectedCity, storeStats]);
 
@@ -304,72 +304,74 @@ export default function IndexPage() {
       </div>
 
       {/* Store Stats (Only Admin) */}
-      <div className="border rounded-lg h-[500px] p-2 overflow-hidden flex flex-col bg-card shadow-sm ">
-        <div className="border-b">
-          <h2 className="text-xl font-semibold mb-2">Store Wise Issuance</h2>
-          <div className="flex items-center gap-2 py-3">
-            <Label>Search By City:</Label>
-            <Input
-              value={selectedCity}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setSelectedCity(e.target.value)
-              }
-              type="text"
-              className="w-64"
-              placeholder="Enter a city name"
-            />
+      {["admin", "super_admin"].includes(currentUserInfo.role) && (
+        <div className="border rounded-lg h-[500px] p-2 overflow-hidden flex flex-col bg-card shadow-sm ">
+          <div className="border-b">
+            <h2 className="text-xl font-semibold mb-2">Store Wise Issuance</h2>
+            <div className="flex items-center gap-2 py-3">
+              <Label>Search By City:</Label>
+              <Input
+                value={selectedCity}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setSelectedCity(e.target.value)
+                }
+                type="text"
+                className="w-64"
+                placeholder="Enter a city name"
+              />
+            </div>
+          </div>
+          <div className="h-full flex-1 overflow-auto py-2">
+            {filteredStores.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredStores.map((s) => (
+                  <Card key={s.store_id} className="shadow-md">
+                    <CardContent className="p-4 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <p className="font-semibold">{s.store_name}</p>
+                        <Button
+                          variant={"link"}
+                          onClick={() =>
+                            navigate(
+                              `/beneficiary/all?beneficiaryStoreId=${s.store_id}`,
+                              {
+                                state: { from: "dashboard" },
+                              }
+                            )
+                          }
+                          size={"sm"}
+                        >
+                          View details
+                        </Button>
+                      </div>
+                      <p className="text-sm text-gray-500">City: {s.city}</p>
+
+                      <div className="grid grid-cols-4 gap-2 text-center">
+                        <div>
+                          <p className="text-xs text-gray-500">Total</p>
+                          <p className="font-bold">{s.total_candidates}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Aadhar Failed</p>
+                          <p className="font-bold">{s.aadhar_failed}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Facial Failed</p>
+                          <p className="font-bold">{s.facial_failed}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Issued</p>
+                          <p className="font-bold">{s.laptops_issued}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-        <div className="h-full flex-1 overflow-auto py-2">
-          {filteredStores.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredStores.map((s) => (
-                <Card key={s.store_id} className="shadow-md">
-                  <CardContent className="p-4 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <p className="font-semibold">{s.store_name}</p>
-                      <Button
-                        variant={"link"}
-                        onClick={() =>
-                          navigate(
-                            `/beneficiary/all?beneficiaryStoreId=${s.store_id}`,
-                            {
-                              state: { from: "dashboard" },
-                            }
-                          )
-                        }
-                        size={"sm"}
-                      >
-                        View details
-                      </Button>
-                    </div>
-                    <p className="text-sm text-gray-500">City: {s.city}</p>
-
-                    <div className="grid grid-cols-4 gap-2 text-center">
-                      <div>
-                        <p className="text-xs text-gray-500">Total</p>
-                        <p className="font-bold">{s.total_candidates}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Aadhar Failed</p>
-                        <p className="font-bold">{s.aadhar_failed}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Facial Failed</p>
-                        <p className="font-bold">{s.facial_failed}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Issued</p>
-                        <p className="font-bold">{s.laptops_issued}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Bulk Upload (Store Agent) */}
       {data.data.recent_issuances && (

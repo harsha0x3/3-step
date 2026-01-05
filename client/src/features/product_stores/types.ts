@@ -9,7 +9,7 @@ export interface NewStorePayload {
   email?: string;
   mobile_number: string;
 
-  // address: string;
+  address: string;
 }
 
 export interface City {
@@ -26,7 +26,7 @@ export interface StoreItem {
   email?: string;
   mobile_number: string;
 
-  // address: string;
+  address?: string;
 }
 
 export interface StoreItemWithUser extends StoreItem {

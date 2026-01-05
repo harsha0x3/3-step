@@ -99,11 +99,14 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
                 <p className="text-xs text-muted-foreground truncate">
                   {[selectedStore.city.map((c) => c.name)].join(", ")}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-xs text-muted-foreground whitespace-break-spaces wrap-break-word">
+                  {selectedStore.address}
+                </p>
+                {/* <p className="text-xs text-muted-foreground truncate">
                   Available Slots:{" "}
                   {selectedStore.count -
                     (selectedStore?.total_assigned_candidates ?? 0)}
-                </p>
+                </p> */}
               </div>
             ) : (
               <span>Select a store</span>
@@ -146,11 +149,14 @@ const StoresCombobox: React.FC<StoresComboboxProps> = ({
                           <p className="text-xs text-muted-foreground">
                             {[store.city.map((c) => c.name)].join(", ")}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground whitespace-break-spaces wrap-break-word">
+                            {store.address}
+                          </p>
+                          {/* <p className="text-xs text-muted-foreground">
                             Available Slots:{" "}
                             {store.count -
                               (store?.total_assigned_candidates ?? 0)}
-                          </p>
+                          </p> */}
                         </div>
                       </CommandItem>
                     );

@@ -954,8 +954,11 @@ const CandidateFormDialog: React.FC<Props> = ({
                       <span className="font-medium">{selectedStore.name}</span>
 
                       <span className="text-xs text-muted-foreground">
-                        {selectedStore.city}
+                        {[selectedStore.city.map((c) => c.name)].join(", ")}
                       </span>
+                      <p className="text-xs text-muted-foreground whitespace-break-spaces wrap-break-word">
+                        {selectedStore.address}
+                      </p>
                     </>
                   ) : (
                     <span className="text-red-500">No store selected</span>

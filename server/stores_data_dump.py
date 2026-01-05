@@ -105,7 +105,7 @@ def map_stores_to_cities():
                 continue
 
 
-map_stores_to_cities()
+# map_stores_to_cities()
 # def dump_stores_data():
 #     print("Started..")
 
@@ -172,4 +172,4 @@ def dump_cities():
                 continue
 
 
-# dump_cities()
+dump_cities()

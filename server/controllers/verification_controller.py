@@ -148,17 +148,17 @@ async def otp_resend(candidate_id: str, db: Session, to_admin: bool = False):
             db.refresh(otp)
 
         if not to_admin:
-            email_payload = CandidateInOtp(
-                otp=otp.otp,
-                candidate_name=candidate.full_name,
-                candidate_email="cgharshavardhan05@gmail.com",
-                expiry_minutes="20",
-                store_name=candidate.store.name,
-                store_address_line=candidate.store.address,
-                store_city=candidate.store.city,
-                support_email="support_temp@gmail.com",
-                support_phone="1234567890",
-            )
+            # email_payload = CandidateInOtp(
+            #     otp=otp.otp,
+            #     candidate_name=candidate.full_name,
+            #     candidate_email="cgharshavardhan05@gmail.com",
+            #     expiry_minutes="20",
+            #     store_name=candidate.store.name,
+            #     store_address_line=candidate.store.address,
+            #     store_city=candidate.store.city,
+            #     support_email="support_temp@gmail.com",
+            #     support_phone="1234567890",
+            # )
             # email_res = await send_otp_email(email_payload=email_payload)
             sms_payload = SmsOtpPayload(
                 otp=otp.otp, mobile_number=candidate.mobile_number

@@ -161,9 +161,12 @@ const ConsolidateVerification: React.FC = () => {
                         {...field}
                         id="coupon_code"
                         value={formatGiftCard(field.value || "")}
-                        onChange={(e) =>
-                          field.onChange(e.target.value.replace(/\s/g, ""))
-                        }
+                        onChange={(e) => {
+                          const raw = e.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 16);
+                          field.onChange(raw);
+                        }}
                         className={`w-full sm:w-72 ${
                           errors.coupon_code ? "border-red-400" : ""
                         }`}
@@ -198,9 +201,12 @@ const ConsolidateVerification: React.FC = () => {
                         {...field}
                         id="aadhar_number"
                         value={formatAadhar(field.value || "")}
-                        onChange={(e) =>
-                          field.onChange(e.target.value.replace(/\s/g, ""))
-                        }
+                        onChange={(e) => {
+                          const raw = e.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 12);
+                          field.onChange(raw);
+                        }}
                         className={`w-full sm:w-72 ${
                           errors.coupon_code ? "border-red-400" : ""
                         }`}

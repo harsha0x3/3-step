@@ -141,6 +141,8 @@ const OtpVerification = () => {
         setIsRequestedFromAdmin(true);
       }
 
+      setError(null);
+
       // ✅ Store expiry time from server
       if (response?.data?.expires_at) {
         const expiry = new Date(response.data.expires_at + "Z");

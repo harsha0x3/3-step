@@ -60,7 +60,7 @@ def get_model():
     if _model is None:
         with _model_lock:
             if _model is None:
-                _model = DeepFace.build_model("VGG-Face")
+                _model = DeepFace.build_model("ArcFace")
     return _model
 
 
@@ -287,8 +287,13 @@ async def facial_recognition_old(img_path: str, original_img: str):
 
 def deepface_verify_sync(img1, img2):
     try:
-        model = get_model()
-        return DeepFace.verify(img1_path=img1, img2_path=img2, model_name="VGG-Face")
+        # model = get_model()
+        return DeepFace.verify(
+            img1_path=img1,
+            img2_path=img2,
+            model_name="ArcFace",
+            detector_backend="retinaface",
+        )
     except Exception as e:
         logger.error(f"Error in deepface verify - {e}")
         return {"verified": False}
@@ -847,6 +852,7 @@ def verify_for_upgrade(
                         count=store.count,
                         email=store.email,
                         mobile_number=store.mobile_number,
+                        address=store.address,
                     )
                     if store
                     else None,

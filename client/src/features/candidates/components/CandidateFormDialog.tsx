@@ -519,8 +519,10 @@ const CandidateFormDialog: React.FC<Props> = ({
                         ? "Aadhaar number is missing, enter it"
                         : false,
                     validate: (value) =>
-                      value.replace(/\s/g, "").length === 12 ||
-                      "Aadhar Number must be exactly 12 digits",
+                      isMaskedAadhar
+                        ? true
+                        : value.replace(/\s/g, "").length === 12 ||
+                          "Aadhar Number must be exactly 12 digits",
                   }}
                   render={({ field, fieldState }) => {
                     // Format for display with dashes

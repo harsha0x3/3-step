@@ -148,7 +148,7 @@ const StoreCandidatesTable: React.FC<Props> = ({
           <div className="flex flex-col">
             <span className="font-medium">Name: {store.name}</span>
             <span className="text-xs text-muted-foreground">
-              City: {store.city}
+              City: {[store.city.map((c) => c.name)].join(", ")}
             </span>
           </div>
         );

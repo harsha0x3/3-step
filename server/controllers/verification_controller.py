@@ -306,9 +306,9 @@ def deepface_verify_sync(img1, img2):
         )
 
     except ValueError as ve:
-        return {"verified": False, "reason": "Face not found. Retake"}
+        raise ValueError(ve)
     except FileNotFoundError as fe:
-        return {"verified": False, "reason": f"{str(fe)}"}
+        raise FileNotFoundError(fe)
     except Exception as e:
         logger.error(f"Error in deepface verify - {e}")
         return {"verified": False, "reason": "Facial Recognition Failure. Try again."}
@@ -343,8 +343,11 @@ async def facial_recognition(img_path, original_img) -> dict[str, Any]:
         logger.error(f"Value error in facial verificaion, {err}")
         return {
             "verified": False,
-            "reason": "NO FACE DETECTED",
+            "reason": "NO FACE DETECTED RETAKE",
         }
+    except FileExistsError as fe:
+        return {"verified": False, "reason": f"{str(fe)}"}
+
     except Exception as e:
         print("Facial verification err", e)
         logger.error(f"Error in facial recog - {e}")

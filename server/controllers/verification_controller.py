@@ -665,6 +665,12 @@ async def candidate_verification_consolidate(
         new_verification_status.facial_verified_at = datetime.now(timezone.utc)
         new_verification_status.aadhar_verified_at = datetime.now(timezone.utc)
         new_verification_status.coupon_verified_at = datetime.now(timezone.utc)
+        if new_verification_status.uploaded_candidate_photo:
+            norm_existing_path = normalize_path(
+                new_verification_status.uploaded_candidate_photo
+            )
+            if os.path.exists(norm_existing_path):
+                os.remove(norm_existing_path)
         new_verification_status.uploaded_candidate_photo = payload.candidate_photo
         new_verification_status.entered_aadhar_number = payload.aadhar_number
 

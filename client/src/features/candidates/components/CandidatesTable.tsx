@@ -79,6 +79,9 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
       cell: ({ row, getValue }) => {
         const verified = getValue();
         const verifier = row.original.verified_by; // <-- access full name
+        const date = new Date(row.original.voucher_issued_at + "Z");
+
+        const readableDate = date.toLocaleString();
 
         return (
           <div className="flex flex-col">
@@ -101,8 +104,12 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
                         <p>{verifier?.full_name}</p>
                       </div>
                       <div className="grid grid-cols-[100px_1fr]">
-                        <strong>Issuer Email:</strong>
-                        <p>{verifier?.email}</p>
+                        <strong>Mobile Number:</strong>
+                        <p>{verifier?.mobile_number}</p>
+                      </div>
+                      <div className="grid grid-cols-[100px_1fr]">
+                        <strong>Time:</strong>
+                        <p>{readableDate}</p>
                       </div>
                       <div className="grid grid-cols-[100px_1fr]">
                         <strong>Issued Location:</strong>

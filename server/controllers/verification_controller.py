@@ -282,11 +282,21 @@ async def facial_recognition_old(img_path: str, original_img: str):
         )
 
 
-# model = DeepFace.build_model("VGG-Face")
+def validate_image_path(path: str, label: str):
+    if not path:
+        raise ValueError(f"{label} image path is empty")
+
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"{label} image does not exist: {path}")
+
+    if os.path.getsize(path) == 0:
+        raise ValueError(f"{label} image file is empty: {path}")
 
 
 def deepface_verify_sync(img1, img2):
     try:
+        validate_image_path(img1, label="Uploaded")
+        validate_image_path(img2, label="Beneficiary Original")
         # model = get_model()
         return DeepFace.verify(
             img1_path=img1,
@@ -294,15 +304,22 @@ def deepface_verify_sync(img1, img2):
             model_name="ArcFace",
             detector_backend="retinaface",
         )
+
+    except ValueError as ve:
+        return {"verified": False, "reason": "Face not found. Retake"}
+    except FileNotFoundError as fe:
+        return {"verified": False, "reason": f"{str(fe)}"}
     except Exception as e:
         logger.error(f"Error in deepface verify - {e}")
-        return {"verified": False}
+        return {"verified": False, "reason": "Facial Recognition Failure. Try again."}
 
 
 face_semaphore = asyncio.Semaphore(2)
 
+from typing import Any
 
-async def facial_recognition(img_path, original_img):
+
+async def facial_recognition(img_path, original_img) -> dict[str, Any]:
     try:
         print("CPU count", os.cpu_count())
         async with face_semaphore:
@@ -310,16 +327,29 @@ async def facial_recognition(img_path, original_img):
             result = await loop.run_in_executor(
                 executor, deepface_verify_sync, img_path, original_img
             )
-            return result["verified"]
+            print("RESULT >> ", result)
+            if not result:
+                raise HTTPException(
+                    status_code=500, detail="Face verification failed, Try again"
+                )
+            distance = result.get("distance")
+            verified = distance is not None and distance <= 0.53
+
+            return {"verified": verified, "reason": "Face did not match"}
+
     except ValueError as e:
         print("Value error in facial verificaion", e)
         err = str(e).lower()
-        return False
+        logger.error(f"Value error in facial verificaion, {err}")
+        return {
+            "verified": False,
+            "reason": "NO FACE DETECTED",
+        }
     except Exception as e:
         print("Facial verification err", e)
         logger.error(f"Error in facial recog - {e}")
         raise HTTPException(
-            status_code=500, detail=f"Face verification failed: {str(e)}"
+            status_code=500, detail="Face verification failed, Try again"
         )
 
 
@@ -549,11 +579,14 @@ async def candidate_verification_consolidate(
         )
 
     print(f"Candidate face in db: - {candidate.photo}")
-    if is_candidate_face_verified:
+    if is_candidate_face_verified.get("verified"):
         verification_status_in.is_facial_verified = True
     else:
         verification_issues.append("facial")
-        msg.append("Facial recognition failed.")
+        if is_candidate_face_verified.get("reason"):
+            msg.append(is_candidate_face_verified.get("reason"))
+        else:
+            msg.append("Facial recognition failed.")
 
     # Save verification status
     try:
@@ -616,7 +649,7 @@ async def candidate_verification_consolidate(
             }
         else:
             return {
-                "msg": " ".join(msg) + " Store agent consent required to proceed.",
+                "msg": " ".join(msg),
                 "data": response_data,
             }
     except HTTPException:

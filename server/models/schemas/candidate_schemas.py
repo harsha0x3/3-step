@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Literal
 from .store_schemas import StoreItemOut
-from datetime import date
+from datetime import date, datetime
 from .auth_schemas import UserOut
 from .region_schemas import RegionOutSchema
 
@@ -75,6 +75,7 @@ class CandidateItemWithStore(BaseModel):
 
     store: StoreItemOut | None = None
     verified_by: UserOut | None = None
+    voucher_issued_at: datetime | None = None
 
 
 class PartialCandidateItem(BaseModel):
@@ -114,5 +115,6 @@ class CandidateOut(BaseModel):
     gift_card_code: str | None = None
 
     is_candidate_verified: bool
+    voucher_issued_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)

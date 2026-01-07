@@ -47,7 +47,7 @@ class StoreItemOut(BaseModel):
     name: str
     city: list[CityOut] | None = None
     count: int
-    address: str | None
+    address: str | None = None
 
     email: str | None = None
     mobile_number: str | None = None

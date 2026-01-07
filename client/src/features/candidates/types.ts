@@ -49,6 +49,8 @@ export interface CandidateItemWithStore extends NewCandidatePayload {
 
   store?: StoreItemWithUser | null | undefined;
   verified_by?: UserItem | null | undefined;
+
+  voucher_issued_at?: string;
 }
 
 export interface PartialCandidateItem {

@@ -1,9 +1,9 @@
 # models\candidates.py
 from db.base import Base, BaseMixin
-from sqlalchemy import String, Text, ForeignKey, Boolean, Index, Date
+from sqlalchemy import String, Text, ForeignKey, Boolean, Index, Date, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from services.aadhar.utils import hash_aadhar_number, verify_aadhar_number_service
-from datetime import date
+from datetime import date, datetime
 
 
 class Candidate(Base, BaseMixin):
@@ -48,6 +48,8 @@ class Candidate(Base, BaseMixin):
     )
 
     gift_card_code: Mapped[str] = mapped_column(String(30), nullable=True)
+
+    voucher_issued_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # ------Relationships ------
 

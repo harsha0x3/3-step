@@ -118,7 +118,7 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
     image,
     fallback,
   }: {
-    title: string;
+    title: string | React.ReactNode;
     icon: React.ElementType;
     image: string | null;
     fallback: string;
@@ -275,6 +275,9 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
                         </div>
                       )}
                     </div>
+                    {/* <div className="grid sm:grid-cols-2 gap-4 items-start text-sm text-muted-foreground">
+
+                    </div> */}
                   </div>
                 </div>
               )}
@@ -323,7 +326,17 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
                   fallback="No Receipt Uploaded"
                 />
                 <PhotoCard
-                  title="Laptop Issued By"
+                  title={
+                    <div className="flex items-center gap-2">
+                      <span>
+                        {candidateIssuanceDetails?.store_employee_name}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <Phone className="w-5 h-5" />{" "}
+                        {candidateIssuanceDetails?.store_employee_mobile}
+                      </span>
+                    </div>
+                  }
                   icon={UserIcon}
                   image={candidateIssuanceDetails.store_employee_photo}
                   fallback="No Photo Uploaded"

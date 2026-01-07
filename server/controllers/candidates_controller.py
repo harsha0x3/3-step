@@ -26,6 +26,7 @@ from utils.helpers import (
     normalize_path,
 )
 from utils.log_config import logger
+from datetime import datetime, timezone
 
 MAX_RETRIES = 3
 
@@ -168,6 +169,7 @@ def get_candidate_by_id(candidate_id: str, db: Session):
             region=RegionOutSchema.model_validate(candidate.region)
             if candidate.region
             else None,
+            voucher_issued_at=candidate.voucher_issued_at,
         )
 
     except HTTPException:
@@ -221,6 +223,7 @@ def get_candidate_details_by_id(candidate_id: str, db: Session):
             region=RegionOutSchema.model_validate(candidate.region)
             if candidate.region
             else None,
+            voucher_issued_at=candidate.voucher_issued_at,
         )
 
     except HTTPException:
@@ -282,6 +285,7 @@ def get_candidate_details_by_coupon_code(coupon_code: str, db: Session):
             region=RegionOutSchema.model_validate(candidate.region)
             if candidate.region
             else None,
+            voucher_issued_at=candidate.voucher_issued_at,
         )
 
     except HTTPException:
@@ -340,6 +344,7 @@ def get_candidate_by_photo_url(photo_url, db: Session):
             region=RegionOutSchema.model_validate(candidate.region)
             if candidate.region
             else None,
+            voucher_issued_at=candidate.voucher_issued_at,
         )
 
     except HTTPException:
@@ -475,6 +480,7 @@ def get_all_candidates(
                 region=RegionOutSchema.model_validate(candidate.region)
                 if candidate.region
                 else None,
+                voucher_issued_at=candidate.voucher_issued_at,
             )
 
             result.append(data)
@@ -688,6 +694,7 @@ def update_candidate_details(
                 region=RegionOutSchema.model_validate(candidate.region)
                 if candidate.region
                 else None,
+                voucher_issued_at=candidate.voucher_issued_at,
             )
             is_cand_ready = is_candidate_ready_to_verify(cand_out.model_dump())
             if not is_cand_ready.get("status"):
@@ -697,6 +704,7 @@ def update_candidate_details(
                     detail=is_cand_ready.get("msg"),
                 )
             candidate.verified_by = verified_user_id
+            candidate.voucher_issued_at = datetime.now(timezone.utc)
         db.add(candidate)
         db.commit()
         db.refresh(candidate)
@@ -734,6 +742,7 @@ def update_candidate_details(
             region=RegionOutSchema.model_validate(candidate.region)
             if candidate.region
             else None,
+            voucher_issued_at=candidate.voucher_issued_at,
         )
 
     except IntegrityError as e:
@@ -806,6 +815,7 @@ def is_candidate_ready_to_verify(payload):
             "gift_card_code",
             "region_id",
             "region",
+            "voucher_issued_at",
         ]:
             null_vals.append(key)
     if len(null_vals) > 0:
@@ -869,6 +879,7 @@ def reset_voucher_issuance(candidate_id: str, db: Session):
                 detail="Voucher has not yet issued.",
             )
         candidate.is_candidate_verified = False
+        candidate.voucher_issued_at = None
         if candidate.photo:
             if os.path.exists(normalize_path(candidate.photo)):
                 os.remove(normalize_path(candidate.photo))
@@ -916,6 +927,7 @@ def reset_voucher_issuance(candidate_id: str, db: Session):
             region=RegionOutSchema.model_validate(candidate.region)
             if candidate.region
             else None,
+            voucher_issued_at=candidate.voucher_issued_at,
         )
 
     except HTTPException:

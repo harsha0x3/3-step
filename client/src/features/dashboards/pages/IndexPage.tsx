@@ -33,6 +33,13 @@ export default function IndexPage() {
   if (isLoading) return <div className="p-6">Loading...</div>;
   if (isError || !data) return <div className="p-6">Failed to load stats</div>;
 
+  const formatDate = (value) => {
+    const date = new Date(value + "Z");
+
+    const readableDate = date.toLocaleString();
+    return readableDate;
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Summary Cards */}
@@ -387,7 +394,7 @@ export default function IndexPage() {
                     <p className="font-semibold">{i.full_name}</p>
                     <p className="text-sm text-gray-500">{i.mobile_number}</p>
                   </div>
-                  <p className="text-sm">{i.issued_at?.split("T")[0]}</p>
+                  <p className="text-sm">{formatDate(i.issued_at)}</p>
                 </CardContent>
               </Card>
             ))}

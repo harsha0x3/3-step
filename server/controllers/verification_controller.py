@@ -2,11 +2,13 @@ from services.verification_service.email_service import (
     send_otp_email,
     send_otp_to_admin,
 )
+from typing import Any
 from services.verification_service.mobile_notification_service import (
     send_beneficiary_sms_otp,
 )
 from sqlalchemy.exc import IntegrityError
 from models.schemas.region_schemas import RegionOutSchema
+from PIL import Image
 
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy.orm import Session, joinedload
@@ -29,6 +31,7 @@ from utils.helpers import (
 )
 from dotenv import load_dotenv
 from datetime import date
+import traceback
 
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
@@ -39,6 +42,7 @@ from utils.log_config import logger
 
 max_workers = min(2, os.cpu_count() - 1)
 executor = ThreadPoolExecutor(max_workers=max_workers)
+face_semaphore = asyncio.Semaphore(2)
 
 load_dotenv()
 
@@ -282,78 +286,105 @@ async def facial_recognition_old(img_path: str, original_img: str):
         )
 
 
-def validate_image_path(path: str, label: str):
-    if not path:
-        raise ValueError(f"{label} image path is empty")
+def normalize_path(path: str) -> str:
+    """Convert relative path to absolute path based on current working directory"""
+    if not os.path.isabs(path):
+        return os.path.join(os.getcwd(), path)
+    return path
 
-    if not os.path.exists(path):
+
+def validate_image_path(path: str, label: str) -> str:
+    """Ensure file exists and is readable, then return normalized path"""
+    path = normalize_path(path)
+
+    if not path or not os.path.exists(path):
         raise FileNotFoundError(f"{label} image does not exist: {path}")
 
     if os.path.getsize(path) == 0:
         raise ValueError(f"{label} image file is empty: {path}")
 
+    return path
 
-def deepface_verify_sync(img1, img2):
+
+def convert_to_jpg(path: str) -> str:
+    """
+    Convert any image to RGB JPEG.
+    Returns path to converted file (adds '_rgb.jpg' suffix)
+    """
+    img = Image.open(path).convert("RGB")
+    new_path = path.rsplit(".", 1)[0] + "_rgb.jpg"
+    img.save(new_path, format="JPEG")
+    return new_path
+
+
+def deepface_verify_sync(img1: str, img2: str) -> dict[str, Any]:
+    """
+    Synchronous DeepFace verification with robust error handling.
+    Returns dict: {"verified": bool, "reason": str, "distance": float | None}
+    """
     try:
-        validate_image_path(img1, label="Uploaded")
-        validate_image_path(img2, label="Beneficiary Original")
-        # model = get_model()
-        return DeepFace.verify(
+        # Validate paths
+        img1 = validate_image_path(img1, "Uploaded")
+        img2 = validate_image_path(img2, "Beneficiary Original")
+
+        # Convert to RGB JPEG for OpenCV compatibility
+        img1 = convert_to_jpg(img1)
+        img2 = convert_to_jpg(img2)
+
+        # DeepFace verification
+        result = DeepFace.verify(
             img1_path=img1,
             img2_path=img2,
             model_name="ArcFace",
-            detector_backend="retinaface",
+            detector_backend="opencv",
+            enforce_detection=True,  # Ensure face must be detected
         )
 
-    except ValueError as ve:
-        raise ValueError(ve)
+        # Check distance to determine verification
+        distance = result.get("distance")
+        verified = distance is not None and distance <= 0.53
+
+        return {
+            "verified": verified,
+            "distance": distance,
+            "reason": None if verified else "Face did not match",
+        }
+
     except FileNotFoundError as fe:
-        raise FileNotFoundError(fe)
-    except Exception as e:
-        logger.error(f"Error in deepface verify - {e}")
-        return {"verified": False, "reason": "Facial Recognition Failure. Try again."}
+        print("File not found", fe)
+        print(traceback.format_exc())
+        return {"verified": False, "reason": str(fe), "distance": None}
+    except ValueError as ve:
+        print("Value Error in deepface: ", ve)
 
-
-face_semaphore = asyncio.Semaphore(2)
-
-from typing import Any
-
-
-async def facial_recognition(img_path, original_img) -> dict[str, Any]:
-    try:
-        print("CPU count", os.cpu_count())
-        async with face_semaphore:
-            loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(
-                executor, deepface_verify_sync, img_path, original_img
-            )
-            print("RESULT >> ", result)
-            if not result:
-                raise HTTPException(
-                    status_code=500, detail="Face verification failed, Try again"
-                )
-            distance = result.get("distance")
-            verified = distance is not None and distance <= 0.53
-
-            return {"verified": verified, "reason": "Face did not match"}
-
-    except ValueError as e:
-        print("Value error in facial verificaion", e)
-        err = str(e).lower()
-        logger.error(f"Value error in facial verificaion, {err}")
+        print(traceback.format_exc())
         return {
             "verified": False,
-            "reason": "NO FACE DETECTED RETAKE",
+            "reason": "NO FACE DETECTED. RETAKE",
+            "distance": None,
         }
-    except FileExistsError as fe:
-        return {"verified": False, "reason": f"{str(fe)}"}
-
     except Exception as e:
-        print("Facial verification err", e)
-        logger.error(f"Error in facial recog - {e}")
-        raise HTTPException(
-            status_code=500, detail="Face verification failed, Try again"
+        print("Unexpected Err in Deepface", e)
+
+        print(traceback.format_exc())
+        # Catch any DeepFace/OpenCV error
+        return {
+            "verified": False,
+            "reason": "IMAGE PROCESSING FAILED",
+            "distance": None,
+        }
+
+
+async def facial_recognition(img_path: str, original_img: str) -> dict[str, Any]:
+    """
+    Async wrapper for deepface_verify_sync
+    """
+    async with face_semaphore:
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            None, deepface_verify_sync, img_path, original_img
         )
+        return result
 
 
 async def verify_otp(candidate_id: str, otp_input: str, db: Session):
@@ -557,6 +588,29 @@ async def candidate_verification_consolidate(
     try:
         norm_input_img_path = normalize_path(payload.candidate_photo)
         norm_org_cand_path = normalize_path(candidate.photo)
+        print(
+            "INPUT PATH:",
+            norm_input_img_path,
+            os.path.exists(norm_input_img_path),
+            os.path.getsize(norm_input_img_path),
+        )
+        print(
+            "DB PATH:",
+            norm_org_cand_path,
+            os.path.exists(norm_org_cand_path),
+            os.path.getsize(norm_org_cand_path),
+        )
+        print(
+            "Candidate photo path:",
+            norm_org_cand_path,
+            os.path.exists(norm_org_cand_path),
+        )
+        print(
+            "Input photo path:",
+            norm_input_img_path,
+            os.path.exists(norm_input_img_path),
+        )
+
         # is_spoof = check_spoof(norm_input_img_path)
         # if is_spoof:
         #     print(is_spoof)
@@ -611,12 +665,6 @@ async def candidate_verification_consolidate(
         new_verification_status.facial_verified_at = datetime.now(timezone.utc)
         new_verification_status.aadhar_verified_at = datetime.now(timezone.utc)
         new_verification_status.coupon_verified_at = datetime.now(timezone.utc)
-        if new_verification_status.uploaded_candidate_photo:
-            norm_existing_path = normalize_path(
-                new_verification_status.uploaded_candidate_photo
-            )
-            if os.path.exists(norm_existing_path):
-                os.remove(norm_existing_path)
         new_verification_status.uploaded_candidate_photo = payload.candidate_photo
         new_verification_status.entered_aadhar_number = payload.aadhar_number
 

@@ -12,9 +12,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Loader } from "lucide-react";
 
 const CandidatePhotoCapture = ({ candidateId }: { candidateId: string }) => {
-  const [uploadPhoto] = useUploadCandidatePhotoMutation();
+  const [uploadPhoto, { isLoading }] = useUploadCandidatePhotoMutation();
   const [open, setOpen] = useState<boolean>(false);
   const handleImageUpload = async (formData: FormData) => {
     try {
@@ -24,16 +25,26 @@ const CandidatePhotoCapture = ({ candidateId }: { candidateId: string }) => {
       }).unwrap();
       setOpen(false);
     } catch (err: any) {
-      toast.error("Photo upload failed", {
-        description: err?.data?.detail?.err_stack ?? "",
-      });
+      const errMsg = err?.data?.detail ?? "Photo upload failed. Try again";
+      toast.error(errMsg);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Capture Photo</Button>
+        <Button disabled={isLoading}>
+          {isLoading ? (
+            <span className="flex items-center gap-2 ">
+              <Loader
+                className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`}
+              />
+              Uploading...
+            </span>
+          ) : (
+            "Capture Photo"
+          )}
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

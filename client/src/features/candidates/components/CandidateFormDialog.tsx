@@ -733,7 +733,8 @@ const CandidateFormDialog: React.FC<Props> = ({
                       }`}
                     >
                       <p className="absolute -translate-y-5 bg-background rounded px-2">
-                        Beneficiary Photo
+                        Beneficiary Photo{" "}
+                        <span className="text-red-500">*</span>
                       </p>
                       {!!candidate && toVerify && (
                         <p className="flex gap-3 items-center text-amber-700">

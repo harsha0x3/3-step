@@ -12,9 +12,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { Loader } from "lucide-react";
 
 const AadharPhotoCapture = ({ candidateId }: { candidateId: string }) => {
-  const [addAadharPhoto] = useAddCandidateAadharMutation();
+  const [addAadharPhoto, { isLoading }] = useAddCandidateAadharMutation();
   const [open, setOpen] = useState<boolean>(false);
   const handleImageUpload = async (formData: FormData) => {
     try {
@@ -33,7 +34,18 @@ const AadharPhotoCapture = ({ candidateId }: { candidateId: string }) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Capture Photo</Button>
+        <Button disabled={isLoading}>
+          {isLoading ? (
+            <span className="flex items-center gap-2 ">
+              <Loader
+                className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`}
+              />
+              Uploading...
+            </span>
+          ) : (
+            "Capture Photo"
+          )}
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

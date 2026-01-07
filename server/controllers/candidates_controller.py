@@ -25,8 +25,11 @@ from utils.helpers import (
     save_aadhar_photo,
     normalize_path,
 )
+import cv2
+import numpy as np
 from utils.log_config import logger
 from datetime import datetime, timezone
+from deepface import DeepFace
 
 MAX_RETRIES = 3
 
@@ -816,6 +819,7 @@ def is_candidate_ready_to_verify(payload):
             "region_id",
             "region",
             "voucher_issued_at",
+            "aadhar_photo",
         ]:
             null_vals.append(key)
     if len(null_vals) > 0:
@@ -826,6 +830,48 @@ def is_candidate_ready_to_verify(payload):
     return {"status": True, "msg": ""}
 
 
+async def validate_face(photo: UploadFile):
+    # Read image bytes
+    contents = await photo.read()
+
+    # Convert bytes to OpenCV image
+    np_arr = np.frombuffer(contents, np.uint8)
+    img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+    if img is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file"
+        )
+
+    try:
+        faces = DeepFace.extract_faces(
+            img_path=img,
+            detector_backend="opencv",  # best accuracy
+        )
+        print("faces >>>", faces)
+    except Exception as e:
+        logger.error(f"No Face detected in upload image, {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No face detected in the photo. Retake",
+        )
+
+    if not faces or len(faces) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="No face detected in image"
+        )
+
+    # OPTIONAL: enforce exactly one face
+    if len(faces) > 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Multiple faces detected. Please upload a single-face photo.",
+        )
+
+    # Reset file pointer so it can be saved later
+    photo.file.seek(0)
+
+
 async def upload_candidate_img(photo: UploadFile, candidate_id: str, db: Session):
     try:
         candidate = db.get(Candidate, candidate_id)
@@ -834,6 +880,8 @@ async def upload_candidate_img(photo: UploadFile, candidate_id: str, db: Session
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found"
             )
+
+        await validate_face(photo)
 
         if candidate.photo is not None:
             print(f"CANDIDATE PHOTO - {candidate.photo}")

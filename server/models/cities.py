@@ -18,11 +18,11 @@ class StoreCityAssociation(Base):
     __tablename__ = "store_city_associations"
     store_id: Mapped[str] = mapped_column(
         String(36),
-        ForeignKey("stores.id", ondelete="cascade"),
+        ForeignKey("stores.id", ondelete="cascade", onupdate="cascade"),
     )
     city_id: Mapped[str] = mapped_column(
         String(40),
-        ForeignKey("cities.id", ondelete="cascade"),
+        ForeignKey("cities.id", ondelete="cascade", onupdate="cascade"),
     )
 
     __table_args__ = (PrimaryKeyConstraint("store_id", "city_id"),)

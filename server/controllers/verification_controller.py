@@ -223,14 +223,15 @@ async def otp_resend(candidate_id: str, db: Session, to_admin: bool = False):
 def check_spoof(image_path):
     try:
         face_objs = DeepFace.extract_faces(img_path=image_path, anti_spoofing=True)
-        print("FACEOBJS", face_objs)
-        # for f in face_objs:
-        #     if not f["is_real"]:
-        #         print(f"Possible spoof detected with score {f['antispoof_score']}")
-        #         # You can return False or raise HTTPException if you want strict checking
-        return not (all(f["is_real"] for f in face_objs))
+
+        if not face_objs:
+            return True  # No face = suspicious
+
+        return any(not f.get("is_real", False) for f in face_objs)
+
     except Exception as e:
-        return False
+        logger.error(f"Spoof check failed: {e}")
+        return True  # FAIL CLOSED (assume spoof)
 
 
 async def facial_recognition_old(img_path: str, original_img: str):
@@ -614,7 +615,9 @@ async def candidate_verification_consolidate(
         # is_spoof = check_spoof(norm_input_img_path)
         # if is_spoof:
         #     print(is_spoof)
-        #     msg.append("Spoof detectected with beneficiary photo.")
+        #     msg.append(
+        #         "Spoof detectected with beneficiary photo. Photo is not captured in realtime."
+        #     )
 
     except HTTPException:
         raise
@@ -624,6 +627,8 @@ async def candidate_verification_consolidate(
         raise
 
     try:
+        # is_candidate_face_verified = {"verified": False, "reason": msg}
+        # if not is_spoof:
         is_candidate_face_verified = await facial_recognition(
             img_path=norm_input_img_path, original_img=norm_org_cand_path
         )

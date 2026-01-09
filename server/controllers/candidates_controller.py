@@ -38,6 +38,12 @@ def add_new_candidate(payload: NewCandidatePayload, db: Session):
     try:
         # Check if store exists
         store = db.get(Store, payload.store_id) if payload.store_id else None
+        mobile_number = payload.mobile_number
+        if mobile_number is not None:
+            mobile_number = mobile_number.strip()
+            if mobile_number == "":
+                mobile_number = None
+
         if payload.store_id and not store:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Store not found"
@@ -51,9 +57,7 @@ def add_new_candidate(payload: NewCandidatePayload, db: Session):
                     id=payload.id if payload.id else candidate_id,
                     full_name=payload.full_name,
                     dob=payload.dob,
-                    mobile_number=payload.mobile_number
-                    if payload.mobile_number and payload.mobile_number.strip() != ""
-                    else None,
+                    mobile_number=mobile_number,
                     city=payload.city,
                     state=payload.state,
                     store_id=payload.store_id if payload.store_id else None,

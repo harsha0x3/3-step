@@ -51,7 +51,9 @@ def add_new_candidate(payload: NewCandidatePayload, db: Session):
                     id=payload.id if payload.id else candidate_id,
                     full_name=payload.full_name,
                     dob=payload.dob,
-                    mobile_number=payload.mobile_number,
+                    mobile_number=payload.mobile_number
+                    if payload.mobile_number and payload.mobile_number.strip() != ""
+                    else None,
                     city=payload.city,
                     state=payload.state,
                     store_id=payload.store_id if payload.store_id else None,
@@ -699,7 +701,7 @@ def update_candidate_details(
                 else None,
                 voucher_issued_at=candidate.voucher_issued_at,
             )
-            is_cand_ready = is_candidate_ready_to_verify(cand_out.model_dump())
+            is_cand_ready = is_candidate_ready_to_verify(cand_out)
             if not is_cand_ready.get("status"):
                 db.rollback()
                 raise HTTPException(
@@ -808,14 +810,18 @@ def update_candidate_details(
         )
 
 
-def is_candidate_ready_to_verify(payload):
+def is_candidate_ready_to_verify(payload: CandidateOut):
     null_vals = []
-    for key, val in payload.items():
+    if not payload.gift_card_code:
+        return {
+            "status": False,
+            "msg": "Gift Card Code is not added for the beneficiary",
+        }
+    for key, val in payload.model_dump().items():
         if not val and key not in [
             "issued_status",
             "dob",
             "coupon_code",
-            "gift_card_code",
             "region_id",
             "region",
             "voucher_issued_at",

@@ -83,7 +83,7 @@ const SingleRegionCombobox: React.FC<Props> = ({
             {isFetching ? "Searching..." : "No regions found"}
           </CommandEmpty>
 
-          <CommandGroup>
+          <CommandGroup className="max-h-60 overflow-y-auto">
             {data?.data?.map((region) => (
               <CommandItem
                 key={region.id}

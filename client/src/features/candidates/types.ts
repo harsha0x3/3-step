@@ -15,6 +15,7 @@ export interface NewCandidatePayload {
   store_id?: string;
   vendor_spoc_id?: string;
   is_candidate_verified?: boolean;
+  region_id?: string;
   region?: RegionOut;
 }
 export interface UpdateCandidatePayload {

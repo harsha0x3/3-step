@@ -22,26 +22,6 @@ def dump_candidate_data():
         csv_path,
         dtype={"Mobile Number": str},
     )
-    # missing_cols = []
-    # for col in REQUIRED_COLS:
-    #     print(col)
-    #     if col not in df.columns:
-    #         missing_cols.append(col)
-
-    # if missing_cols:
-    #     print("err")
-    #     raise Exception(f"Following cols are missing, {', '.join(missing_cols)}")
-
-    # df = df.rename(
-    #     columns={
-    #         "E.No": "id",
-    #         "Name": "full_name",
-    #         "Mobile Number": "mobile_number",
-    #         "DOB": "dob",
-    #         "State": "state",
-    #         "City": "city",
-    #     }
-    # )
 
     gift_code: int = 1001340431168341
     for _, row in df.iterrows():

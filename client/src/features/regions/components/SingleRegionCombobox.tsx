@@ -19,6 +19,7 @@ import type { RegionOut } from "@/store/rootTypes";
 
 type Props = {
   value?: string;
+  selected?: RegionOut;
   onChange?: (region: RegionOut) => void;
   disabled?: boolean;
 };

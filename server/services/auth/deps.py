@@ -1,5 +1,6 @@
 from fastapi import Depends, HTTPException, status, Cookie, Response, Header, Request
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
+from sqlalchemy import select
 from db.connection import get_db_conn
 from models.users import User
 from .jwt_handler import (
@@ -62,7 +63,11 @@ def get_current_user(
     if not payload and lt_refresh_token:
         try:
             payload = verify_refresh_token(lt_refresh_token)
-            user = db.get(User, payload.get("sub"))
+            user = db.scalar(
+                select(User)
+                .options(selectinload(User.regions))
+                .where(User.id == payload.get("sub"))
+            )
 
             if not user or not user.is_active:
                 raise HTTPException(
@@ -124,5 +129,7 @@ def get_current_user(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Invalid Session. Please login again.",
             )
+    if user.role != "registration_officer":
+        user.regions = []
 
     return UserOut.model_validate(user)

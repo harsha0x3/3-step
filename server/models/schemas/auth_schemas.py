@@ -2,7 +2,7 @@ from enum import Enum
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 from typing import Literal
-from .region_schemas import RegionAssociationSchema
+from .region_schemas import RegionOutSchema
 
 
 class RoleEnum(str, Enum):
@@ -65,7 +65,7 @@ class UserOut(BaseModel):
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
-    regions: list[RegionAssociationSchema] | None = None
+    regions: list[RegionOutSchema] | None = None
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -125,7 +125,7 @@ class UserDetailOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    regions: list[RegionAssociationSchema] | None = None
+    regions: list[RegionOutSchema] | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

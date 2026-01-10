@@ -30,7 +30,12 @@ def admin_create_user(
     """Admin creates a new user with default password"""
 
     # Check if user already exists
-    print(f"DEBUG PAYLOAD - {payload.model_dump()}")
+    if payload.role == "registration_officer":
+        if not payload.region_ids or len(payload.region_ids) < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="At least one region is required for registration_officer role",
+            )
 
     existing_user = db.scalar(
         select(User).where(or_(User.mobile_number == payload.mobile_number))

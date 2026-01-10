@@ -19,7 +19,8 @@ import type { RegionOut } from "@/store/rootTypes";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  values?: string[]; // selected region IDs
+  values?: string[];
+  selectedRegions?: RegionOut[]; // 👈 ADD THIS
   onChange?: (regionIds: string[], regions: RegionOut[]) => void;
   disabled?: boolean;
 };
@@ -27,6 +28,7 @@ type Props = {
 const MultiRegionCombobox: React.FC<Props> = ({
   values = [],
   onChange,
+  selectedRegions,
   disabled = false,
 }) => {
   const [open, setOpen] = useState(false);
@@ -56,10 +58,17 @@ const MultiRegionCombobox: React.FC<Props> = ({
 
   console.log("REGIONS: ", regions);
 
-  const selectedRegions = useMemo(
-    () => regions.filter((r) => values.includes(r.id)),
-    [regions, values]
+  const displayRegions = useMemo(
+    () => selectedRegions ?? [],
+    [selectedRegions]
   );
+
+  const buttonLabel = useMemo(() => {
+    if (displayRegions.length === 0) return "Select Regions";
+    if (displayRegions.length <= 2)
+      return displayRegions.map((r) => r.name).join(", ");
+    return `${displayRegions.length} regions selected`;
+  }, [displayRegions]);
 
   const toggleRegion = (region: RegionOut) => {
     let nextIds: string[];
@@ -75,14 +84,7 @@ const MultiRegionCombobox: React.FC<Props> = ({
       regions.filter((r) => nextIds.includes(r.id))
     );
   };
-
-  const buttonLabel = useMemo(() => {
-    if (values.length === 0) return "Select Regions";
-    if (values.length <= 2)
-      return selectedRegions.map((r) => r.name).join(", ");
-    return `${values.length} regions selected`;
-  }, [values, selectedRegions]);
-
+  console.log("VALUES >>>", values);
   return (
     <Popover open={!disabled && open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -110,9 +112,10 @@ const MultiRegionCombobox: React.FC<Props> = ({
             </CommandEmpty>
           )}
 
-          <CommandGroup>
+          <CommandGroup className="max-h-60 overflow-y-auto">
             {regions.map((region) => {
               const selected = values.includes(region.id);
+              console.log("SELECTED", selected);
 
               return (
                 <CommandItem

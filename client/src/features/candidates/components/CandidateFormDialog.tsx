@@ -57,6 +57,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import SingleRegionCombobox from "@/features/regions/components/SingleRegionCombobox";
 
 type Props = {
   store_id?: string;
@@ -132,6 +133,7 @@ const CandidateFormDialog: React.FC<Props> = ({
           store_id: candidate.store_id,
           vendor_spoc_id: candidate.vendor_spoc_id,
           is_candidate_verified: candidate.is_candidate_verified,
+          region_id: candidate?.region.id,
         }
       : { store_id: store_id || "" },
   });
@@ -139,6 +141,8 @@ const CandidateFormDialog: React.FC<Props> = ({
   useEffect(() => {
     if (defOpen) setOpen(true);
   }, [defOpen]);
+
+  console.log("CANDIDATE ", candidate);
 
   const isVerifiedChecked = watch("is_candidate_verified");
   const closeAndGoBack = () => {
@@ -242,6 +246,7 @@ const CandidateFormDialog: React.FC<Props> = ({
         state: candidate.state,
         division: candidate.division,
         aadhar_number: candidate.aadhar_number,
+        region_id: candidate?.region.id,
 
         store_id: candidate.store_id,
         vendor_spoc_id: candidate.vendor_spoc_id,
@@ -651,7 +656,8 @@ const CandidateFormDialog: React.FC<Props> = ({
                 )}
               />
 
-              {!!candidate && (
+              {(!!candidate ||
+                ["admin", "super_admin"].includes(currentUserInfo.role)) && (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
                     <div>
@@ -706,6 +712,46 @@ const CandidateFormDialog: React.FC<Props> = ({
                   </div>
                 </>
               )}
+
+              {
+                <Controller
+                  name="region_id"
+                  control={control}
+                  rules={{
+                    required: "Region is required",
+                  }}
+                  render={({ field, fieldState }) => {
+                    return (
+                      <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
+                        <Label className="font-semibold text-md">
+                          Region<span className="text-red-500">*</span>
+                        </Label>
+
+                        <div>
+                          <SingleRegionCombobox
+                            value={field.value?.toString()}
+                            disabled={
+                              (!isEditMode && !!candidate) ||
+                              !["admin", "super_admin"].includes(
+                                currentUserInfo.role
+                              )
+                            }
+                            onChange={(region) => {
+                              field.onChange(region.id);
+                            }}
+                          />
+
+                          {fieldState.invalid && (
+                            <p className="text-sm text-red-600">
+                              {fieldState.error?.message}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+              }
             </section>
 
             {!!candidate && (

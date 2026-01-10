@@ -53,7 +53,7 @@ class CandidatesSearchParams(BaseModel):
 
 class CandidateItemWithStore(BaseModel):
     id: str
-    coupon_code: str
+    coupon_code: str | None = None
     full_name: str
     mobile_number: str | None = None
     dob: date | None = None
@@ -95,7 +95,7 @@ class PartialCandidateItem(BaseModel):
 
 class CandidateOut(BaseModel):
     id: str
-    coupon_code: str
+    coupon_code: str | None = None
     full_name: str
     mobile_number: str
     dob: date | None = None

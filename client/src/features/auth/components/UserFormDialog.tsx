@@ -73,7 +73,14 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
 
   useEffect(() => {
     if (user) {
-      reset(user);
+      reset({
+        mobile_number: user?.mobile_number,
+        full_name: user.full_name,
+        role: user.role,
+        store_id: user.store_id,
+        location: user.location,
+        region_ids: [...user.regions.map((r) => r.id)],
+      });
     } else {
       reset({
         mobile_number: "",
@@ -189,7 +196,8 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
 
               <MultiRegionCombobox
                 values={watch("region_ids") || []}
-                onChange={(ids) =>
+                selectedRegions={user?.regions || []}
+                onChange={(ids, regions) =>
                   setValue("region_ids", ids, {
                     shouldDirty: true,
                     shouldValidate: true,

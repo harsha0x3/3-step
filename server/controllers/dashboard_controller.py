@@ -5,6 +5,7 @@ from models.issued_statuses import IssuedStatus
 from models import UpgradeRequest, City, StoreCityAssociation
 from fastapi import HTTPException, status
 from typing import Any
+from models.schemas.auth_schemas import UserOut
 
 
 def get_admin_dashboard_stats(db: Session) -> dict[str, Any]:
@@ -251,11 +252,18 @@ def get_store_agent_dashboard_stats(db: Session, store_id: str) -> dict[str, Any
         )
 
 
-def get_registration_officer_dashboard_stats(db: Session) -> dict[str, Any]:
+def get_registration_officer_dashboard_stats(
+    db: Session, current_user: UserOut
+) -> dict[str, Any]:
     """Get dashboard statistics for registration officer"""
     try:
         # Total candidates
-        total_candidates = db.scalar(select(func.count(Candidate.id)))
+        total_cand_stmt = select(func.count(Candidate.id))
+        if current_user.regions:
+            region_ids = [r.id for r in current_user.regions]
+            total_cand_stmt = total_cand_stmt.where(Candidate.region_id.in_(region_ids))
+
+        total_candidates = db.scalar(total_cand_stmt)
 
         # Verified candidates
         verified_candidates = db.scalar(

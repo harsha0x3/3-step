@@ -724,7 +724,8 @@ const CandidateFormDialog: React.FC<Props> = ({
                     return (
                       <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
                         <Label className="font-semibold text-md">
-                          Region<span className="text-red-500">*</span>
+                          Distribution Location
+                          <span className="text-red-500">*</span>
                         </Label>
 
                         <div>

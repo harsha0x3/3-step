@@ -382,6 +382,25 @@ def get_all_candidates(
             ),
         ).outerjoin(IssuedStatus, IssuedStatus.candidate_id == Candidate.id)
 
+        if current_user.role == "registration_officer":
+            print("CURRENT USER >> ", current_user)
+            if current_user.regions:
+                regions = [r.id for r in current_user.regions]
+                stmt = stmt.where(Candidate.region_id.in_(regions))
+                stmt_count = (
+                    select(
+                        func.count(Candidate.id).label("total_candidates"),
+                        func.sum(
+                            case((Candidate.is_candidate_verified, 1), else_=0)
+                        ).label("total_vouchers_issued"),
+                        func.sum(
+                            case((IssuedStatus.issued_status == "issued", 1), else_=0)
+                        ).label("total_laptops_issued"),
+                    )
+                    .where(Candidate.region_id.in_(regions))
+                    .outerjoin(IssuedStatus, IssuedStatus.candidate_id == Candidate.id)
+                )
+
         count_stats = db.execute(stmt_count).one()
 
         if (

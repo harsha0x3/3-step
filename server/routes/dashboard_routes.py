@@ -104,7 +104,7 @@ async def get_role_based_stats(
         store = get_store_of_user(db, current_user)
         stats = get_store_agent_dashboard_stats(db, store.id)
     elif current_user.role == "registration_officer":
-        stats = get_registration_officer_dashboard_stats(db)
+        stats = get_registration_officer_dashboard_stats(db, current_user)
     else:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"

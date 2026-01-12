@@ -95,7 +95,7 @@ async def login_user(
     if not is_valid_captcha:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Captcha verification failed",
+            detail="Captcha verification failed, refresh and try again",
         )
     user = db.scalar(
         select(User).where(
@@ -116,7 +116,8 @@ async def login_user(
         print("wrong pass")
 
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
         )
 
     if not user.is_active:

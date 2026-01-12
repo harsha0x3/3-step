@@ -50,9 +50,9 @@ const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
   const handleSubmit = async () => {
     if (!preview) return toast.error("Please capture a photo first");
     let file = base64ToFile(preview, "captured_photo.jpg");
-    if (!noCommpression) {
-      file = await compressImage(file, 1.5);
-    }
+
+    file = await compressImage(file, 1.0);
+
     const formData = new FormData();
     formData.append("photo", file);
     try {

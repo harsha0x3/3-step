@@ -21,9 +21,15 @@ def map_stores():
                 with open("store_map_logs.log", "a", encoding="utf-8") as f:
                     f.write(f"Candidate not found - id: {row.get('E.No', '')} \n")
                 continue
-            store = db.scalar(
-                select(Store).where(Store.id == row.get("Store Code", ""))
-            )
+            store = None
+            if pd.notna(row["Store Code"]):
+                store = db.scalar(select(Store).where(Store.id == row["Store Code"]))
+
+            if pd.notna(row["Store Code 2"]):
+                store = db.scalar(select(Store).where(Store.id == row["Store Code 2"]))
+
+            if not store:
+                continue
 
             if not store:
                 with open("store_map_logs.log", "a", encoding="utf-8") as f:

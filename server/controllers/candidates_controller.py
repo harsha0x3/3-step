@@ -492,7 +492,7 @@ def get_all_candidates(
                 coupon_code=candidate.coupon_code,
                 verified_by=verified_by_user,
                 gift_card_code=candidate.gift_card_code
-                if current_user.role == "super_admin"
+                if current_user.role in ["super_admin", "admin"]
                 else None,
                 store=StoreItemOut(
                     name=store.name,

@@ -23,13 +23,28 @@ const FILE_TYPES: { label: string; type: UtilityFileType; roles: string[] }[] =
       roles: ["super_admin", "admin", "registration_officer"],
     },
     {
+      label: "Voucher Distribution Guide Video",
+      type: "voucher_distribution_video",
+      roles: ["super_admin", "admin", "registration_officer"],
+    },
+    {
       label: "Laptop Distribution Guide",
       type: "laptop_distribution_sop",
       roles: ["super_admin", "admin", "store_agent"],
     },
     {
+      label: "Laptop Distribution Guide Video",
+      type: "laptop_distribution_normal_video",
+      roles: ["super_admin", "admin", "store_agent"],
+    },
+    {
       label: "Login Guide",
       type: "login_sop",
+      roles: ["super_admin", "admin", "registration_officer", "store_agent"],
+    },
+    {
+      label: "Login Guide Video",
+      type: "login_video",
       roles: ["super_admin", "admin", "registration_officer", "store_agent"],
     },
     // { label: "Upgrade Laptop SOP", type: "upgrade_laptop_sop" },

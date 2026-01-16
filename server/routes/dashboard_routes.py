@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
-from sqlalchemy import text
+from sqlalchemy import text, select, and_
 import pandas as pd
 from typing import Annotated
 from sqlalchemy.orm import Session
@@ -16,6 +16,7 @@ from controllers.dashboard_controller import (
     get_laptop_issuance_stats_of_all,
     get_registration_office_locations,
 )
+from models import Candidate, Region, Store
 
 from controllers.store_controller import get_store_of_user
 
@@ -38,28 +39,26 @@ async def download_candidates_data(
             detail=f"Not authorised to view all candidates with role - {current_user.role}",
         )
 
-    sql_query = text("""
-        SELECT
-            c.id AS employee_id,
-            c.full_name AS name,
-            c.mobile_number AS mobile_number,
-            c.gift_card_code AS gift_card_code,
-            c.state,
-            c.city,
-            r.name AS distribution_location,
-            c.division,
-            c.store_id AS store_code,
-            s.name AS store_name,
-            s.address AS store_address,
-            s.email AS store_email,
-            s.mobile_number AS store_mobile
-        FROM candidates c
-        LEFT JOIN stores s ON c.store_id = s.id
-        LEFT JOIN regions r ON r.id = c.region_id
-    """)
-
-    with db.connection() as conn:
-        df = pd.read_sql(sql_query, conn)
+    candidates = db.scalars(select(Candidate)).all()
+    rows = []
+    for cand in candidates:
+        rows.append(
+            {
+                "Employee ID": cand.id,
+                "Name": cand.full_name,
+                "Mobile Number": cand.mobile_number,
+                "State": cand.state,
+                "City": cand.city,
+                "Gift Card Code": cand.gift_card_code,
+                "Distribution Location": cand.region.name if cand.region else None,
+                "Division": cand.division,
+                "Store Code": cand.store.id if cand.store else None,
+                "Store Name": cand.store.name if cand.store else None,
+                "Store Address": cand.store.address if cand.store else None,
+                "Store Mobile": cand.store.mobile_number if cand.store else None,
+            }
+        )
+    df = pd.DataFrame(rows).astype(str)
 
     now_str = datetime.now().strftime("%Y%m%d-%H%M")
     filename = f"candidates_{now_str}.xlsx"
@@ -67,6 +66,7 @@ async def download_candidates_data(
 
     df.to_excel(filepath, index=False)
 
+    # 📤 Return file
     return FileResponse(
         path=filepath,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

@@ -54,6 +54,12 @@ export const utilityFilesApiSlice = rootApiSlice.injectEndpoints({
         },
       }),
     }),
+    getUtilityFilePath: builder.mutation<string, UtilityFileType>({
+      query: (fileType) => ({
+        url: `/utility_files/path/${fileType}`,
+        method: "GET",
+      }),
+    }),
   }),
 });
 
@@ -61,4 +67,5 @@ export const {
   useUploadUtilityFileMutation,
   useGetAllUtilityFilesQuery,
   useGetUtilityFileMutation,
+  useGetUtilityFilePathMutation,
 } = utilityFilesApiSlice;

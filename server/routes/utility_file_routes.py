@@ -98,3 +98,27 @@ def fetch_utility_file(
         media_type=mime_type,
         filename=os.path.basename(file_path),
     )
+
+
+@router.get("/path/{file_type}", status_code=status.HTTP_200_OK)
+def fetch_utility_file_path(
+    db: Annotated[Session, Depends(get_db_conn)],
+    file_type: Annotated[
+        Literal[
+            "voucher_distribution_sop",
+            "laptop_distribution_sop",
+            "login_sop",
+            "login_video",
+            "upgrade_laptop_sop",
+            "voucher_distribution_video",
+            "laptop_upgrade_now_video",
+            "laptop_upgrade_later_video",
+            "laptop_distribution_normal_video",
+        ],
+        Path(...),
+    ],
+):
+    result = get_utility_file(db=db, file_type=file_type)
+    file_path = normalize_path(result.path)
+
+    return file_path

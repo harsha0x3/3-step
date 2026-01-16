@@ -1,11 +1,16 @@
 import { Button } from "@/components/ui/button";
-import { useGetUtilityFileMutation } from "./store/utilityFilesApiSlice";
+import {
+  useGetUtilityFileMutation,
+  useGetUtilityFilePathMutation,
+} from "./store/utilityFilesApiSlice";
 import { toast } from "sonner";
 import { useState } from "react";
 import { FileIcon, Loader, VideoIcon } from "lucide-react";
+import { secureFileUrl } from "@/utils/secureFile";
 
 const LoginSupportFooter = () => {
   const [getFile] = useGetUtilityFileMutation();
+  const [getFilePath] = useGetUtilityFilePathMutation();
   const [loadingKey, setLoadingKey] = useState<null | string>(null);
 
   return (
@@ -72,14 +77,15 @@ const LoginSupportFooter = () => {
               try {
                 setLoadingKey("login_video");
 
-                const file = await getFile("login_video").unwrap();
+                // const file = await getFile("login_video").unwrap();
+                const filePath = await getFilePath("login_video").unwrap();
 
-                const blobUrl = URL.createObjectURL(
-                  new Blob([file], { type: "video/mp4" })
-                );
+                // const blobUrl = URL.createObjectURL(
+                //   new Blob([file], { type: "video/mp4" })
+                // );
 
-                window.open(blobUrl, "_blank");
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+                window.open(secureFileUrl(filePath), "_blank");
+                // setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
               } catch (err) {
                 toast.error("Failed to load video");
               } finally {

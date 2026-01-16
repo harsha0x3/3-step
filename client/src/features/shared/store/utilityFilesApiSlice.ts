@@ -4,7 +4,12 @@ export type UtilityFileType =
   | "voucher_distribution_sop"
   | "laptop_distribution_sop"
   | "login_sop"
-  | "upgrade_laptop_sop";
+  | "login_video"
+  | "upgrade_laptop_sop"
+  | "laptop_upgrade_now_video"
+  | "laptop_upgrade_later_video"
+  | "laptop_distribution_normal_video"
+  | "voucher_distribution_video";
 
 export interface UtilityFileResponse {
   type: UtilityFileType;

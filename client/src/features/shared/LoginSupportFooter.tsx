@@ -1,9 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { useGetUtilityFileMutation } from "./store/utilityFilesApiSlice";
 import { toast } from "sonner";
+import { useState } from "react";
+import { FileIcon, Loader, VideoIcon } from "lucide-react";
 
 const LoginSupportFooter = () => {
   const [getFile] = useGetUtilityFileMutation();
+  const [loadingKey, setLoadingKey] = useState<null | string>(null);
+
   return (
     <footer className="w-full mt-auto pb-6 text-center text-sm text-muted-foreground">
       <div className="flex flex-col gap-2 items-center justify-center">
@@ -31,8 +35,12 @@ const LoginSupportFooter = () => {
         <div className="flex flex-col sm:flex-row sm:gap-3 items-center gap-1 mt-2">
           <Button
             variant="link"
+            disabled={loadingKey === "pdf"}
+            className="underline hover:text-primary flex items-center gap-2"
             onClick={async () => {
               try {
+                setLoadingKey("pdf");
+
                 const file = await getFile("login_sop").unwrap();
 
                 const blobUrl = URL.createObjectURL(
@@ -40,23 +48,53 @@ const LoginSupportFooter = () => {
                 );
 
                 window.open(blobUrl, "_blank");
-
-                // Optional but recommended cleanup
                 setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
               } catch (err) {
-                const errMsg =
-                  err?.data?.detail?.msg ??
-                  err?.data?.detail ??
-                  JSON.stringify(err);
-
-                const errDesc = err?.data?.detail?.msg
-                  ? err?.data?.detail?.err_stack
-                  : "Failed to fetch beneficiary";
-                toast.error(errMsg, { description: errDesc });
+                toast.error("Failed to load document");
+              } finally {
+                setLoadingKey(null);
               }
             }}
           >
-            📄 Login Help {"  "}|{" "}
+            {loadingKey === "pdf" ? (
+              <Loader className="h-4 w-4 animate-spin" />
+            ) : (
+              <span className="flex items-center gap-1">
+                <FileIcon /> Login Help
+              </span>
+            )}
+          </Button>
+          <Button
+            variant="link"
+            disabled={loadingKey === "login_video"}
+            className="underline hover:text-primary flex items-center gap-2"
+            onClick={async () => {
+              try {
+                setLoadingKey("login_video");
+
+                const file = await getFile("login_video").unwrap();
+
+                const blobUrl = URL.createObjectURL(
+                  new Blob([file], { type: "video/mp4" })
+                );
+
+                window.open(blobUrl, "_blank");
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+              } catch (err) {
+                toast.error("Failed to load video");
+              } finally {
+                setLoadingKey(null);
+              }
+            }}
+          >
+            {loadingKey === "login_video" ? (
+              <Loader className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <VideoIcon className="h-4 w-4" />
+                Login Video Demo
+              </>
+            )}
           </Button>
 
           {/* <a

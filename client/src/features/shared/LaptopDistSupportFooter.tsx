@@ -1,9 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useGetUtilityFileMutation } from "./store/utilityFilesApiSlice";
+import { FileIcon, Loader, VideoIcon } from "lucide-react";
+import { useState } from "react";
 
 const LaptopDistSupportFooter = ({ trouble }: { trouble: string }) => {
   const [getFile] = useGetUtilityFileMutation();
+  const [loadingKey, setLoadingKey] = useState<null | string>(null);
 
   return (
     <footer className="w-full mt-auto pb-6 text-center text-sm text-muted-foreground">
@@ -48,9 +51,12 @@ const LaptopDistSupportFooter = ({ trouble }: { trouble: string }) => {
         <div className="flex flex-col sm:flex-row sm:gap-3 items-center gap-1 mt-2">
           <Button
             variant="link"
-            className="underline hover:text-primary"
+            disabled={loadingKey === "pdf"}
+            className="underline hover:text-primary flex items-center gap-2"
             onClick={async () => {
               try {
+                setLoadingKey("pdf");
+
                 const file = await getFile("laptop_distribution_sop").unwrap();
 
                 const blobUrl = URL.createObjectURL(
@@ -58,23 +64,56 @@ const LaptopDistSupportFooter = ({ trouble }: { trouble: string }) => {
                 );
 
                 window.open(blobUrl, "_blank");
-
-                // Optional but recommended cleanup
                 setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
               } catch (err) {
-                const errMsg =
-                  err?.data?.detail?.msg ??
-                  err?.data?.detail ??
-                  JSON.stringify(err);
-
-                const errDesc = err?.data?.detail?.msg
-                  ? err?.data?.detail?.err_stack
-                  : "Failed to fetch beneficiary";
-                toast.error(errMsg, { description: errDesc });
+                toast.error("Failed to load document");
+              } finally {
+                setLoadingKey(null);
               }
             }}
           >
-            📄 Laptop Distribution Help {"  "}|{" "}
+            {loadingKey === "pdf" ? (
+              <Loader className="h-4 w-4 animate-spin" />
+            ) : (
+              <span className="flex items-center gap-1">
+                <FileIcon /> Laptop Distribution Help
+              </span>
+            )}
+          </Button>
+
+          <Button
+            variant="link"
+            disabled={loadingKey === "normal_video"}
+            className="underline hover:text-primary flex items-center gap-2"
+            onClick={async () => {
+              try {
+                setLoadingKey("normal_video");
+
+                const file = await getFile(
+                  "laptop_distribution_normal_video"
+                ).unwrap();
+
+                const blobUrl = URL.createObjectURL(
+                  new Blob([file], { type: "video/mp4" })
+                );
+
+                window.open(blobUrl, "_blank");
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+              } catch (err) {
+                toast.error("Failed to load video");
+              } finally {
+                setLoadingKey(null);
+              }
+            }}
+          >
+            {loadingKey === "normal_video" ? (
+              <Loader className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <VideoIcon className="h-4 w-4" />
+                Laptop Issuance Video Demo
+              </>
+            )}
           </Button>
 
           {/* <a

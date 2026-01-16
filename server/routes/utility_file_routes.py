@@ -1,3 +1,5 @@
+# utilityroutes
+
 from fastapi import (
     APIRouter,
     Depends,
@@ -69,7 +71,12 @@ def fetch_utility_file(
             "voucher_distribution_sop",
             "laptop_distribution_sop",
             "login_sop",
+            "login_video",
             "upgrade_laptop_sop",
+            "voucher_distribution_video",
+            "laptop_upgrade_now_video",
+            "laptop_upgrade_later_video",
+            "laptop_distribution_normal_video",
         ],
         Path(...),
     ],

@@ -32,46 +32,45 @@ async def download_candidates_data(
     db: Annotated[Session, Depends(get_db_conn)],
     current_user: Annotated[UserOut, Depends(get_current_user)],
 ):
-    if current_user.role != "admin" and current_user.role != "super_admin":
+    if current_user.role not in {"admin", "super_admin"}:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Not authorised to view all candidates with role - {current_user.role}",
         )
 
     sql_query = text("""
-SELECT
-    c.id AS employee_id,
-    c.full_name,
-    c.mobile_number,
-    c.coupon_code AS voucher_code,
-    c.dob,
-    c.state,
-    c.city,
-    c.division,
-    c.store_id,
-    c.aadhar_number,
-    s.name AS store_name,
-    s.city AS store_city,
-    s.address AS store_address,
-    s.email AS store_email,
-    s.mobile_number AS store_mobile
-FROM candidates c
-LEFT JOIN stores s ON c.store_id = s.id
-""")
+        SELECT
+            c.id AS employee_id,
+            c.full_name AS name,
+            c.mobile_number AS mobile_number,
+            c.gift_card_code AS gift_card_code,
+            c.state,
+            c.city,
+            r.name AS distribution_location,
+            c.division,
+            c.store_id AS store_code,
+            s.name AS store_name,
+            s.address AS store_address,
+            s.email AS store_email,
+            s.mobile_number AS store_mobile
+        FROM candidates c
+        LEFT JOIN stores s ON c.store_id = s.id
+        LEFT JOIN regions r ON r.id = c.region_id
+    """)
 
     with db.connection() as conn:
         df = pd.read_sql(sql_query, conn)
 
-    now_time = datetime.now()
-    now_str = now_time.strftime("%Y%m%d-%H:%M")
-    filename = f"employees_download_{now_str}.xlsx"
+    now_str = datetime.now().strftime("%Y%m%d-%H%M")
+    filename = f"candidates_{now_str}.xlsx"
     filepath = os.path.join(BASE_CSV_UPLOAD_DIR, filename)
+
     df.to_excel(filepath, index=False)
 
     return FileResponse(
-        filepath,
+        path=filepath,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        filename="candidates.xlsx",
+        filename=filename,
     )
 
 

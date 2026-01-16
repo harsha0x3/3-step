@@ -190,7 +190,7 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
 
     downloadCandidates: builder.mutation({
       query: () => ({
-        url: "/download/candidates",
+        url: "/dashboard/download/candidates",
         method: "GET",
         responseHandler: (response) => response.blob(),
       }),

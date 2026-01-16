@@ -74,6 +74,23 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
       cell: (info) => info.getValue(),
     }),
 
+    ...(["super_admin", "admin"].includes(currentUserInfo.role)
+      ? [
+          columnHelper.accessor("gift_card_code", {
+            id: "gift_card_code",
+            header: "Gift Card Code",
+            cell: ({ row }) => {
+              const code = row.original.gift_card_code;
+              return code ? (
+                <span className="font-medium">{code}</span>
+              ) : (
+                <span className="text-muted-foreground">No Gift Card</span>
+              );
+            },
+          }),
+        ]
+      : []),
+
     columnHelper.accessor("is_candidate_verified", {
       header: "Voucher Issue Status",
       cell: ({ row, getValue }) => {
@@ -220,23 +237,6 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
       },
     }),
   ];
-
-  if (["super_admin", "admin"].includes(currentUserInfo.role)) {
-    columns.push(
-      columnHelper.accessor("gift_card_code", {
-        id: "gift_card_code",
-        header: "Gift Card Code",
-        cell: ({ row }) => {
-          const code = row.original.gift_card_code;
-          return code ? (
-            <span className="font-medium">{code}</span>
-          ) : (
-            <span className="text-muted-foreground">No Gift Card</span>
-          );
-        },
-      })
-    );
-  }
 
   const table = useReactTable({
     data: candidates,

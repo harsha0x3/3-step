@@ -3,6 +3,7 @@ import { useGetUtilityFileMutation } from "./store/utilityFilesApiSlice";
 import { toast } from "sonner";
 import { useState } from "react";
 import { FileIcon, Loader, VideoIcon } from "lucide-react";
+import { secureFileUrl } from "@/utils/secureFile";
 
 const VoucherIssuanceSupportFooter = () => {
   const [getFile] = useGetUtilityFileMutation();
@@ -69,26 +70,29 @@ const VoucherIssuanceSupportFooter = () => {
             variant="link"
             disabled={loadingKey === "voucher_video"}
             className="underline hover:text-primary flex items-center gap-2"
-            onClick={async () => {
-              try {
-                setLoadingKey("voucher_video");
+            // onClick={async () => {
+            //   try {
+            //     setLoadingKey("voucher_video");
 
-                const file = await getFile(
-                  "voucher_distribution_video"
-                ).unwrap();
+            //     const file = await getFile(
+            //       "voucher_distribution_video"
+            //     ).unwrap();
 
-                const blobUrl = URL.createObjectURL(
-                  new Blob([file], { type: "video/mp4" })
-                );
+            //     const blobUrl = URL.createObjectURL(
+            //       new Blob([file], { type: "video/mp4" })
+            //     );
 
-                window.open(blobUrl, "_blank");
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
-              } catch (err) {
-                toast.error("Failed to load video");
-              } finally {
-                setLoadingKey(null);
-              }
-            }}
+            //     window.open(blobUrl, "_blank");
+            //     setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+            //   } catch (err) {
+            //     toast.error("Failed to load video");
+            //   } finally {
+            //     setLoadingKey(null);
+            //   }
+            // }}
+            onClick={() =>
+              window.open(secureFileUrl("voucher_distribution_video"), "_blank")
+            }
           >
             {loadingKey === "voucher_video" ? (
               <Loader className="h-4 w-4 animate-spin" />

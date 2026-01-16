@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useGetUtilityFileMutation } from "./store/utilityFilesApiSlice";
 import { FileIcon, Loader, VideoIcon } from "lucide-react";
 import { useState } from "react";
+import { secureFileUrl } from "@/utils/secureFile";
 
 const LaptopDistSupportFooter = ({ trouble }: { trouble: string }) => {
   const [getFile] = useGetUtilityFileMutation();
@@ -85,26 +86,32 @@ const LaptopDistSupportFooter = ({ trouble }: { trouble: string }) => {
             variant="link"
             disabled={loadingKey === "normal_video"}
             className="underline hover:text-primary flex items-center gap-2"
-            onClick={async () => {
-              try {
-                setLoadingKey("normal_video");
+            // onClick={async () => {
+            //   try {
+            //     setLoadingKey("normal_video");
 
-                const file = await getFile(
-                  "laptop_distribution_normal_video"
-                ).unwrap();
+            //     const file = await getFile(
+            //       "laptop_distribution_normal_video"
+            //     ).unwrap();
 
-                const blobUrl = URL.createObjectURL(
-                  new Blob([file], { type: "video/mp4" })
-                );
+            //     const blobUrl = URL.createObjectURL(
+            //       new Blob([file], { type: "video/mp4" })
+            //     );
 
-                window.open(blobUrl, "_blank");
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
-              } catch (err) {
-                toast.error("Failed to load video");
-              } finally {
-                setLoadingKey(null);
-              }
-            }}
+            //     window.open(blobUrl, "_blank");
+            //     setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+            //   } catch (err) {
+            //     toast.error("Failed to load video");
+            //   } finally {
+            //     setLoadingKey(null);
+            //   }
+            // }}
+            onClick={() =>
+              window.open(
+                secureFileUrl("laptop_distribution_normal_video"),
+                "_blank"
+              )
+            }
           >
             {loadingKey === "normal_video" ? (
               <Loader className="h-4 w-4 animate-spin" />

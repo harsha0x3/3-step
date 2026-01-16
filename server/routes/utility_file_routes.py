@@ -21,6 +21,7 @@ from controllers.utility_files_controller import (
     get_all_utility_files,
 )
 import os
+import mimetypes
 from utils.helpers import normalize_path
 
 router = APIRouter(prefix="/utility_files", tags=["Utility Files"])
@@ -90,8 +91,10 @@ def fetch_utility_file(
             detail="File not found",
         )
 
+    mime_type, _ = mimetypes.guess_file_type(file_path)
+
     return FileResponse(
         path=file_path,
-        media_type="application/pdf",
+        media_type=mime_type,
         filename=os.path.basename(file_path),
     )

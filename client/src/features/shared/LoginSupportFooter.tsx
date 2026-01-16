@@ -3,7 +3,6 @@ import { useGetUtilityFileMutation } from "./store/utilityFilesApiSlice";
 import { toast } from "sonner";
 import { useState } from "react";
 import { FileIcon, Loader, VideoIcon } from "lucide-react";
-import { secureFileUrl } from "@/utils/secureFile";
 
 const LoginSupportFooter = () => {
   const [getFile] = useGetUtilityFileMutation();
@@ -38,25 +37,24 @@ const LoginSupportFooter = () => {
             variant="link"
             disabled={loadingKey === "pdf"}
             className="underline hover:text-primary flex items-center gap-2"
-            // onClick={async () => {
-            //   try {
-            //     setLoadingKey("pdf");
+            onClick={async () => {
+              try {
+                setLoadingKey("pdf");
 
-            //     const file = await getFile("login_sop").unwrap();
+                const file = await getFile("login_sop").unwrap();
 
-            //     const blobUrl = URL.createObjectURL(
-            //       new Blob([file], { type: "application/pdf" })
-            //     );
+                const blobUrl = URL.createObjectURL(
+                  new Blob([file], { type: "application/pdf" })
+                );
 
-            //     window.open(blobUrl, "_blank");
-            //     setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
-            //   } catch (err) {
-            //     toast.error("Failed to load document");
-            //   } finally {
-            //     setLoadingKey(null);
-            //   }
-            // }}
-            onClick={() => window.open(secureFileUrl("login_video"), "_blank")}
+                window.open(blobUrl, "_blank");
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+              } catch (err) {
+                toast.error("Failed to load document");
+              } finally {
+                setLoadingKey(null);
+              }
+            }}
           >
             {loadingKey === "pdf" ? (
               <Loader className="h-4 w-4 animate-spin" />

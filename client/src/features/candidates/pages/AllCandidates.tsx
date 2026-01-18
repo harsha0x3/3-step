@@ -65,6 +65,7 @@ const AllCandidates: React.FC = () => {
   const candIsIssued = searchParams.get("is_issued");
   const candUpgrade = searchParams.get("upgrade_request");
   const candStoreId = searchParams.get("beneficiaryStoreId");
+  const candDistributionLocation = searchParams.get("candDistributionLocation");
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -87,7 +88,9 @@ const AllCandidates: React.FC = () => {
       upgrade_request:
         candUpgrade !== null ? candUpgrade === "true" : undefined,
       store_id: candStoreId ?? undefined,
+      distribution_location: candDistributionLocation,
     }),
+
     [
       candPage,
       candPageSize,
@@ -99,6 +102,7 @@ const AllCandidates: React.FC = () => {
       candIsIssued,
       candUpgrade,
       candStoreId,
+      candDistributionLocation,
     ]
   );
 
@@ -178,6 +182,7 @@ const AllCandidates: React.FC = () => {
     return null;
   }
   const totalCandidates = candidatesData?.data?.total_count ?? 0;
+  const filteredCandidates = candidatesData?.data?.filtered_count ?? 0;
 
   return (
     <div className="flex flex-col gap-4 p-2 py-2 sm:px-1 sm:py-0">
@@ -534,8 +539,10 @@ const AllCandidates: React.FC = () => {
           <p className="text-sm">Total Beneficiaries: {totalCandidates}</p>
           <span>|</span>
           <p className="text-sm">
-            Page {candPage} of {Math.ceil(totalCandidates / candPageSize)}
+            Page {candPage} of {Math.ceil(filteredCandidates / candPageSize)}
           </p>
+          <span>|</span>
+          <p className="text-sm">Filtered: {filteredCandidates}</p>
         </div>
       </div>
 
@@ -598,7 +605,7 @@ const AllCandidates: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 {Array.from(
-                  { length: Math.ceil(totalCandidates / candPageSize) },
+                  { length: Math.ceil(filteredCandidates / candPageSize) },
                   (_, i) => i + 1
                 ).map((page) => (
                   <SelectItem key={page} value={String(page)}>
@@ -612,7 +619,7 @@ const AllCandidates: React.FC = () => {
             <PaginationItem>
               <PaginationLink
                 onClick={() => {
-                  if (candPage === Math.ceil(totalCandidates / candPageSize))
+                  if (candPage === Math.ceil(filteredCandidates / candPageSize))
                     return;
                   console.log("Goint to next page");
                   goToPage(candPage + 1);
@@ -629,7 +636,7 @@ const AllCandidates: React.FC = () => {
             <PaginationItem>
               <PaginationLink
                 onClick={() =>
-                  goToPage(Math.ceil(totalCandidates / candPageSize))
+                  goToPage(Math.ceil(filteredCandidates / candPageSize))
                 }
                 aria-label="Go to last page"
                 size="icon"

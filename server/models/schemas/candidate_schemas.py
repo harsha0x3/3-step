@@ -47,6 +47,7 @@ class CandidatesSearchParams(BaseModel):
     store_id: str | None = None
     is_verified: bool | None = None
     is_issued: bool | None = None
+    distribution_location: str | None = None
 
     upgrade_request: bool | None = None
 

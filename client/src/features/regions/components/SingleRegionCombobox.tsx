@@ -65,7 +65,7 @@ const SingleRegionCombobox: React.FC<Props> = ({
           className="w-full justify-between"
           disabled={disabled}
         >
-          {selected?.name ?? "Select Region"}
+          {selected?.name ?? "Distribution Location"}
           <ChevronsUpDownIcon className="w-4 h-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

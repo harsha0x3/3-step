@@ -62,7 +62,7 @@ async def get_all_users(
     current_user: Annotated[UserOut, Depends(require_admin)],
     # ---- Search ----
     search_by: Annotated[
-        Literal["id", "email", "mobile_number", "full_name", "role"] | None,
+        Literal["id", "mobile_number", "full_name", "role"] | None,
         Query(title="Search users by"),
     ] = "full_name",
     search_term: Annotated[str | None, Query(title="Search term")] = None,

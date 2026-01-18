@@ -51,6 +51,7 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
         candidates: CandidateItemWithStore[];
         count: number;
         total_count: number;
+        filtered_count: number;
       }>,
       CandidatesSearchParams
     >({
@@ -90,6 +91,17 @@ export const candidatesApiSlice = rootApiSlice.injectEndpoints({
           params.store_id.trim() !== ""
         )
           searchParams.append("store_id", params.store_id);
+        if (
+          params?.distribution_location &&
+          params.distribution_location !== undefined &&
+          params.distribution_location !== null &&
+          params.distribution_location.trim() !== ""
+        ) {
+          searchParams.append(
+            "distribution_location",
+            params.distribution_location
+          );
+        }
 
         const queryString = searchParams.toString();
         return `/candidates${queryString ? `?${queryString}` : ""}`;

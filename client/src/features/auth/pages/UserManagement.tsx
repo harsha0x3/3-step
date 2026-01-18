@@ -21,6 +21,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuGroup,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import {
   Pagination,
@@ -56,6 +60,7 @@ const UserManagement: React.FC = () => {
   const sortBy = searchParams.get("userSortBy") || "created_at";
   const sortOrder = searchParams.get("userSortOrder") || "desc";
   const searchTerm = searchParams.get("userSearchTerm") || "";
+  const searchBy = searchParams.get("userSearchBy") || "full_name";
 
   const [searchInput, setSearchInput] = useState(searchTerm);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -68,8 +73,9 @@ const UserManagement: React.FC = () => {
       search: searchTerm,
       sort_by: sortBy,
       sort_order: sortOrder,
+      search_by: searchBy,
     }),
-    [page, pageSize, searchTerm, sortBy, sortOrder]
+    [page, pageSize, searchTerm, sortBy, sortOrder, searchBy]
   );
 
   const { data, isLoading, isFetching, refetch } = useGetAllUsersQuery(
@@ -136,44 +142,91 @@ const UserManagement: React.FC = () => {
             </DropdownMenuTrigger>
 
             <DropdownMenuContent>
-              <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-              <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                {[
-                  { field: "created_at", label: "Created At" },
-                  { field: "full_name", label: "Full Name" },
-                ].map((item) => (
-                  <DropdownMenuItem
-                    key={item.field}
-                    onClick={() =>
-                      updateSearchParams({
-                        userSortBy: item.field,
-                        userPage: 1,
-                      })
-                    }
-                  >
-                    {sortBy === item.field && (
-                      <Check className="h-4 w-4 mr-2" />
-                    )}
-                    {item.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>Sort By</DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      {[
+                        { field: "created_at", label: "Created At" },
+                        { field: "full_name", label: "Full Name" },
+                      ].map((item) => (
+                        <DropdownMenuItem
+                          key={item.field}
+                          onClick={() =>
+                            updateSearchParams({
+                              userSortBy: item.field,
+                              userPage: 1,
+                            })
+                          }
+                        >
+                          {sortBy === item.field && (
+                            <Check className="h-4 w-4 mr-2" />
+                          )}
+                          {item.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
 
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>Sort Order</DropdownMenuLabel>
-              <DropdownMenuGroup>
-                {["asc", "desc"].map((ord) => (
-                  <DropdownMenuItem
-                    key={ord}
-                    onClick={() =>
-                      updateSearchParams({ userSortOrder: ord, userPage: 1 })
-                    }
-                  >
-                    {sortOrder === ord && <Check className="h-4 w-4 mr-2" />}
-                    {ord.toUpperCase()}
-                  </DropdownMenuItem>
-                ))}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>Sort Order</DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      {["asc", "desc"].map((ord) => (
+                        <DropdownMenuItem
+                          key={ord}
+                          onClick={() =>
+                            updateSearchParams({
+                              userSortOrder: ord,
+                              userPage: 1,
+                            })
+                          }
+                        >
+                          {sortOrder === ord && (
+                            <Check className="h-4 w-4 mr-2" />
+                          )}
+                          {ord.toUpperCase()}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
+
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>Search By</DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({
+                            userSearchBy: "full_name",
+                          })
+                        }
+                      >
+                        {searchBy === "full_name" && (
+                          <Check className="h-4 w-4 mr-2" />
+                        )}
+                        Full Name
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({
+                            userSearchBy: "mobile_number",
+                          })
+                        }
+                      >
+                        {searchBy === "mobile_number" && (
+                          <Check className="h-4 w-4 mr-2" />
+                        )}
+                        Mobile Number
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>

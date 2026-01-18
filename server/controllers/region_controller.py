@@ -21,9 +21,13 @@ def create_new_region(db: Session, name: str) -> RegionOutSchema:
         )
 
 
-def get_all_regions(db: Session):
+def get_all_regions(db: Session, name: str | None):
     try:
-        regions = db.scalars(select(Region)).all()
+        stmt = select(Region)
+        if name:
+            stmt = stmt.where(Region.name.ilike(f"%{name}%"))
+        regions = db.scalars(stmt).all()
+
         return [RegionOutSchema.model_validate(region) for region in regions]
     except Exception as e:
         raise HTTPException(

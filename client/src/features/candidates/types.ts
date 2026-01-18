@@ -80,4 +80,5 @@ export interface CandidatesSearchParams {
   is_verified?: boolean | undefined;
   is_issued?: boolean | undefined;
   upgrade_request?: boolean | undefined;
+  distribution_location?: string | undefined;
 }

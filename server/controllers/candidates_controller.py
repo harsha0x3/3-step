@@ -383,7 +383,6 @@ def get_all_candidates(
         ).outerjoin(IssuedStatus, IssuedStatus.candidate_id == Candidate.id)
 
         if current_user.role == "registration_officer":
-            print("CURRENT USER >> ", current_user)
             if current_user.regions:
                 regions = [r.id for r in current_user.regions]
                 stmt = stmt.where(Candidate.region_id.in_(regions))
@@ -413,6 +412,9 @@ def get_all_candidates(
         # Filter by verification
         if params.is_verified is not None:
             stmt = stmt.where(Candidate.is_candidate_verified == params.is_verified)
+
+        if params.distribution_location:
+            stmt = stmt.where(Candidate.region_id == params.distribution_location)
 
         # Filter by issued status
         if params.is_issued is not None:
@@ -452,6 +454,10 @@ def get_all_candidates(
             sort_col = asc(sort_col)
         else:
             sort_col = desc(sort_col)
+
+        filtered_count_stmt = select(func.count()).select_from(stmt.subquery())
+
+        filtered_count = db.execute(filtered_count_stmt).scalar()
 
         if params.page >= 1:
             candidates = db.scalars(
@@ -520,6 +526,7 @@ def get_all_candidates(
                 "total_vouchers_issued": count_stats.total_vouchers_issued,
                 "total_laptops_issued": count_stats.total_laptops_issued,
                 "count": len(result),
+                "filtered_count": filtered_count,
             },
         }
 

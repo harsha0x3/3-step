@@ -130,6 +130,7 @@ async def list_candidates(
     upgrade_request: Annotated[
         bool | None, Query(title="Filter by upgrade request pending / completed")
     ] = None,
+    distribution_location: Annotated[str | None, Query(...)] = None,
 ):
     """
     Retrieve all candidates.
@@ -158,6 +159,7 @@ async def list_candidates(
         is_verified=is_verified,
         is_issued=is_issued,
         upgrade_request=upgrade_request,
+        distribution_location=distribution_location,
     )
     return get_all_candidates(db, params, current_user)
 

@@ -55,7 +55,6 @@ async def download_candidates_data(
                 "Store Code": cand.store.id if cand.store else None,
                 "Store Name": cand.store.name if cand.store else None,
                 "Store Address": cand.store.address if cand.store else None,
-                "Store Mobile": cand.store.mobile_number if cand.store else None,
             }
         )
     df = pd.DataFrame(rows).astype(str)

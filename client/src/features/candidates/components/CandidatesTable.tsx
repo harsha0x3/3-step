@@ -20,13 +20,14 @@ import { EyeIcon, Loader } from "lucide-react";
 import CandidateFormDialog from "./CandidateFormDialog";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import SingleRegionCombobox from "@/features/regions/components/SingleRegionCombobox";
 
 type Props = {
   candidates: CandidateItemWithStore[];
@@ -35,6 +36,7 @@ type Props = {
 };
 
 const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const currentUserInfo = useSelector(selectAuth);
   const navigate = useNavigate();
   const [openDialog, setOpenDialog] = React.useState(false);
@@ -42,6 +44,7 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
   const IssuanceDetailsDialog = lazy(() => import("./IssuanceDetailsDialog"));
   const [selectedCandidate, setSelectedCandidate] =
     React.useState<CandidateItemWithStore | null>(null);
+  const candDistributionLocation = searchParams.get("candDistributionLocation");
 
   const columnHelper = createColumnHelper<CandidateItemWithStore>();
 
@@ -60,6 +63,33 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
       cell: (info) => info.getValue(),
     }),
 
+    columnHelper.accessor("region", {
+      header: () =>
+        ["super_admin", "admin"].includes(currentUserInfo.role) ? (
+          <SingleRegionCombobox
+            value={candDistributionLocation ?? undefined}
+            onChange={(region) => {
+              const newParams = new URLSearchParams(searchParams);
+
+              if (region?.id) {
+                newParams.set("candDistributionLocation", region.id);
+                newParams.set("page", "1"); // reset pagination
+              } else {
+                newParams.delete("candDistributionLocation");
+              }
+
+              setSearchParams(newParams);
+            }}
+          />
+        ) : (
+          "Distribution Location"
+        ),
+
+      cell: (info) => {
+        const region = info.getValue();
+        return <p>{region?.name ?? "-"}</p>;
+      },
+    }),
     columnHelper.accessor("city", {
       header: "City",
       cell: (info) => info.getValue(),

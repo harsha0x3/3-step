@@ -1,9 +1,12 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
 
 from db.connection import get_db_conn
 from models.schemas.region_schemas import RegionOutSchema, NewRegionSchema
 from controllers.region_controller import create_new_region, get_all_regions
+from typing import Annotated
+from services.auth.deps import get_current_user
+from models.schemas.auth_schemas import UserOut
 
 router = APIRouter(
     prefix="/regions",
@@ -30,10 +33,12 @@ def create_region(
     status_code=status.HTTP_200_OK,
 )
 def list_regions(
-    db: Session = Depends(get_db_conn),
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+    name: Annotated[str | None, Query(...)] = None,
 ):
     """
     Get all regions.
     """
-    data = get_all_regions(db=db)
+    data = get_all_regions(db=db, name=name)
     return {"msg": "", "data": data}

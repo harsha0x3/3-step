@@ -263,7 +263,7 @@ def get_registration_officer_dashboard_stats(
             region_ids = [r.id for r in current_user.regions]
             total_cand_stmt = total_cand_stmt.where(Candidate.region_id.in_(region_ids))
 
-        total_candidates = db.scalar(total_cand_stmt)
+        total_candidates = db.scalar(total_cand_stmt) or 0
 
         # Verified candidates
         verified_candidates_stmt = select(func.count(Candidate.id)).where(
@@ -275,43 +275,29 @@ def get_registration_officer_dashboard_stats(
                 Candidate.region_id.in_(region_ids)
             )
         verified_candidates = db.scalar(verified_candidates_stmt)
+        issued_laptops_stmt = (
+            select(func.count(Candidate.id))
+            .join(IssuedStatus)
+            .where(
+                and_(
+                    IssuedStatus.issued_status == "issued",
+                    IssuedStatus.is_requested_to_upgrade.is_(False),
+                )
+            )
+        )
+
+        if current_user.regions:
+            region_ids = [r.id for r in current_user.regions]
+            issued_laptops_stmt = issued_laptops_stmt.where(
+                Candidate.region_id.in_(region_ids)
+            )
+
+        issued_laptops = db.scalar(issued_laptops_stmt)
 
         # Pending verifications
         pending_verifications = total_candidates - (verified_candidates or 0)
 
         total_stores = db.scalar(select(func.count(Store.id)))
-
-        # Recently verified candidates (last 10)
-        recent_verifications = db.execute(
-            select(
-                Candidate.id,
-                Candidate.full_name,
-                Candidate.mobile_number,
-                Candidate.store_id,
-                Store.name.label("store_name"),
-                Candidate.updated_at,
-            )
-            .outerjoin(Store, Candidate.store_id == Store.id)
-            .where(Candidate.is_candidate_verified)
-            .order_by(Candidate.updated_at.desc())
-            .limit(10)
-        ).all()
-
-        # Pending candidates (not verified)
-        pending_candidates = db.execute(
-            select(
-                Candidate.id,
-                Candidate.full_name,
-                Candidate.mobile_number,
-                Candidate.store_id,
-                Store.name.label("store_name"),
-                Candidate.created_at,
-            )
-            .outerjoin(Store, Candidate.store_id == Store.id)
-            .where(Candidate.is_candidate_verified)
-            .order_by(Candidate.created_at.asc())
-            .limit(20)
-        ).all()
 
         return {
             "summary": {
@@ -319,39 +305,8 @@ def get_registration_officer_dashboard_stats(
                 "verified_candidates": verified_candidates or 0,
                 "pending_verifications": pending_verifications,
                 "total_stores": total_stores,
-                "completion_rate": round(
-                    (verified_candidates / total_candidates * 100)
-                    if total_candidates > 0
-                    else 0,
-                    2,
-                ),
+                "issued_laptops": issued_laptops,
             },
-            "recent_verifications": [
-                {
-                    "candidate_id": row.id,
-                    "full_name": row.full_name,
-                    "mobile_number": row.mobile_number,
-                    "store_id": row.store_id,
-                    "store_name": row.store_name,
-                    "verified_at": row.updated_at.isoformat()
-                    if row.updated_at
-                    else None,
-                }
-                for row in recent_verifications
-            ],
-            "pending_candidates": [
-                {
-                    "candidate_id": row.id,
-                    "full_name": row.full_name,
-                    "mobile_number": row.mobile_number,
-                    "store_id": row.store_id,
-                    "store_name": row.store_name,
-                    "created_at": row.created_at.isoformat()
-                    if row.created_at
-                    else None,
-                }
-                for row in pending_candidates
-            ],
         }
     except Exception as e:
         raise HTTPException(

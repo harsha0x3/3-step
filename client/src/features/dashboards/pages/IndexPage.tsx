@@ -3,13 +3,25 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { selectAuth } from "@/features/auth/store/authSlice";
-import { useGetRoleBasedStatsQuery } from "@/features/dashboards/store/dashboardApiSlice";
+import {
+  useGetRoleBasedStatsQuery,
+  useGetRegionWiseStatsQuery,
+} from "@/features/dashboards/store/dashboardApiSlice";
+import SingleRegionCombobox from "@/features/regions/components/SingleRegionCombobox";
+import type { RegionOut } from "@/store/rootTypes";
 import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 export default function IndexPage() {
   const { data, isLoading, isError } = useGetRoleBasedStatsQuery(undefined);
+  const [selectedRegion, setSelectedRegion] = useState<RegionOut | undefined>(
+    undefined
+  );
+  const { data: regionStatsData, isLoading: isRegionStatsLoading } =
+    useGetRegionWiseStatsQuery(selectedRegion?.id || "", {
+      skip: !selectedRegion,
+    });
   const currentUserInfo = useSelector(selectAuth);
   const navigate = useNavigate();
   const [selectedCity, setSelectedCity] = useState<string>("");
@@ -310,7 +322,116 @@ export default function IndexPage() {
         )}
       </div>
 
-      {/* Store Stats (Only Admin) */}
+      {/* Region Wise Stats (Only Admin/Super Admin) */}
+      {["admin", "super_admin"].includes(currentUserInfo.role) && (
+        <Card className="shadow-md">
+          <CardContent className="p-4 space-y-4">
+            <div>
+              <h2 className="text-lg font-semibold mb-3">
+                Region Wise Statistics
+              </h2>
+              <div className="flex items-center gap-3">
+                <Label className="min-w-fit">Select Region:</Label>
+                <SingleRegionCombobox
+                  value={selectedRegion?.id}
+                  onChange={(region) => setSelectedRegion(region)}
+                />
+              </div>
+            </div>
+
+            {!selectedRegion ? (
+              <div className="flex items-center justify-center p-8 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  📍 Select a region above to view region-wise statistics
+                </p>
+              </div>
+            ) : isRegionStatsLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <p className="text-sm text-gray-500">
+                  Loading region statistics...
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="border rounded-lg p-3 bg-gray-50">
+                  <p className="text-xs text-gray-600">
+                    Beneficiaries Registered
+                  </p>
+                  <p className="text-xl font-bold">
+                    {regionStatsData?.data?.summary?.total_candidates ?? 0}
+                  </p>
+                  <div className="w-full flex items-center justify-end">
+                    <Button
+                      variant={"link"}
+                      onClick={() =>
+                        navigate(
+                          `/beneficiary/all?candDistributionLocation=${selectedRegion.id}`,
+                          {
+                            state: {
+                              from: "dashboard",
+                              region_id: selectedRegion.id,
+                            },
+                          }
+                        )
+                      }
+                    >
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+                <div className="border rounded-lg p-3 bg-gray-50">
+                  <p className="text-xs text-gray-600">Vouchers Issued</p>
+                  <p className="text-xl font-bold">
+                    {regionStatsData?.data?.summary?.verified_candidates ?? 0}
+                  </p>
+                  <div className="w-full flex items-center justify-end">
+                    <Button
+                      variant={"link"}
+                      onClick={() =>
+                        navigate(
+                          `/beneficiary/all?candDistributionLocation=${selectedRegion.id}&is_issued=true`,
+                          {
+                            state: {
+                              from: "dashboard",
+                              region_id: selectedRegion.id,
+                            },
+                          }
+                        )
+                      }
+                    >
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+                <div className="border rounded-lg p-3 bg-gray-50">
+                  <p className="text-xs text-gray-600">Pending</p>
+                  <p className="text-xl font-bold">
+                    {regionStatsData?.data?.summary?.pending_verifications ?? 0}
+                  </p>
+                  <div className="w-full flex items-center justify-end">
+                    <Button
+                      variant={"link"}
+                      onClick={() =>
+                        navigate(
+                          `/beneficiary/all?candDistributionLocation=${selectedRegion.id}&is_issued=false`,
+                          {
+                            state: {
+                              from: "dashboard",
+                              region_id: selectedRegion.id,
+                            },
+                          }
+                        )
+                      }
+                    >
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
       {["admin", "super_admin"].includes(currentUserInfo.role) && (
         <div className="border rounded-lg h-[500px] p-2 overflow-hidden flex flex-col bg-card shadow-sm ">
           <div className="border-b">

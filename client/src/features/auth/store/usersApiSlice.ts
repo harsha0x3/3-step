@@ -21,6 +21,7 @@ export const usersApiSlice = rootApiSlice.injectEndpoints({
         sort_order?: "asc" | "desc";
         search_by?: string;
         region_id?: string;
+        role?: string;
       } | void
     >({
       query: (params) => {
@@ -32,6 +33,7 @@ export const usersApiSlice = rootApiSlice.injectEndpoints({
           sort_order = "desc",
           search_by = "full_name",
           region_id = "",
+          role = "",
         } = params || {};
 
         const urlParams = new URLSearchParams();
@@ -43,6 +45,7 @@ export const usersApiSlice = rootApiSlice.injectEndpoints({
         if (sort_order) urlParams.append("sort_order", sort_order);
         if (search_by) urlParams.append("search_by", search_by);
         if (region_id) urlParams.append("region_id", region_id);
+        if (role) urlParams.append("role", role);
 
         return `/users?${urlParams.toString()}`;
       },

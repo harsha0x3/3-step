@@ -107,8 +107,7 @@ const CandidateFormDialog: React.FC<Props> = ({
   const currentUserInfo = useSelector(selectAuth);
   const canEdit =
     !!candidate &&
-    (currentUserInfo.role === "admin" ||
-      currentUserInfo.role === "super_admin" ||
+    (currentUserInfo.role === "super_admin" ||
       currentUserInfo.role === "registration_officer");
 
   const {
@@ -263,7 +262,7 @@ const CandidateFormDialog: React.FC<Props> = ({
     e.stopPropagation();
     let file = e.target.files?.[0];
     if (!file) return;
-    file = await compressImage(file, 1.5);
+    file = await compressImage(file, 1.0);
     const formData = new FormData();
     formData.append("photo", file);
 

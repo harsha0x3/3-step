@@ -42,6 +42,11 @@ export const dashboardApiAlice = rootApiSlice.injectEndpoints({
         responseHandler: async (response) => response.blob(),
       }),
     }),
+
+    getRegionWiseStats: builder.query({
+      query: (regionId: string) => `/dashboard/stats/region-wise/${regionId}`,
+      providesTags: ["Dashboard"],
+    }),
   }),
 });
 
@@ -50,4 +55,5 @@ export const {
   useGetRoleBasedStatsQuery,
   useBulkUploadIssuanceMutation,
   useLazyDownloadBulkTemplateQuery,
+  useGetRegionWiseStatsQuery,
 } = dashboardApiAlice;

@@ -257,7 +257,7 @@ const VendorSpocFormDialog: React.FC<Props> = ({
                     if (!file) {
                       return;
                     }
-                    file = await compressImage(file, 1.5);
+                    file = await compressImage(file, 1.0);
 
                     setPhoto(file);
                     if (file) setPhotoPreview(URL.createObjectURL(file));

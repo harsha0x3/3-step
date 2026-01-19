@@ -240,7 +240,7 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
                 );
               }}
             >
-              Issue Voucher
+              <EyeIcon />
             </Button>
           );
         }

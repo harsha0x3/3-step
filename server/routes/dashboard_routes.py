@@ -15,6 +15,7 @@ from controllers.dashboard_controller import (
     get_registration_officer_dashboard_stats,
     get_laptop_issuance_stats_of_all,
     get_registration_office_locations,
+    get_region_wise_dashboard_stats,
 )
 from models import Candidate, Region, Store
 
@@ -42,6 +43,12 @@ async def download_candidates_data(
     candidates = db.scalars(select(Candidate)).all()
     rows = []
     for cand in candidates:
+        lt_status = "No"
+        if cand.issued_status:
+            if cand.issued_status:
+                lt_status = (
+                    "Yes" if cand.issued_status.issued_status == "issued" else "No"
+                )
         rows.append(
             {
                 "Employee ID": cand.id,
@@ -55,6 +62,8 @@ async def download_candidates_data(
                 "Store Code": cand.store.id if cand.store else None,
                 "Store Name": cand.store.name if cand.store else None,
                 "Store Address": cand.store.address if cand.store else None,
+                "Voucher Issued Status": "Yes" if cand.is_candidate_verified else "No",
+                "Laptop Issued Status": lt_status,
             }
         )
     df = pd.DataFrame(rows).astype(str)
@@ -109,6 +118,27 @@ async def get_role_based_stats(
         )
 
     return {"msg": "Dashboard statistics retrieved", "data": stats}
+
+
+@router.get("/stats/region-wise/{region_id}", status_code=status.HTTP_200_OK)
+async def get_region_wise_stats(
+    region_id: str,
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+):
+    """Get dashboard statistics for a specific region"""
+    if current_user.role not in ["admin", "super_admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
+    try:
+        stats = get_region_wise_dashboard_stats(db, region_id)
+        return {"msg": "Region statistics retrieved successfully", "data": stats}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching region statistics: {str(e)}",
+        )
 
 
 @router.get("/registration_office-locations")

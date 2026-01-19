@@ -22,6 +22,7 @@ import StoreFormDialog from "./StoreFormDialog";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 type Props = {
   stores: StoreItemWithUser[];
@@ -35,6 +36,7 @@ const StoreTable: React.FC<Props> = ({ stores, isLoading, error }) => {
   const [editOpen, setEditOpen] = React.useState(false);
   const [selectedStore, setSelectedStore] =
     React.useState<StoreItemWithUser | null>(null);
+  const navigate = useNavigate();
 
   const columnHelper = createColumnHelper<StoreItemWithUser>();
 
@@ -116,7 +118,6 @@ const StoreTable: React.FC<Props> = ({ stores, isLoading, error }) => {
 
   if (["super_admin", "admin"].includes(currentUserInfo.role)) {
     columns.push(
-      // 🆕 Add this column for store_person
       columnHelper.accessor("store_agents", {
         header: "Store Agents",
         cell: (info) => {
@@ -136,6 +137,32 @@ const StoreTable: React.FC<Props> = ({ stores, isLoading, error }) => {
           );
         },
       }),
+      columnHelper.display({
+        id: "view-beneficiaries",
+        header: "View Beneficiaries",
+        cell: ({ row }) => {
+          const storeId = row.original.id;
+          return (
+            <>
+              <Button
+                variant={"link"}
+                onClick={() =>
+                  navigate(`/beneficiary/all?beneficiaryStoreId=${storeId}`)
+                }
+                size={"sm"}
+              >
+                View Beneficiaries
+              </Button>
+            </>
+          );
+        },
+      })
+    );
+  }
+
+  if (["super_admin"].includes(currentUserInfo.role)) {
+    columns.push(
+      // 🆕 Add this column for store_person
 
       columnHelper.display({
         id: "edit_store",

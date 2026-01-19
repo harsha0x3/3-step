@@ -65,6 +65,7 @@ const UserManagement: React.FC = () => {
   const searchTerm = searchParams.get("userSearchTerm") || "";
   const searchBy = searchParams.get("userSearchBy") || "full_name";
   const regionId = searchParams.get("userRegionId");
+  const roleFilter = searchParams.get("userRole");
 
   const [searchInput, setSearchInput] = useState(searchTerm);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -79,8 +80,18 @@ const UserManagement: React.FC = () => {
       sort_order: sortOrder,
       search_by: searchBy,
       region_id: regionId || undefined,
+      role: roleFilter || undefined,
     }),
-    [page, pageSize, searchTerm, sortBy, sortOrder, searchBy, regionId]
+    [
+      page,
+      pageSize,
+      searchTerm,
+      sortBy,
+      sortOrder,
+      searchBy,
+      regionId,
+      roleFilter,
+    ]
   );
 
   const { data, isLoading, isFetching, refetch } = useGetAllUsersQuery(
@@ -238,6 +249,81 @@ const UserManagement: React.FC = () => {
                           <Check className="h-4 w-4 mr-2" />
                         )}
                         Mobile Number
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
+
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    Filter by Role
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({
+                            userRole: null,
+                            userPage: 1,
+                          })
+                        }
+                      >
+                        {!roleFilter && <Check className="h-4 w-4 mr-2" />}
+                        All Roles
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({
+                            userRole: "super_admin",
+                            userPage: 1,
+                          })
+                        }
+                      >
+                        {roleFilter === "super_admin" && (
+                          <Check className="h-4 w-4 mr-2" />
+                        )}
+                        Super Admin
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({
+                            userRole: "admin",
+                            userPage: 1,
+                          })
+                        }
+                      >
+                        {roleFilter === "admin" && (
+                          <Check className="h-4 w-4 mr-2" />
+                        )}
+                        Admin
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({
+                            userRole: "registration_officer",
+                            userPage: 1,
+                          })
+                        }
+                      >
+                        {roleFilter === "registration_officer" && (
+                          <Check className="h-4 w-4 mr-2" />
+                        )}
+                        Registration Officer (voucher)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateSearchParams({
+                            userRole: "store_agent",
+                            userPage: 1,
+                          })
+                        }
+                      >
+                        {roleFilter === "store_agent" && (
+                          <Check className="h-4 w-4 mr-2" />
+                        )}
+                        Store Agent
                       </DropdownMenuItem>
                     </DropdownMenuSubContent>
                   </DropdownMenuPortal>

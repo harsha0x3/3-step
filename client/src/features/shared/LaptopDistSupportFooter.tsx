@@ -94,19 +94,20 @@ const LaptopDistSupportFooter = ({ trouble }: { trouble: string }) => {
               try {
                 setLoadingKey("normal_video");
 
-                // const file = await getFile(
-                //   "laptop_distribution_normal_video"
-                // ).unwrap();
-                const filePath = await getFilePath(
+                const file = await getFile(
                   "laptop_distribution_normal_video"
                 ).unwrap();
+                // const filePath = await getFilePath(
+                //   "laptop_distribution_normal_video"
+                // ).unwrap();
 
-                // const blobUrl = URL.createObjectURL(
-                //   new Blob([file], { type: "video/mp4" })
-                // );
+                const blobUrl = URL.createObjectURL(
+                  new Blob([file], { type: "video/mp4" })
+                );
 
-                window.open(secureFileUrl(filePath), "_blank");
-                // setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+                // window.open(secureFileUrl(filePath), "_blank");
+                window.open(blobUrl, "_blank");
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
               } catch (err) {
                 toast.error("Failed to load video");
               } finally {

@@ -202,7 +202,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
                     let file = e.target.files?.[0];
                     if (file) {
                       console.log("FILE DOES EXIST");
-                      file = await compressImage(file, 1.5);
+                      file = await compressImage(file, 1.0);
 
                       setEvidencePhoto(file);
                       setEvidencePhotoPreview(URL.createObjectURL(file));
@@ -258,7 +258,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
                   onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
                     let file = e.target.files?.[0];
                     if (file) {
-                      file = await compressImage(file, 1.5);
+                      file = await compressImage(file, 1.0);
 
                       setBillPhoto(file);
                       setBillPhotoPreview(URL.createObjectURL(file));
@@ -350,7 +350,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
                     ) => {
                       let file = e.target.files?.[0];
                       if (file) {
-                        file = await compressImage(file, 1.5);
+                        file = await compressImage(file, 1.0);
 
                         setEmployeePhoto(file);
                         setEmployeePhotoPreview(URL.createObjectURL(file));

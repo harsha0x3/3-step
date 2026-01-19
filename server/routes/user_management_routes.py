@@ -77,6 +77,7 @@ async def get_all_users(
     # ---- Filters ----
     role: Annotated[str | None, Query(title="Filter by role")] = None,
     disabled: Annotated[bool | None, Query(title="Filter by disabled status")] = None,
+    region_id: Annotated[str | None, Query(title="Filter by region ID")] = None,
     # ---- Pagination ----
     page: Annotated[int, Query(title="Page number")] = 1,
     page_size: Annotated[int, Query(title="Items per page")] = 15,
@@ -88,6 +89,7 @@ async def get_all_users(
         sort_order=sort_order,
         role=role,
         disabled=disabled,
+        region_id=region_id,
         page=page,
         page_size=page_size,
     )

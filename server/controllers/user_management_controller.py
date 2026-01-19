@@ -262,6 +262,15 @@ def admin_get_all_users(db: Session, params: UsersSearchParams):
         if params.disabled is not None:
             stmt = stmt.where(User.disabled == params.disabled)
 
+        if (
+            params.region_id
+            and params.region_id != "null"
+            and params.region_id.strip() != ""
+        ):
+            stmt = stmt.join(
+                RegionUserAssociation, User.id == RegionUserAssociation.user_id
+            ).where(RegionUserAssociation.region_id == params.region_id)
+
         # ---- Search ----
         if params.search_by and params.search_term and params.search_term != "null":
             setattr(params, "page", -1)

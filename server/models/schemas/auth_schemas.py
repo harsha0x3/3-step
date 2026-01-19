@@ -141,3 +141,4 @@ class UsersSearchParams(BaseModel):
     sort_order: Literal["asc", "desc"] = "desc"
     role: str | None = None
     disabled: bool | None = None
+    region_id: str | None = None

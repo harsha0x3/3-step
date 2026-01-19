@@ -413,7 +413,11 @@ def get_all_candidates(
         if params.is_verified is not None:
             stmt = stmt.where(Candidate.is_candidate_verified == params.is_verified)
 
-        if params.distribution_location:
+        if (
+            params.distribution_location
+            and params.distribution_location.strip() != ""
+            and params.distribution_location != "null"
+        ):
             stmt = stmt.where(Candidate.region_id == params.distribution_location)
 
         # Filter by issued status

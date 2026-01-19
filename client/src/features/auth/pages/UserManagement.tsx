@@ -4,15 +4,18 @@ import { selectAuth } from "@/features/auth/store/authSlice";
 import { useGetAllUsersQuery } from "../store/usersApiSlice";
 import UserManagementTable from "../components/UserManagementTable";
 import UserFormDialog from "../components/UserFormDialog";
+import SingleRegionCombobox from "@/features/regions/components/SingleRegionCombobox";
 import { Button } from "@/components/ui/button";
 import {
   UserPlus,
   RefreshCcw,
   Check,
   SlidersHorizontalIcon,
+  X,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useSearchParams } from "react-router-dom";
+import type { RegionOut } from "@/store/rootTypes";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -61,6 +64,7 @@ const UserManagement: React.FC = () => {
   const sortOrder = searchParams.get("userSortOrder") || "desc";
   const searchTerm = searchParams.get("userSearchTerm") || "";
   const searchBy = searchParams.get("userSearchBy") || "full_name";
+  const regionId = searchParams.get("userRegionId");
 
   const [searchInput, setSearchInput] = useState(searchTerm);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -74,8 +78,9 @@ const UserManagement: React.FC = () => {
       sort_by: sortBy,
       sort_order: sortOrder,
       search_by: searchBy,
+      region_id: regionId || undefined,
     }),
-    [page, pageSize, searchTerm, sortBy, sortOrder, searchBy]
+    [page, pageSize, searchTerm, sortBy, sortOrder, searchBy, regionId]
   );
 
   const { data, isLoading, isFetching, refetch } = useGetAllUsersQuery(
@@ -131,6 +136,16 @@ const UserManagement: React.FC = () => {
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search users..."
             className="h-8 max-w-xs"
+          />
+
+          <SingleRegionCombobox
+            value={regionId || undefined}
+            onChange={(region) => {
+              updateSearchParams({
+                userRegionId: region.id,
+                userPage: 1,
+              });
+            }}
           />
 
           <DropdownMenu>

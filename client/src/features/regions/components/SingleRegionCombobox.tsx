@@ -62,7 +62,7 @@ const SingleRegionCombobox: React.FC<Props> = ({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className="w-full justify-between"
+          className="justify-between  max-w-[--radix-popover-trigger-width]"
           disabled={disabled}
         >
           {selected?.name ?? "Distribution Location"}
@@ -84,6 +84,14 @@ const SingleRegionCombobox: React.FC<Props> = ({
           </CommandEmpty>
 
           <CommandGroup className="max-h-60 overflow-y-auto">
+            <CommandItem
+              value="None"
+              onSelect={() => {
+                onChange?.({ name: "None", id: "null" });
+              }}
+            >
+              None
+            </CommandItem>
             {data?.data?.map((region) => (
               <CommandItem
                 key={region.id}

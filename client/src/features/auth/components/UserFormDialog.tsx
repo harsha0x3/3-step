@@ -192,7 +192,7 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
 
           {selectedRole === "registration_officer" && (
             <div className="space-y-2">
-              <Label>Assigned Regions</Label>
+              <Label>Voucher Distribution Location</Label>
 
               <MultiRegionCombobox
                 values={watch("region_ids") || []}
@@ -213,7 +213,7 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
             </div>
           )}
 
-          {selectedRole === "registration_officer" && (
+          {/* {selectedRole === "registration_officer" && (
             <div className="space-y-2">
               <Label htmlFor="full_name">Voucher Distribution Location</Label>
               <Input
@@ -228,7 +228,7 @@ const UserFormDialog: React.FC<Props> = ({ user, open, onOpenChange }) => {
                 </span>
               )}
             </div>
-          )}
+          )} */}
 
           {selectedRole === "store_agent" && (
             <div className="space-y-2">

@@ -266,9 +266,15 @@ def get_registration_officer_dashboard_stats(
         total_candidates = db.scalar(total_cand_stmt)
 
         # Verified candidates
-        verified_candidates = db.scalar(
-            select(func.count(Candidate.id)).where(Candidate.is_candidate_verified)
+        verified_candidates_stmt = select(func.count(Candidate.id)).where(
+            Candidate.is_candidate_verified
         )
+        if current_user.regions:
+            region_ids = [r.id for r in current_user.regions]
+            verified_candidates_stmt = verified_candidates_stmt.where(
+                Candidate.region_id.in_(region_ids)
+            )
+        verified_candidates = db.scalar(verified_candidates_stmt)
 
         # Pending verifications
         pending_verifications = total_candidates - (verified_candidates or 0)
@@ -346,6 +352,71 @@ def get_registration_officer_dashboard_stats(
                 }
                 for row in pending_candidates
             ],
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching officer dashboard stats: {str(e)}",
+        )
+
+
+def get_region_wise_dashboard_stats(db: Session, region_id: str) -> dict[str, Any]:
+    """Get dashboard statistics for registration officer"""
+    try:
+        # Total candidates
+        total_cand_stmt = select(func.count(Candidate.id)).where(
+            Candidate.region_id == region_id
+        )
+
+        total_candidates = db.scalar(total_cand_stmt) or 0
+
+        # Verified candidates
+        verified_candidates = (
+            db.scalar(
+                select(func.count(Candidate.id)).where(
+                    and_(
+                        Candidate.is_candidate_verified,
+                        Candidate.region_id == region_id,
+                    )
+                )
+            )
+            or 0
+        )
+
+        # Pending verifications
+        pending_verifications = total_candidates - (verified_candidates or 0)
+
+        total_stores = db.scalar(select(func.count(Store.id)))
+
+        # Pending candidates (not verified)
+        # pending_candidates = db.execute(
+        #     select(
+        #         Candidate.id,
+        #         Candidate.full_name,
+        #         Candidate.mobile_number,
+        #         Candidate.store_id,
+        #         Store.name.label("store_name"),
+        #         Candidate.created_at,
+        #     )
+        #     .outerjoin(Store, Candidate.store_id == Store.id)
+        #     .where(Candidate.is_candidate_verified)
+        #     .order_by(Candidate.created_at.asc())
+        #     .limit(20)
+        # ).all()
+
+        return {
+            "summary": {
+                "total_candidates": total_candidates or 0,
+                "verified_candidates": verified_candidates or 0,
+                "pending_verifications": pending_verifications,
+                "total_stores": total_stores,
+                "completion_rate": round(
+                    (verified_candidates / total_candidates * 100)
+                    if total_candidates > 0
+                    else 0,
+                    2,
+                ),
+            },
         }
     except Exception as e:
         raise HTTPException(

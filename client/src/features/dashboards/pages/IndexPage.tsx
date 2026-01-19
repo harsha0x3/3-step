@@ -328,10 +328,10 @@ export default function IndexPage() {
           <CardContent className="p-4 space-y-4">
             <div>
               <h2 className="text-lg font-semibold mb-3">
-                Region Wise Statistics
+                Distribution Location Wise Statistics
               </h2>
               <div className="flex items-center gap-3">
-                <Label className="min-w-fit">Select Region:</Label>
+                <Label className="min-w-fit">Select a Location:</Label>
                 <SingleRegionCombobox
                   value={selectedRegion?.id}
                   onChange={(region) => setSelectedRegion(region)}

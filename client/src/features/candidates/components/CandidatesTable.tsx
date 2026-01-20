@@ -100,7 +100,7 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
       cell: (info) => info.getValue(),
     }),
 
-    ...(["super_admin", "admin"].includes(currentUserInfo.role)
+    ...(["super_admin"].includes(currentUserInfo.role)
       ? [
           columnHelper.accessor("gift_card_code", {
             id: "gift_card_code",

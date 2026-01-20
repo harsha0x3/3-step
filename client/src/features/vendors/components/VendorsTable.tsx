@@ -60,7 +60,6 @@ const VendorsTable: React.FC<Props> = ({ vendors, isLoading, error }) => {
       cell: ({ row }) => {
         const vendor = row.original;
         if (
-          currentUserInfo.role === "admin" ||
           currentUserInfo.role === "super_admin" ||
           currentUserInfo.role === "registration_officer"
         ) {

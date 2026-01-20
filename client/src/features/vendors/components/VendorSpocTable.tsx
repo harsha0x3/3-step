@@ -84,7 +84,6 @@ const VendorSpocTable: React.FC<Props> = ({
         cell: ({ row }) => {
           const vendorSpoc = row.original;
           if (
-            currentUserInfo.role === "admin" ||
             currentUserInfo.role === "super_admin" ||
             currentUserInfo.role === "registration_officer"
           ) {

@@ -25,7 +25,7 @@ const LoginSupportFooter = () => {
           Contact Support:{" "}
           <span className=" text-black font-medium ">Sminu - </span>
           <a href="tel:+911234567890" className="underline hover:text-primary">
-            +91 9811980043
+            +91 9811980042
           </a>{" "}
           |{" "}
           <a
@@ -52,10 +52,16 @@ const LoginSupportFooter = () => {
                   new Blob([file], { type: "application/pdf" })
                 );
 
-                window.open(blobUrl, "_blank");
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+                const link = document.createElement("a");
+                link.href = blobUrl;
+                link.download = "login_sop.pdf";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
               } catch (err) {
-                toast.error("Failed to load document");
+                toast.error("Failed to download document");
               } finally {
                 setLoadingKey(null);
               }
@@ -78,16 +84,21 @@ const LoginSupportFooter = () => {
                 setLoadingKey("login_video");
 
                 const file = await getFile("login_video").unwrap();
-                // const filePath = await getFilePath("login_video").unwrap();
 
                 const blobUrl = URL.createObjectURL(
                   new Blob([file], { type: "video/mp4" })
                 );
 
-                window.open(blobUrl, "_blank");
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+                const link = document.createElement("a");
+                link.href = blobUrl;
+                link.download = "login_video.mp4";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
               } catch (err) {
-                toast.error("Failed to load video");
+                toast.error("Failed to download video");
               } finally {
                 setLoadingKey(null);
               }

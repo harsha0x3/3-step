@@ -40,5 +40,5 @@ def list_regions(
     """
     Get all regions.
     """
-    data = get_all_regions(db=db, name=name)
+    data = get_all_regions(db=db, name=name, current_user=current_user)
     return {"msg": "", "data": data}

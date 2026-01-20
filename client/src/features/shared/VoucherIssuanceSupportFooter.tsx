@@ -25,7 +25,7 @@ const VoucherIssuanceSupportFooter = () => {
           Contact Support:{" "}
           <span className=" text-black font-medium ">Sminu - </span>
           <a href="tel:+911234567890" className="underline hover:text-primary">
-            +91 9811980043
+            +91 9811980042
           </a>{" "}
           |{" "}
           <a
@@ -81,20 +81,20 @@ const VoucherIssuanceSupportFooter = () => {
               try {
                 setLoadingKey("voucher_video");
 
-                const file = await getFile(
-                  "voucher_distribution_video"
-                ).unwrap();
-                // const filePath = await getFilePath(
+                // const file = await getFile(
                 //   "voucher_distribution_video"
                 // ).unwrap();
+                const filePath = await getFilePath(
+                  "voucher_distribution_video"
+                ).unwrap();
 
-                const blobUrl = URL.createObjectURL(
-                  new Blob([file], { type: "video/mp4" })
-                );
+                // const blobUrl = URL.createObjectURL(
+                //   new Blob([file], { type: "video/mp4" })
+                // );
 
-                window.open(blobUrl, "_blank");
-                // window.open(secureFileUrl(filePath), "_blank");
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+                // window.open(blobUrl, "_blank");
+                window.open(secureFileUrl(filePath), "_blank");
+                // setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
               } catch (err) {
                 toast.error("Failed to load video");
               } finally {

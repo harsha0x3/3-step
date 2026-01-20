@@ -2,8 +2,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from fastapi import HTTPException, status
 
-from models import Region
+from models import Region, RegionUserAssociation
 from models.schemas.region_schemas import RegionOutSchema
+from models.schemas.auth_schemas import UserOut
 
 
 def create_new_region(db: Session, name: str) -> RegionOutSchema:
@@ -21,9 +22,16 @@ def create_new_region(db: Session, name: str) -> RegionOutSchema:
         )
 
 
-def get_all_regions(db: Session, name: str | None):
+def get_all_regions(db: Session, name: str | None, current_user: UserOut):
     try:
         stmt = select(Region)
+        if current_user.role == "registration_officer":
+            print("USER ROLE REGISTRATION OFFICER")
+            stmt = stmt.join(
+                RegionUserAssociation, RegionUserAssociation.region_id == Region.id
+            ).where(RegionUserAssociation.user_id == current_user.id)
+            print("STMT", stmt)
+
         if name:
             stmt = stmt.where(Region.name.ilike(f"%{name}%"))
         regions = db.scalars(stmt).all()

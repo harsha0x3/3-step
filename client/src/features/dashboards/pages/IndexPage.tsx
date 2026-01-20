@@ -323,7 +323,9 @@ export default function IndexPage() {
       </div>
 
       {/* Region Wise Stats (Only Admin/Super Admin) */}
-      {["admin", "super_admin"].includes(currentUserInfo.role) && (
+      {["admin", "super_admin", "registration_officer"].includes(
+        currentUserInfo.role
+      ) && (
         <Card className="shadow-md">
           <CardContent className="p-4 space-y-4">
             <div>
@@ -342,13 +344,14 @@ export default function IndexPage() {
             {!selectedRegion ? (
               <div className="flex items-center justify-center p-8 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-700">
-                  📍 Select a region above to view region-wise statistics
+                  📍 Select a location above to view distribution location wise
+                  statistics
                 </p>
               </div>
             ) : isRegionStatsLoading ? (
               <div className="flex items-center justify-center p-8">
                 <p className="text-sm text-gray-500">
-                  Loading region statistics...
+                  Loading distribution location statistics...
                 </p>
               </div>
             ) : (

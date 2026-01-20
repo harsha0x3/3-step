@@ -64,27 +64,23 @@ const CandidatesTable: React.FC<Props> = ({ candidates, isLoading, error }) => {
     }),
 
     columnHelper.accessor("region", {
-      header: () =>
-        ["super_admin", "admin"].includes(currentUserInfo.role) ? (
-          <SingleRegionCombobox
-            value={candDistributionLocation ?? undefined}
-            onChange={(region) => {
-              const newParams = new URLSearchParams(searchParams);
+      header: () => (
+        <SingleRegionCombobox
+          value={candDistributionLocation ?? undefined}
+          onChange={(region) => {
+            const newParams = new URLSearchParams(searchParams);
 
-              if (region?.id) {
-                newParams.set("candDistributionLocation", region.id);
-                newParams.set("page", "1"); // reset pagination
-              } else {
-                newParams.delete("candDistributionLocation");
-              }
+            if (region?.id) {
+              newParams.set("candDistributionLocation", region.id);
+              newParams.set("page", "1"); // reset pagination
+            } else {
+              newParams.delete("candDistributionLocation");
+            }
 
-              setSearchParams(newParams);
-            }}
-          />
-        ) : (
-          "Distribution Location"
-        ),
-
+            setSearchParams(newParams);
+          }}
+        />
+      ),
       cell: (info) => {
         const region = info.getValue();
         return <p>{region?.name ?? "-"}</p>;

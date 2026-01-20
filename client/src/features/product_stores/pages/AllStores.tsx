@@ -1,6 +1,9 @@
 // src/features/product_stores/pages/AllStores.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useGetAllStoresQuery } from "../store/productStoresApiSlice";
+import {
+  useDownloadStoreAllotmentMutation,
+  useGetAllStoresQuery,
+} from "../store/productStoresApiSlice";
 import StoreTable from "../components/StoresTable";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
@@ -24,6 +27,7 @@ import {
   RefreshCcw,
   ArrowBigLeftDashIcon,
   SlidersHorizontalIcon,
+  DownloadIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -63,7 +67,6 @@ const AllStores: React.FC = () => {
   const storeSortBy = searchParams.get("storeSortBy") || "created_at";
   const storeSortOrder = searchParams.get("storeSortOrder") || "desc";
   const [selectedCity, setSelectedCity] = useState<string>(storeSearchTerm);
-
   const storeQueryParams = useMemo(
     () => ({
       page: storePage,
@@ -97,6 +100,17 @@ const AllStores: React.FC = () => {
     refetchOnMountOrArgChange: true,
   });
 
+  const [downloadCandidates, { isLoading: isDownloading }] =
+    useDownloadStoreAllotmentMutation();
+
+  useEffect(() => {
+    updateSearchParams({
+      storeSearchTerm: selectedCity,
+      storeSearchBy: "city",
+      storePage: 1,
+    });
+  }, [selectedCity]);
+
   if (
     currentUserInfo.role !== "admin" &&
     currentUserInfo.role !== "super_admin" &&
@@ -104,6 +118,28 @@ const AllStores: React.FC = () => {
   ) {
     navigate("/");
   }
+
+  const downloadStoreAllotmentData = async () => {
+    try {
+      const blob = await downloadCandidates(undefined).unwrap();
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      const now = new Date().toLocaleString();
+      link.download = `store_allotment_data_${now}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      const errMsg = err?.data?.detail?.msg ?? "Failed to fetch beneficiaries";
+      const errDesc = err?.data?.detail?.msg
+        ? err?.data?.detail?.err_stack
+        : "Failed to download beneficiary data";
+      toast.error(errMsg, { description: errDesc });
+    }
+  };
 
   const updateSearchParams = (updates: object) => {
     const newParams = new URLSearchParams(searchParams);
@@ -113,14 +149,6 @@ const AllStores: React.FC = () => {
     });
     setSearchParams(newParams);
   };
-
-  useEffect(() => {
-    updateSearchParams({
-      storeSearchTerm: selectedCity,
-      storeSearchBy: "city",
-      storePage: 1,
-    });
-  }, [selectedCity]);
 
   const goToPage = (page: number) => {
     updateSearchParams({ storePage: page });
@@ -150,6 +178,17 @@ const AllStores: React.FC = () => {
             value={selectedCity}
             onChange={(val) => setSelectedCity(val)}
           />
+          {["super_admin"].includes(currentUserInfo.role) && (
+            <Hint label="Download store allotment data as excel">
+              <Button
+                onClick={downloadStoreAllotmentData}
+                disabled={isDownloading}
+              >
+                <DownloadIcon className="h-4 w-4 mr-1" />
+                {isDownloading ? "Downloading.." : "Download Store allotment"}
+              </Button>
+            </Hint>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" className="px-2">

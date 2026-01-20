@@ -10,6 +10,7 @@ class RoleEnum(str, Enum):
     admin = "admin"
     store_agent = "store_agent"
     verifier = "registration_officer"
+    inspector = "inspector"
 
 
 class RegisterRequest(BaseModel):

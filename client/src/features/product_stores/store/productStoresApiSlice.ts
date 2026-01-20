@@ -99,6 +99,14 @@ export const productStoresApiSlice = rootApiSlice.injectEndpoints({
         body: formData,
       }),
     }),
+
+    downloadStoreAllotment: builder.mutation({
+      query: () => ({
+        url: "/dashboard/download/store-allotment",
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
   }),
 });
 
@@ -111,4 +119,5 @@ export const {
   useGetOfflineUploadHistoryQuery,
   useUploadOfflineReportMutation,
   useGetAllCitiesQuery,
+  useDownloadStoreAllotmentMutation,
 } = productStoresApiSlice;

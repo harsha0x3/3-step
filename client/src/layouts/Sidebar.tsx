@@ -177,31 +177,31 @@ const Sidebar: React.FC = () => {
     {
       label: "Register",
       icon: CopyPlusIcon,
-      roles: ["admin", "super_admin", "registration_officer"],
+      roles: ["super_admin", "registration_officer"],
       children: [
         {
           label: "Beneficiary",
           icon: UsersRoundIcon,
           path: "/admin/beneficiary/new",
-          roles: ["admin", "super_admin"],
+          roles: ["super_admin"],
         },
         {
           label: "Store",
           icon: StoreIcon,
           path: "/admin/stores/new",
-          roles: ["admin", "super_admin"],
+          roles: ["super_admin"],
         },
         {
           label: "Vendor",
           icon: Users2Icon,
           path: "/vendors/new",
-          roles: ["admin", "super_admin"],
+          roles: ["super_admin"],
         },
         {
           label: "Vendor Contact Person",
           icon: UserCircle2Icon,
           path: "/vendor_spoc/new",
-          roles: ["admin", "super_admin", "registration_officer"],
+          roles: ["super_admin", "registration_officer"],
         },
       ],
     },
@@ -209,7 +209,7 @@ const Sidebar: React.FC = () => {
       label: "User Management",
       icon: Users2Icon,
       path: "/admin/users",
-      roles: ["admin", "super_admin"],
+      roles: ["super_admin"],
     },
     {
       label: "Issue Voucher",

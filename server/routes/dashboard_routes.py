@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
-from sqlalchemy import text, select, and_
+from sqlalchemy import text, select, and_, func
 import pandas as pd
 from typing import Annotated
 from sqlalchemy.orm import Session
@@ -69,7 +69,51 @@ async def download_candidates_data(
     df = pd.DataFrame(rows).astype(str)
 
     now_str = datetime.now().strftime("%Y%m%d-%H%M")
-    filename = f"candidates_{now_str}.xlsx"
+    filename = f"beneficiaries_{now_str}.xlsx"
+    filepath = os.path.join(BASE_CSV_UPLOAD_DIR, filename)
+
+    df.to_excel(filepath, index=False)
+
+    # 📤 Return file
+    return FileResponse(
+        path=filepath,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename=filename,
+    )
+
+
+# ✅ Get all candidates (with optional search)
+@router.get("/download/store-allotment", status_code=status.HTTP_200_OK)
+async def download_store_allotment_data(
+    db: Annotated[Session, Depends(get_db_conn)],
+    current_user: Annotated[UserOut, Depends(get_current_user)],
+):
+    if current_user.role not in {"admin", "super_admin"}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Not authorised to view all candidates with role - {current_user.role}",
+        )
+
+    store_allotment = db.execute(
+        select(Store, func.count(Candidate.id).label("candidate_count"))
+        .outerjoin(Candidate, Candidate.store_id == Store.id)
+        .group_by(Store.id)
+    ).all()
+    rows = []
+
+    for store, cnt in store_allotment:
+        data = {
+            "Store Code": store.id,
+            "Store Name": store.name,
+            "Alloted Count": cnt,
+            "Store Address": Store.address,
+        }
+        rows.append(data)
+
+    df = pd.DataFrame(rows).astype(str)
+
+    now_str = datetime.now().strftime("%Y%m%d-%H%M")
+    filename = f"store_allotment_{now_str}.xlsx"
     filepath = os.path.join(BASE_CSV_UPLOAD_DIR, filename)
 
     df.to_excel(filepath, index=False)

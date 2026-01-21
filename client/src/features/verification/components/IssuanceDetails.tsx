@@ -18,6 +18,7 @@ import {
   UserIcon,
   Laptop,
   GiftIcon,
+  Clock,
 } from "lucide-react";
 import type {
   IssuanceDetailsItem,
@@ -32,6 +33,7 @@ import Hint from "@/components/ui/hint";
 import { Textarea } from "@/components/ui/textarea";
 import { useSelector } from "react-redux";
 import { selectAuth } from "@/features/auth/store/authSlice";
+import { dateParser } from "@/utils/helpers";
 
 interface IssuanceDetailProps {
   candidate: CandidateItemWithStore;
@@ -99,7 +101,7 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
         <span
           className={clsx(
             "flex items-center gap-1 font-medium",
-            status ? "text-green-500" : "text-red-500"
+            status ? "text-green-500" : "text-red-500",
           )}
         >
           {status ? (
@@ -132,7 +134,7 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
         {image ? (
           <img
             src={`${baseUrl}/hard_verify/api/v1.0/secured_file?path=${encodeURIComponent(
-              image
+              image,
             )}`}
             className="w-64 h-64 rounded-md object-cover border"
           />
@@ -195,13 +197,19 @@ const IssuanceDetails: React.FC<IssuanceDetailProps> = ({
               </div>
               {!isToConfirm && currentUserInfo.role !== "store_agent" && (
                 <div className="flex items-center gap-2">
-                  <MapPinCheck className="w-4 h-4" />
+                  <Clock className="w-4 h-4" />
                   <span>
-                    <strong>Voucher Issued at:</strong>{" "}
-                    {candidate.verified_by?.location}
+                    <strong>Laptop Issued at:</strong>{" "}
+                    {dateParser(candidateIssuanceDetails?.issued_at)}
                   </span>
                 </div>
               )}
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                <span>
+                  <strong>Store Location:</strong> {candidate.store?.name}
+                </span>
+              </div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
                 <span>

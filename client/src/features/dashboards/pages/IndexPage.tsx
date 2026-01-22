@@ -16,7 +16,7 @@ import { useNavigate } from "react-router-dom";
 export default function IndexPage() {
   const { data, isLoading, isError } = useGetRoleBasedStatsQuery(undefined);
   const [selectedRegion, setSelectedRegion] = useState<RegionOut | undefined>(
-    undefined
+    undefined,
   );
   const { data: regionStatsData, isLoading: isRegionStatsLoading } =
     useGetRegionWiseStatsQuery(selectedRegion?.id || "", {
@@ -38,7 +38,7 @@ export default function IndexPage() {
   const filteredStores = useMemo(() => {
     if (storeStats)
       return storeStats.filter((s) =>
-        (s.city ?? "").toLowerCase().includes(selectedCity.toLowerCase())
+        (s.city ?? "").toLowerCase().includes(selectedCity.toLowerCase()),
       );
   }, [selectedCity, storeStats]);
 
@@ -122,7 +122,7 @@ export default function IndexPage() {
                       "/dashboard/store/beneficiary/all?is_verified=true",
                       {
                         state: { from: "dashboard" },
-                      }
+                      },
                     )
                   }
                 >
@@ -163,7 +163,7 @@ export default function IndexPage() {
                         "/dashboard/store/beneficiary/all?is_issued=true",
                         {
                           state: { from: "dashboard" },
-                        }
+                        },
                       )
                     }
                   >
@@ -174,7 +174,7 @@ export default function IndexPage() {
             </Card>
           )}
         {["super_admin", "admin", "store_agent"].includes(
-          currentUserInfo.role
+          currentUserInfo.role,
         ) &&
           upgradeStats !== undefined &&
           upgradeStats !== null && (
@@ -216,7 +216,7 @@ export default function IndexPage() {
             </Card>
           )}
         {["super_admin", "admin", "store_agent"].includes(
-          currentUserInfo.role
+          currentUserInfo.role,
         ) &&
           upgradeStats !== undefined &&
           upgradeStats !== null && (
@@ -250,7 +250,7 @@ export default function IndexPage() {
                         "/dashboard/store/beneficiary/all?upgrade_request=true",
                         {
                           state: { from: "dashboard" },
-                        }
+                        },
                       )
                     }
                   >
@@ -324,7 +324,7 @@ export default function IndexPage() {
 
       {/* Region Wise Stats (Only Admin/Super Admin) */}
       {["admin", "super_admin", "registration_officer"].includes(
-        currentUserInfo.role
+        currentUserInfo.role,
       ) && (
         <Card className="shadow-md">
           <CardContent className="p-4 space-y-4">
@@ -374,7 +374,7 @@ export default function IndexPage() {
                               from: "dashboard",
                               region_id: selectedRegion.id,
                             },
-                          }
+                          },
                         )
                       }
                     >
@@ -392,13 +392,13 @@ export default function IndexPage() {
                       variant={"link"}
                       onClick={() =>
                         navigate(
-                          `/beneficiary/all?candDistributionLocation=${selectedRegion.id}&is_issued=true`,
+                          `/beneficiary/all?candDistributionLocation=${selectedRegion.id}&is_verified=true`,
                           {
                             state: {
                               from: "dashboard",
                               region_id: selectedRegion.id,
                             },
-                          }
+                          },
                         )
                       }
                     >
@@ -416,13 +416,13 @@ export default function IndexPage() {
                       variant={"link"}
                       onClick={() =>
                         navigate(
-                          `/beneficiary/all?candDistributionLocation=${selectedRegion.id}&is_issued=false`,
+                          `/beneficiary/all?candDistributionLocation=${selectedRegion.id}&is_verified=false`,
                           {
                             state: {
                               from: "dashboard",
                               region_id: selectedRegion.id,
                             },
-                          }
+                          },
                         )
                       }
                     >
@@ -467,7 +467,7 @@ export default function IndexPage() {
                               `/beneficiary/all?beneficiaryStoreId=${s.store_id}`,
                               {
                                 state: { from: "dashboard" },
-                              }
+                              },
                             )
                           }
                           size={"sm"}

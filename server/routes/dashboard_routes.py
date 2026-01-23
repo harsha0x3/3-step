@@ -44,11 +44,13 @@ async def download_candidates_data(
     rows = []
     for cand in candidates:
         lt_status = "No"
+        lt_issued_time = None
         if cand.issued_status:
             if cand.issued_status:
                 lt_status = (
                     "Yes" if cand.issued_status.issued_status == "issued" else "No"
                 )
+                lt_issued_time = cand.issued_status.issued_at
         rows.append(
             {
                 "Employee ID": cand.id,
@@ -63,7 +65,9 @@ async def download_candidates_data(
                 "Store Name": cand.store.name if cand.store else None,
                 "Store Address": cand.store.address if cand.store else None,
                 "Voucher Issued Status": "Yes" if cand.is_candidate_verified else "No",
+                "Voucher Issued Time": cand.voucher_issued_at,
                 "Laptop Issued Status": lt_status,
+                "Laptop Issued Time": lt_issued_time,
             }
         )
     df = pd.DataFrame(rows).astype(str)

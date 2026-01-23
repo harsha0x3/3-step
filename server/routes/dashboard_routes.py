@@ -50,7 +50,20 @@ async def download_candidates_data(
                 lt_status = (
                     "Yes" if cand.issued_status.issued_status == "issued" else "No"
                 )
-                lt_issued_time = cand.issued_status.issued_at
+                if cand.issued_status.issued_at:
+                    lt_issued_time = (
+                        pd.to_datetime(cand.issued_status.issued_at)
+                        .tz_localize("UTC")
+                        .tz_convert("Asia/Kolkata")
+                    )
+
+        voucher_issued_time = None
+        if cand.voucher_issued_at:
+            voucher_issued_time = (
+                pd.to_datetime(cand.voucher_issued_at)
+                .tz_localize("UTC")
+                .tz_convert("Asia/Kolkata")
+            )
         rows.append(
             {
                 "Employee ID": cand.id,
@@ -65,7 +78,7 @@ async def download_candidates_data(
                 "Store Name": cand.store.name if cand.store else None,
                 "Store Address": cand.store.address if cand.store else None,
                 "Voucher Issued Status": "Yes" if cand.is_candidate_verified else "No",
-                "Voucher Issued Time": cand.voucher_issued_at,
+                "Voucher Issued Time": voucher_issued_time,
                 "Laptop Issued Status": lt_status,
                 "Laptop Issued Time": lt_issued_time,
             }

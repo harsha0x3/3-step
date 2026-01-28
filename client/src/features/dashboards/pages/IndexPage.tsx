@@ -482,16 +482,24 @@ export default function IndexPage() {
                           <p className="text-xs text-gray-500">Total</p>
                           <p className="font-bold">{s.total_candidates}</p>
                         </div>
-                        <div>
+                        {/* <div>
                           <p className="text-xs text-gray-500">Aadhar Failed</p>
                           <p className="font-bold">{s.aadhar_failed}</p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Facial Failed</p>
                           <p className="font-bold">{s.facial_failed}</p>
+                        </div> */}
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Vouchers Issued
+                          </p>
+                          <p className="font-bold">{s.vouchers_issued}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Issued</p>
+                          <p className="text-xs text-gray-500">
+                            Laptops Issued
+                          </p>
                           <p className="font-bold">{s.laptops_issued}</p>
                         </div>
                       </div>

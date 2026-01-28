@@ -66,6 +66,9 @@ def get_admin_dashboard_stats(db: Session) -> dict[str, Any]:
                         case((IssuedStatus.issued_status == "issued", Candidate.id))
                     )
                 ).label("laptops_issued"),
+                func.count(
+                    func.distinct(case((Candidate.is_candidate_verified, Candidate.id)))
+                ).label("vouchers_issued"),
                 # Verification failures (verification table is 1-to-1 per candidate, so sum is safe)
                 func.sum(
                     case((~VerificationStatus.is_aadhar_verified, 1), else_=0)
@@ -136,6 +139,7 @@ def get_admin_dashboard_stats(db: Session) -> dict[str, Any]:
                     "total_candidates": row.total_candidates or 0,
                     "aadhar_failed": row.aadhar_failed or 0,
                     "facial_failed": row.facial_failed or 0,
+                    "vouchers_issued": row.vouchers_issued or 0,
                     "laptops_issued": row.laptops_issued or 0,
                 }
                 for row in store_stats

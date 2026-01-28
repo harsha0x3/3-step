@@ -427,10 +427,10 @@ def get_all_candidates(
                     IssuedStatus.issued_status == "issued"
                 )
             else:
-                stmt = stmt.join(IssuedStatus).where(
+                stmt = stmt.outerjoin(IssuedStatus).where(
                     or_(
                         IssuedStatus.issued_status == "not_issued",
-                        Candidate.issued_status.is_(None),
+                        IssuedStatus.candidate_id.is_(None),
                     )
                 )
 

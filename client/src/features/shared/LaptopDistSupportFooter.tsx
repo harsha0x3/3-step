@@ -19,38 +19,6 @@ const LaptopDistSupportFooter = ({ trouble }: { trouble: string }) => {
         <p className="font-medium text-accent-foreground">
           Having trouble {trouble}?
         </p>
-        <p>Contact Support</p>
-
-        {/* <p>
-          <span className=" text-black font-medium ">
-            Regional Helpdesk: {"{Contact person}"} -{" "}
-          </span>
-          <a href="tel:+911234567890" className="underline hover:text-primary">
-            +91 9998889990
-          </a>{" "}
-          |{" "}
-          <a
-            href="mailto:sminu@titan.co.in"
-            className="underline hover:text-primary"
-          >
-            helpdesk@titan.co.in
-          </a>
-        </p> */}
-
-        {/* Support Contact */}
-        <p>
-          <span className=" text-black font-medium ">Admin: Sminu - </span>
-          <a href="tel:+911234567890" className="underline hover:text-primary">
-            +91 9811980042
-          </a>{" "}
-          |{" "}
-          <a
-            href="mailto:sminu@titan.co.in"
-            className="underline hover:text-primary"
-          >
-            sminu@titan.co.in
-          </a>
-        </p>
 
         {/* Useful Links */}
         <div className="flex flex-col sm:flex-row sm:gap-3 items-center gap-1 mt-2">
@@ -65,7 +33,7 @@ const LaptopDistSupportFooter = ({ trouble }: { trouble: string }) => {
                 const file = await getFile("laptop_distribution_sop").unwrap();
 
                 const blobUrl = URL.createObjectURL(
-                  new Blob([file], { type: "application/pdf" })
+                  new Blob([file], { type: "application/pdf" }),
                 );
 
                 window.open(blobUrl, "_blank");
@@ -98,7 +66,7 @@ const LaptopDistSupportFooter = ({ trouble }: { trouble: string }) => {
                 //   "laptop_distribution_normal_video"
                 // ).unwrap();
                 const filePath = await getFilePath(
-                  "laptop_distribution_normal_video"
+                  "laptop_distribution_normal_video",
                 ).unwrap();
 
                 // const blobUrl = URL.createObjectURL(
@@ -132,6 +100,65 @@ const LaptopDistSupportFooter = ({ trouble }: { trouble: string }) => {
           >
             🎥 Video Demo – Laptop Distribution
           </a> */}
+        </div>
+        <p>Contact Support</p>
+
+        {/* <p>
+          <span className=" text-black font-medium ">
+            Regional Helpdesk: {"{Contact person}"} -{" "}
+          </span>
+          <a href="tel:+911234567890" className="underline hover:text-primary">
+            +91 9998889990
+          </a>{" "}
+          |{" "}
+          <a
+            href="mailto:sminu@titan.co.in"
+            className="underline hover:text-primary"
+          >
+            helpdesk@titan.co.in
+          </a>
+        </p> */}
+
+        {/* Support Contact */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-2 text-sm">
+          {/* Contact 1 */}
+          <div className="flex flex-col sm:flex-row sm:gap-1 items-center">
+            <span className="text-black font-medium">Sminu Thomas</span>
+            <a
+              href="tel:+919811980042"
+              className="underline hover:text-primary"
+            >
+              +91 9811980042
+            </a>
+            <span className="hidden sm:inline">|</span>
+            <a
+              href="mailto:sminu@titan.co.in"
+              className="underline hover:text-primary"
+            >
+              sminu@titan.co.in
+            </a>
+          </div>
+
+          {/* Divider (desktop only) */}
+          <span className="hidden sm:inline text-muted-foreground">•</span>
+
+          {/* Contact 2 */}
+          <div className="flex flex-col sm:flex-row sm:gap-1 items-center">
+            <span className="text-black font-medium">C G Harsha Vardhan</span>
+            <a
+              href="tel:+919573525695"
+              className="underline hover:text-primary"
+            >
+              +91 9573525695
+            </a>
+            <span className="hidden sm:inline">|</span>
+            <a
+              href="mailto:harshavardhancg@titan.co.in"
+              className="underline hover:text-primary"
+            >
+              harshavardhancg@titan.co.in
+            </a>
+          </div>
         </div>
       </div>
     </footer>

@@ -20,48 +20,6 @@ const LoginSupportFooter = () => {
           Need help logging in?
         </p>
 
-        {/* Support Contacts */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-2 text-sm">
-          {/* Contact 1 */}
-          <div className="flex flex-col sm:flex-row sm:gap-1 items-center">
-            <span className="text-black font-medium">Sminu Thomas</span>
-            <a
-              href="tel:+919811980042"
-              className="underline hover:text-primary"
-            >
-              +91 9811980042
-            </a>
-            <span className="hidden sm:inline">|</span>
-            <a
-              href="mailto:sminu@titan.co.in"
-              className="underline hover:text-primary"
-            >
-              sminu@titan.co.in
-            </a>
-          </div>
-
-          {/* Divider (desktop only) */}
-          <span className="hidden sm:inline text-muted-foreground">•</span>
-
-          {/* Contact 2 */}
-          <div className="flex flex-col sm:flex-row sm:gap-1 items-center">
-            <span className="text-black font-medium">C G Harsha Vardhan</span>
-            <a
-              href="tel:+919573525695"
-              className="underline hover:text-primary"
-            >
-              +91 9573525695
-            </a>
-            <span className="hidden sm:inline">|</span>
-            <a
-              href="mailto:harshavardhancg@titan.co.in"
-              className="underline hover:text-primary"
-            >
-              harshavardhancg@titan.co.in
-            </a>
-          </div>
-        </div>
-
         {/* Useful Links */}
         <div className="flex flex-col sm:flex-row sm:gap-3 items-center gap-1 mt-2">
           <Button
@@ -147,6 +105,49 @@ const LoginSupportFooter = () => {
           >
             🎥 Video Demo – First-time Login
           </a> */}
+        </div>
+        <p>Contact Support</p>
+
+        {/* Support Contacts */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-2 text-sm">
+          {/* Contact 1 */}
+          <div className="flex flex-col sm:flex-row sm:gap-1 items-center">
+            <span className="text-black font-medium">Sminu Thomas</span>
+            <a
+              href="tel:+919811980042"
+              className="underline hover:text-primary"
+            >
+              +91 9811980042
+            </a>
+            <span className="hidden sm:inline">|</span>
+            <a
+              href="mailto:sminu@titan.co.in"
+              className="underline hover:text-primary"
+            >
+              sminu@titan.co.in
+            </a>
+          </div>
+
+          {/* Divider (desktop only) */}
+          <span className="hidden sm:inline text-muted-foreground">•</span>
+
+          {/* Contact 2 */}
+          <div className="flex flex-col sm:flex-row sm:gap-1 items-center">
+            <span className="text-black font-medium">C G Harsha Vardhan</span>
+            <a
+              href="tel:+919573525695"
+              className="underline hover:text-primary"
+            >
+              +91 9573525695
+            </a>
+            <span className="hidden sm:inline">|</span>
+            <a
+              href="mailto:harshavardhancg@titan.co.in"
+              className="underline hover:text-primary"
+            >
+              harshavardhancg@titan.co.in
+            </a>
+          </div>
         </div>
       </div>
     </footer>

@@ -79,7 +79,7 @@ const CandidateFormDialog: React.FC<Props> = ({
   const [open, setOpen] = React.useState(defOpen);
   const [showVerifyConfirm, setShowVerifyConfirm] = useState<boolean>(false);
   const [selectedStore, setSelectedStore] = useState<StoreItemWithUser | null>(
-    null
+    null,
   );
   const [showResetIssuanceAlert, setShowResetIssuanceAlert] = useState(false);
   useEffect(() => {
@@ -228,12 +228,12 @@ const CandidateFormDialog: React.FC<Props> = ({
   const mode = isEditMode
     ? "edit"
     : viewOnly
-    ? "view"
-    : toVerify
-    ? "verify"
-    : candidate
-    ? "view"
-    : "add";
+      ? "view"
+      : toVerify
+        ? "verify"
+        : candidate
+          ? "view"
+          : "add";
 
   useEffect(() => {
     if (candidate) {
@@ -256,7 +256,7 @@ const CandidateFormDialog: React.FC<Props> = ({
 
   const handleImageUpload = async (
     type: "aadhar" | "candidate",
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     e.preventDefault();
     e.stopPropagation();
@@ -310,7 +310,7 @@ const CandidateFormDialog: React.FC<Props> = ({
     label: string,
     type: string = "text",
     required = currentUserInfo.role !== "super_admin",
-    isReadOnly = false
+    isReadOnly = false,
   ) => (
     <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
       <Label className="font-semibold text-md flex gap-2" htmlFor={name}>
@@ -323,7 +323,7 @@ const CandidateFormDialog: React.FC<Props> = ({
         readOnly={viewOnly || (!isEditMode && !!candidate) || isReadOnly}
         {...register(
           name,
-          required ? { required: `${label} is required` } : {}
+          required ? { required: `${label} is required` } : {},
         )}
         className={`${errors[name] ? "border-red-500 " : ""}`}
       />
@@ -371,10 +371,10 @@ const CandidateFormDialog: React.FC<Props> = ({
               {viewOnly
                 ? "View Beneficiary Details"
                 : toVerify
-                ? "Beneficiary Details"
-                : isEditMode || !!candidate
-                ? "Edit Beneficiary Details"
-                : "Add New Beneficiary"}
+                  ? "Beneficiary Details"
+                  : isEditMode || !!candidate
+                    ? "Edit Beneficiary Details"
+                    : "Add New Beneficiary"}
 
               {candidate?.is_candidate_verified && (
                 <span className="text-green-400 bg-green-100 rounded flex gap-2 items-center px-2 py-1 text-sm">
@@ -462,7 +462,13 @@ const CandidateFormDialog: React.FC<Props> = ({
             )}
 
             <section className="flex flex-col gap-4">
-              {renderTextInput("id", "Employee ID", "text", true)}
+              {renderTextInput(
+                "id",
+                "Employee ID",
+                "text",
+                true,
+                currentUserInfo.role !== "super_admin",
+              )}
               {renderTextInput("full_name", "Full Name")}
               <div className="grid grid-cols-1 sm:grid-cols-[250px_1fr] gap-0">
                 <Label
@@ -540,7 +546,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                         .replace(/(\d{4})(?=\d)/g, "$1-");
 
                     const handleChange = (
-                      e: React.ChangeEvent<HTMLInputElement>
+                      e: React.ChangeEvent<HTMLInputElement>,
                     ) => {
                       if (!isEditMode) return;
 
@@ -733,7 +739,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                             disabled={
                               (!isEditMode && !!candidate) ||
                               !["admin", "super_admin"].includes(
-                                currentUserInfo.role
+                                currentUserInfo.role,
                               )
                             }
                             onChange={(region) => {
@@ -797,7 +803,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                             src={`${
                               import.meta.env.VITE_API_BASE_API_URL
                             }/hard_verify/api/v1.0/secured_file?path=${encodeURIComponent(
-                              candidate?.photo
+                              candidate?.photo,
                             )}`}
                             alt="Candidate"
                             className="w-30 h-30 object-cover rounded-md border"
@@ -835,7 +841,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                                   disabled={
                                     candidate.is_candidate_verified &&
                                     !["super_admin"].includes(
-                                      currentUserInfo.role
+                                      currentUserInfo.role,
                                     )
                                   }
                                 />
@@ -883,7 +889,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                             src={`${
                               import.meta.env.VITE_API_BASE_API_URL
                             }/hard_verify/api/v1.0/secured_file?path=${encodeURIComponent(
-                              candidate?.aadhar_photo
+                              candidate?.aadhar_photo,
                             )}`}
                             alt="Candidate"
                             className="w-30 h-30 object-cover rounded-md border"
@@ -921,7 +927,7 @@ const CandidateFormDialog: React.FC<Props> = ({
                                   disabled={
                                     candidate.is_candidate_verified &&
                                     !["super_admin"].includes(
-                                      currentUserInfo.role
+                                      currentUserInfo.role,
                                     )
                                   }
                                 />
@@ -1132,8 +1138,8 @@ const CandidateFormDialog: React.FC<Props> = ({
                       !isVerifiedChecked
                         ? "Check the Beneficiary details verified checkbox to proceed"
                         : candidate.is_candidate_verified
-                        ? "Voucher for the beneficiary is already issued."
-                        : "Issue Voucher to the beneficiary"
+                          ? "Voucher for the beneficiary is already issued."
+                          : "Issue Voucher to the beneficiary"
                     }
                   >
                     <div className="relative w-full flex justify-center">

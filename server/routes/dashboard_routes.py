@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
-from sqlalchemy import text, select, and_, func
+from sqlalchemy import text, select, and_, func, case
 import pandas as pd
 from typing import Annotated
 from sqlalchemy.orm import Session
@@ -17,7 +17,7 @@ from controllers.dashboard_controller import (
     get_registration_office_locations,
     get_region_wise_dashboard_stats,
 )
-from models import Candidate, Region, Store
+from models import Candidate, IssuedStatus, Store
 
 from controllers.store_controller import get_store_of_user
 
@@ -111,19 +111,28 @@ async def download_store_allotment_data(
             detail=f"Not authorised to view all candidates with role - {current_user.role}",
         )
 
-    store_allotment = db.execute(
-        select(Store, func.count(Candidate.id).label("candidate_count"))
+    store_allotment = store_allotment = db.execute(
+        select(
+            Store,
+            func.count(Candidate.id).label("candidate_count"),
+            func.count(case((IssuedStatus.issued_status == "issued", 1))).label(
+                "issued_count"
+            ),
+        )
         .outerjoin(Candidate, Candidate.store_id == Store.id)
+        .outerjoin(IssuedStatus, IssuedStatus.candidate_id == Candidate.id)
         .group_by(Store.id)
     ).all()
     rows = []
 
-    for store, cnt in store_allotment:
+    for store, total_cnt, issued_cnt in store_allotment:
         data = {
             "Store Code": store.id,
             "Store Name": store.name,
-            "Alloted Count": cnt,
-            "Store Address": Store.address,
+            "Alloted Count": total_cnt,
+            "Store Address": store.address,
+            "Laptops Issued": issued_cnt,
+            "Pending Issuance": total_cnt - issued_cnt,
         }
         rows.append(data)
 

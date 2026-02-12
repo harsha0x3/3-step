@@ -176,7 +176,7 @@ const UpgradeLaptopForm: React.FC<UpgradeFormProps> = ({
         err?.data?.detail ??
         "Error in upgrading laptop.  Try again";
       console.log("ERR IN LAP UPGRADE", err);
-      toast.error(errMsg);
+      toast.error(JSON.stringify(err));
     }
   };
 

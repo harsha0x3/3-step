@@ -65,20 +65,20 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
     if (!isLoadingLatestLaptopIssuer && latestLaptopIssuer) {
       setStoreEmployeeName(
         latestLaptopIssuer?.data?.store_employee_name ??
-          currentUserInfo.full_name
+          currentUserInfo.full_name,
       );
       setStoreEmployeeMobile(
         latestLaptopIssuer?.data?.store_employee_mobile ??
-          currentUserInfo.mobile_number
+          currentUserInfo.mobile_number,
       );
       setEmployeePhotoPreview(
         latestLaptopIssuer?.data?.store_employee_photo
           ? `${
               import.meta.env.VITE_API_BASE_API_URL
             }/hard_verify/api/v1.0/secured_file?path=${encodeURIComponent(
-              latestLaptopIssuer?.data.store_employee_photo
+              latestLaptopIssuer?.data.store_employee_photo,
             )}`
-          : null
+          : null,
       );
     }
   }, [isLoadingLatestLaptopIssuer, latestLaptopIssuer]);
@@ -136,7 +136,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
         err?.data?.detail?.msg ??
         err?.data?.detail ??
         "Error in Issuance of laptop. Try again";
-      toast.error(errMsg);
+      toast.error(JSON.stringify(err));
     }
   };
 
@@ -346,7 +346,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
                     type="file"
                     accept="image/*"
                     onChange={async (
-                      e: React.ChangeEvent<HTMLInputElement>
+                      e: React.ChangeEvent<HTMLInputElement>,
                     ) => {
                       let file = e.target.files?.[0];
                       if (file) {
@@ -429,7 +429,7 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
                     src={`${
                       import.meta.env.VITE_API_BASE_API_URL
                     }/hard_verify/api/v1.0/secured_file?path=${encodeURIComponent(
-                      candidateDetails?.data?.candidate?.photo
+                      candidateDetails?.data?.candidate?.photo,
                     )}`}
                     className="w-36 h-36 rounded-lg border object-cover"
                   />

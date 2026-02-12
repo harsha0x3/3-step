@@ -52,7 +52,10 @@ const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
     let file = base64ToFile(preview, "captured_photo.jpg");
 
     file = await compressImage(file, 1.0);
-
+    if (file.size / 1024 / 1024 > 1.0) {
+      toast.error(`File size is larger than 1 MB`);
+      return;
+    }
     const formData = new FormData();
     formData.append("photo", file);
     try {

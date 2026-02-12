@@ -132,7 +132,7 @@ const VendorSpocFormDialog: React.FC<Props> = ({
     name: keyof VendorSpocForm,
     label: string,
     type: string = "text",
-    required = true
+    required = true,
   ) => (
     <div className="grid gap-cols-1 sm:grid-cols-[200px_1fr] gap-0">
       <Label htmlFor={name}>{label}</Label>
@@ -142,7 +142,7 @@ const VendorSpocFormDialog: React.FC<Props> = ({
         readOnly={viewOnly}
         {...register(
           name,
-          required ? { required: `${label} is required` } : {}
+          required ? { required: `${label} is required` } : {},
         )}
       />
       {errors[name] && (
@@ -231,7 +231,7 @@ const VendorSpocFormDialog: React.FC<Props> = ({
                         : `${
                             import.meta.env.VITE_API_BASE_API_URL
                           }/hard_verify/api/v1.0/secured_file?path=${encodeURIComponent(
-                            vendorSpoc?.photo
+                            vendorSpoc?.photo,
                           )}`
                     }
                     alt="Selected Contact Photo"
@@ -258,6 +258,10 @@ const VendorSpocFormDialog: React.FC<Props> = ({
                       return;
                     }
                     file = await compressImage(file, 1.0);
+                    if (file.size / 1024 / 1024 > 1.0) {
+                      toast.error(`File size is larger than 1 MB`);
+                      return;
+                    }
 
                     setPhoto(file);
                     if (file) setPhotoPreview(URL.createObjectURL(file));

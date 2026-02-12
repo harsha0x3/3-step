@@ -203,6 +203,10 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
                     if (file) {
                       console.log("FILE DOES EXIST");
                       file = await compressImage(file, 1.0);
+                      if (file.size / 1024 / 1024 > 1.0) {
+                        toast.error(`File size is larger than 1 MB`);
+                        return;
+                      }
 
                       setEvidencePhoto(file);
                       setEvidencePhotoPreview(URL.createObjectURL(file));
@@ -259,7 +263,10 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
                     let file = e.target.files?.[0];
                     if (file) {
                       file = await compressImage(file, 1.0);
-
+                      if (file.size / 1024 / 1024 > 1.0) {
+                        toast.error(`File size is larger than 1 MB`);
+                        return;
+                      }
                       setBillPhoto(file);
                       setBillPhotoPreview(URL.createObjectURL(file));
                     }
@@ -351,7 +358,10 @@ const LaptopIssuanceForm: React.FC<LaptopIssuanceFormProps> = ({
                       let file = e.target.files?.[0];
                       if (file) {
                         file = await compressImage(file, 1.0);
-
+                        if (file.size / 1024 / 1024 > 1.0) {
+                          toast.error(`File size is larger than 1 MB`);
+                          return;
+                        }
                         setEmployeePhoto(file);
                         setEmployeePhotoPreview(URL.createObjectURL(file));
                       }

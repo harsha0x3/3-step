@@ -263,6 +263,10 @@ const CandidateFormDialog: React.FC<Props> = ({
     let file = e.target.files?.[0];
     if (!file) return;
     file = await compressImage(file, 1.0);
+    if (file.size / 1024 / 1024 > 1.0) {
+      toast.error(`File size is larger than 1 MB`);
+      return;
+    }
     const formData = new FormData();
     formData.append("photo", file);
 

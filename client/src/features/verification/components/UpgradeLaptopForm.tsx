@@ -84,20 +84,20 @@ const UpgradeLaptopForm: React.FC<UpgradeFormProps> = ({
     if (!isLoadingLatestLaptopIssuer && latestLaptopIssuer) {
       setStoreEmployeeName(
         latestLaptopIssuer?.data?.store_employee_name ??
-          currentUserInfo.full_name
+          currentUserInfo.full_name,
       );
       setStoreEmployeeMobile(
         latestLaptopIssuer?.data?.store_employee_mobile ??
-          currentUserInfo.mobile_number
+          currentUserInfo.mobile_number,
       );
       setEmployeePhotoPreview(
         latestLaptopIssuer?.data?.store_employee_photo
           ? `${
               import.meta.env.VITE_API_BASE_API_URL
             }/hard_verify/api/v1.0/secured_file?path=${encodeURIComponent(
-              latestLaptopIssuer?.data.store_employee_photo
+              latestLaptopIssuer?.data.store_employee_photo,
             )}`
-          : null
+          : null,
       );
     }
   }, [isLoadingLatestLaptopIssuer, latestLaptopIssuer]);
@@ -175,6 +175,7 @@ const UpgradeLaptopForm: React.FC<UpgradeFormProps> = ({
         err?.data?.detail?.msg ??
         err?.data?.detail ??
         "Error in upgrading laptop.  Try again";
+      console.log("ERR IN LAP UPGRADE", err);
       toast.error(errMsg);
     }
   };
@@ -405,7 +406,7 @@ const UpgradeLaptopForm: React.FC<UpgradeFormProps> = ({
                     type="file"
                     accept="image/*"
                     onChange={async (
-                      e: React.ChangeEvent<HTMLInputElement>
+                      e: React.ChangeEvent<HTMLInputElement>,
                     ) => {
                       let file = e.target.files?.[0];
                       if (file) {
@@ -493,7 +494,7 @@ const UpgradeLaptopForm: React.FC<UpgradeFormProps> = ({
                     src={`${
                       import.meta.env.VITE_API_BASE_API_URL
                     }/hard_verify/api/v1.0/secured_file?path=${encodeURIComponent(
-                      candidateDetails?.data?.candidate?.photo
+                      candidateDetails?.data?.candidate?.photo,
                     )}`}
                     className="w-36 h-36 rounded-lg border object-cover"
                   />

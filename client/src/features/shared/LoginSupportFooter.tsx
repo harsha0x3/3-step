@@ -142,10 +142,10 @@ const LoginSupportFooter = () => {
             </a>
             <span className="hidden sm:inline">|</span>
             <a
-              href="mailto:harshavardhancg@titan.co.in"
+              href="mailto:cgharshavardhan@titan.co.in"
               className="underline hover:text-primary"
             >
-              harshavardhancg@titan.co.in
+              cgharshavardhan@titan.co.in
             </a>
           </div>
         </div>

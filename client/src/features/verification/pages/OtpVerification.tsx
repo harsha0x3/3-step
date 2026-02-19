@@ -92,7 +92,7 @@ const OtpVerification = () => {
     ) {
       console.log("YES IT IS ISSUED.");
       navigate(
-        `/store/beneficiary/${candidateDetails?.data?.candidate?.id}/issuance/success`
+        `/store/beneficiary/${candidateDetails?.data?.candidate?.id}/issuance/success`,
       );
     }
   }, [candidateDetails, isFetchingCandidateDetails]);
@@ -241,7 +241,7 @@ const OtpVerification = () => {
                 </p>
                 <p className="flex items-center gap-1">
                   <MailIcon className="w-4 h-4" />
-                  Email: harshavardhancg@titan.co.in
+                  Email: cgharshavardhan@titan.co.in
                 </p>
               </div>
             )}
@@ -273,7 +273,7 @@ const OtpVerification = () => {
                           </React.Fragment>
                         ) : (
                           <InputOTPSlot index={i} key={i} />
-                        )
+                        ),
                       )}
                     </InputOTPGroup>
                   </InputOTP>

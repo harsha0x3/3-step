@@ -279,6 +279,7 @@ def get_registration_officer_dashboard_stats(
                 Candidate.region_id.in_(region_ids)
             )
         verified_candidates = db.scalar(verified_candidates_stmt)
+
         issued_laptops_stmt = (
             select(func.count(Candidate.id))
             .join(IssuedStatus)
@@ -290,13 +291,28 @@ def get_registration_officer_dashboard_stats(
             )
         )
 
+        upgrade_laptops_stmt = (
+            select(func.count(Candidate.id))
+            .join(IssuedStatus)
+            .where(
+                and_(
+                    IssuedStatus.issued_status == "issued",
+                    IssuedStatus.is_requested_to_upgrade.is_(True),
+                )
+            )
+        )
+
         if current_user.regions:
             region_ids = [r.id for r in current_user.regions]
             issued_laptops_stmt = issued_laptops_stmt.where(
                 Candidate.region_id.in_(region_ids)
             )
+            upgrade_laptops_stmt = upgrade_laptops_stmt.where(
+                Candidate.region_id.in_(region_ids)
+            )
 
         issued_laptops = db.scalar(issued_laptops_stmt)
+        upgrade_laptops = db.scalar(upgrade_laptops_stmt)
 
         # Pending verifications
         pending_verifications = total_candidates - (verified_candidates or 0)
@@ -310,6 +326,7 @@ def get_registration_officer_dashboard_stats(
                 "pending_verifications": pending_verifications,
                 "total_stores": total_stores,
                 "issued_laptops": issued_laptops,
+                "upgrade_laptops": upgrade_laptops,
             },
         }
     except Exception as e:

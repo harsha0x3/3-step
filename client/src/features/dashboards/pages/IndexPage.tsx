@@ -261,6 +261,31 @@ export default function IndexPage() {
             </Card>
           )}
 
+        {currentUserInfo.role == "registration_officer" &&
+          data?.data?.summary?.upgrade_laptops && (
+            <Card className="shadow-md flex flex-col">
+              <CardContent className="px-4 py-2">
+                <p className="text-sm text-gray-500">Upgrades Completed</p>
+                <p className="text-2xl font-bold">
+                  {data?.data?.summary?.upgrade_laptops}
+                </p>
+              </CardContent>
+              <CardFooter className="mt-auto flex justify-end">
+                <Button
+                  variant={"link"}
+                  className="text-right"
+                  onClick={() =>
+                    navigate("/beneficiary/all?upgrade_request=true", {
+                      state: { from: "dashboard" },
+                    })
+                  }
+                >
+                  View Details
+                </Button>
+              </CardFooter>
+            </Card>
+          )}
+
         {/* {stats.pending_verifications !== undefined &&
           stats.pending_verifications !== null && (
             <Card className="shadow-md flex flex-col">
